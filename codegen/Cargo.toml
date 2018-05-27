@@ -1,0 +1,18 @@
+[package]
+name = "cuke_runner_codegen"
+version = "0.0.1"
+authors = ["Michael Mitteregger <michael.mitteregger@gmx.at>"]
+description = "Code generation for cuke-runner"
+homepage = "https://github.com/mmitteregger/cuke-runner"
+repository = "https://github.com/mmitteregger/cuke-runner"
+readme = "../README.md"
+keywords = ["cucumber", "bdd", "testing", "gherkin"]
+categories = ["development-tools::testing"]
+license = "MIT"
+
+[lib]
+plugin = true
+
+[dependencies]
+cuke_runner = { path = "../lib" }
+regex = "1"

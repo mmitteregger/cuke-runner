@@ -1,2 +1,3 @@
-# cuke-runner
-Cucumber for Rust with a focus on ease-of-use
+# Cuke Runner
+
+Cucumber for Rust with a focus on ease-of-use inspired by [Rocket](https://rocket.rs/).
