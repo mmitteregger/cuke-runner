@@ -16,16 +16,18 @@ use walkdir::{WalkDir, DirEntry};
 
 pub use state::State;
 pub use step_keyword::StepKeyword;
+#[doc(hidden)]
+pub use codegen::*;
 
 use config::CukeConfig;
-use error::Result;
+pub use error::{Result, Error};
 
 mod config;
 mod error;
-#[doc(hidden)]
-pub mod macros;
 mod state;
 mod step_keyword;
+mod codegen;
+mod handler;
 
 pub fn run_cukes<P: AsRef<Path>>(tests_base_path: P) {
     match run(tests_base_path) {

@@ -8,7 +8,7 @@ pub fn reset_calculator(mut calc: State<RpnCalculator>) {
 }
 
 #[when("I add (\\d+) and (\\d+)")]
-pub fn add(mut calc: State<RpnCalculator>, arg1: f64, arg2: f64) {
+pub fn add(mut calc: State<RpnCalculator>, arg1: &str, arg2: &str) {
     calc.push(arg1);
     calc.push(arg2);
     calc.push("+");
@@ -21,7 +21,7 @@ pub fn press(mut calc: State<RpnCalculator>, what: String) {
 
 #[then("the result is (.*)")]
 pub fn assert_result(calc: State<RpnCalculator>, expected: f64) {
-    assert_equals!(calc.value(), expected);
+    assert_eq!(calc.value(), expected);
 }
 
 //Before(new String[]{"not @foo"}, (Scenario scenario) -> {

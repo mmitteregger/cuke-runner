@@ -1,16 +1,14 @@
-use std::str::FromStr;
+use cuke_runner::StepKeyword;
+use regex::Regex;
 use std::collections::HashSet;
-
-use syntax::ast::*;
-use syntax::ext::base::{ExtCtxt, Annotatable};
-use syntax::codemap::{Span, Spanned, dummy_spanned};
-
-use utils::{MetaItemExt, SpanExt, span, is_valid_ident};
+use std::str::FromStr;
 use super::Function;
 use super::keyvalue::KVSpanned;
-// use super::uri::validate_uri;
-use regex::Regex;
-use cuke_runner::StepKeyword;
+use super::regex::validate_regex;
+use syntax::ast::*;
+use syntax::codemap::{dummy_spanned, Span, Spanned};
+use syntax::ext::base::{Annotatable, ExtCtxt};
+use utils::{is_valid_ident, MetaItemExt, span, SpanExt};
 
 /// This structure represents the parsed `step` attribute.
 ///
@@ -52,27 +50,27 @@ impl StepParams {
             ecx.span_fatal(sp, "attribute requires at least 1 parameter");
         }
 
-        // Figure out the method. If it is known (i.e, because we're parsing a
-        // helper attribute), use that method directly. Otherwise, try to parse
-        // it from the list of meta items.
-        let (method, attr_params) = match known_keyword {
-            Some(method) => (method, meta_items),
+        // Figure out the step keyword.
+        // If it is known (i.e, because we're parsing a helper attribute),
+        // use that method directly.
+        // Otherwise, try to parse it from the list of meta items.
+        let (keyword, attr_params) = match known_keyword {
+            Some(step_keyword) => (step_keyword, meta_items),
             None => (parse_keyword(ecx, &meta_items[0]), &meta_items[1..])
         };
 
         if attr_params.len() < 1 {
             ecx.struct_span_err(sp, "attribute requires at least a text")
-                .help(r#"example: #[given("/my/path")] or #[get(text = "/hi")]"#)
+                .help(r#"example: #[given("step text")] or #[given(text = "step text")]"#)
                 .emit();
             ecx.span_fatal(sp, "malformed attribute");
         }
 
-        // Parse the required path and optional query parameters.
-        let (uri, query) = parse_path(ecx, &attr_params[0]);
+        // Parse the required text
+        let text = parse_text(ecx, &attr_params[0]);
 
         // Parse all of the optional parameters.
         let mut seen_keys = HashSet::new();
-        let (mut rank, mut data, mut format) = Default::default();
         for param in &attr_params[1..] {
             let kv_opt = kv_from_nested(param);
             if kv_opt.is_none() {
@@ -82,9 +80,6 @@ impl StepParams {
 
             let kv = kv_opt.unwrap();
             match kv.key().as_str() {
-                "rank" => rank = parse_opt(ecx, &kv, parse_rank),
-                "data" => data = parse_opt(ecx, &kv, parse_data),
-                "format" => format = parse_opt(ecx, &kv, parse_format),
                 _ => {
                     let msg = format!("'{}' is not a known parameter", kv.key());
                     ecx.span_err(kv.span, &msg);
@@ -137,18 +132,16 @@ pub fn param_to_ident(ecx: &ExtCtxt, s: Spanned<&str>) -> Option<Spanned<Ident>>
     None
 }
 
-fn parse_keyword(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<Method> {
+fn parse_keyword(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<StepKeyword> {
     let default_keyword = dummy_spanned(StepKeyword::Star);
-    let valid_keywords = "valid keywords are: `Given`, `When`, `Then`, `Star`";
+    let valid_keywords = "valid keywords are: `Given`, `When`, `Then`, `*`";
 
     if let Some(word) = meta_item.word() {
         if let Ok(keyword) = StepKeyword::from_str(&word.name().as_str()) {
-            if is_valid_keyword(keyword) {
-                return span(keyword, word.span());
-            }
+            return span(keyword, word.span());
         }
 
-        let msg = format!("'{}' is not a valid method", word.ident);
+        let msg = format!("'{}' is not a valid step keyword", word.ident);
         ecx.struct_span_err(word.span, &msg).help(valid_keywords).emit();
         return default_keyword;
     }
@@ -159,96 +152,31 @@ fn parse_keyword(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<Method> {
     dummy_spanned(StepKeyword::Star)
 }
 
-fn parse_path(ecx: &ExtCtxt,
-              meta_item: &NestedMetaItem)
-              -> (Spanned<Uri<'static>>, Option<Spanned<Ident>>) {
+fn parse_text(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<Regex> {
     let sp = meta_item.span();
     if let Some((name, lit)) = meta_item.name_value() {
-        if name != "path" {
-            ecx.span_err(sp, "the first key, if any, must be 'path'");
+        if name != "text" {
+            ecx.span_err(sp, "the first key, if any, must be 'text'");
         } else if let LitKind::Str(ref s, _) = lit.node {
-            return validate_uri(ecx, &s.as_str(), lit.span);
+            return validate_regex(ecx, &s.as_str(), lit.span);
         } else {
-            ecx.span_err(lit.span, "`path` value must be a string")
+            ecx.span_err(lit.span, "`text` value must be a string")
         }
     } else if let Some(s) = meta_item.str_lit() {
-        return validate_uri(ecx, &s.as_str(), sp);
+        return validate_regex(ecx, &s.as_str(), sp);
     } else {
-        ecx.struct_span_err(sp, r#"expected `path = string` or a path string"#)
-            .help(r#"you can specify the path directly as a string, \
-                  e.g: "/hello/world", or as a key-value pair, \
-                  e.g: path = "/hello/world" "#)
+        ecx.struct_span_err(sp, r#"expected `text = string` or a regex string"#)
+            .help(r#"you can specify the text directly as a string, \
+                  e.g: "a simple step text", or as a key-value pair, \
+                  e.g: text = "a simple step text" "#)
             .emit();
     }
 
-    (dummy_spanned(Uri::new("")), None)
+    dummy_spanned(Regex::new("").unwrap())
 }
 
 fn parse_opt<O, T, F>(ecx: &ExtCtxt, kv: &KVSpanned<T>, f: F) -> Option<KVSpanned<O>>
     where F: Fn(&ExtCtxt, &KVSpanned<T>) -> O
 {
     Some(kv.map_ref(|_| f(ecx, kv)))
-}
-
-fn parse_data(ecx: &ExtCtxt, kv: &KVSpanned<LitKind>) -> Ident {
-    let mut ident = Ident::from_str("unknown");
-    if let LitKind::Str(ref s, _) = *kv.value() {
-        ident = Ident::from_str(&s.as_str());
-        if let Some(id) = param_to_ident(ecx, span(&s.as_str(), kv.value.span)) {
-            return id.node;
-        }
-    }
-
-    let err_string = r#"`data` value must be a parameter, e.g: "<name>"`"#;
-    ecx.struct_span_fatal(kv.span, err_string)
-        .help(r#"data, if specified, must be a key-value pair where
-              the key is `data` and the value is a string with a single
-              parameter inside '<' '>'. e.g: data = "<user_form>""#)
-        .emit();
-
-    ident
-}
-
-fn parse_rank(ecx: &ExtCtxt, kv: &KVSpanned<LitKind>) -> isize {
-    if let LitKind::Int(n, _) = *kv.value() {
-        let max = isize::max_value();
-        if n <= max as u128 {
-            return n as isize;
-        } else {
-            let msg = format!("rank must be less than or equal to {}", max);
-            ecx.span_err(kv.value.span, msg.as_str());
-        }
-    } else {
-        ecx.struct_span_err(kv.span, r#"`rank` value must be an int"#)
-            .help(r#"the rank, if specified, must be a key-value pair where
-                  the key is `rank` and the value is an integer.
-                  e.g: rank = 1, or e.g: rank = 10"#)
-            .emit();
-    }
-
-    -1
-}
-
-fn parse_format(ecx: &ExtCtxt, kv: &KVSpanned<LitKind>) -> MediaType {
-    if let LitKind::Str(ref s, _) = *kv.value() {
-        if let Some(ct) = MediaType::parse_flexible(&s.as_str()) {
-            if !ct.is_known() {
-                let msg = format!("'{}' is not a known media type", s);
-                ecx.span_warn(kv.value.span, &msg);
-            }
-
-            return ct;
-        } else {
-            ecx.span_err(kv.value.span, "malformed media type");
-        }
-    }
-
-    ecx.struct_span_err(kv.span, r#"`format` must be a "media/type""#)
-        .help(r#"format, if specified, must be a key-value pair where
-              the key is `format` and the value is a string representing the
-              media type accepted. e.g: format = "application/json".
-              shorthand is also accepted: format = "json"#)
-        .emit();
-
-    MediaType::Any
 }

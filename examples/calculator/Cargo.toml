@@ -2,6 +2,6 @@
 name = "calculator"
 version = "0.0.0"
 
-[dependencies]
+[dev-dependencies]
 cuke_runner = { path = "../../lib" }
 cuke_runner_codegen = { path = "../../codegen" }

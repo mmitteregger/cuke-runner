@@ -11,7 +11,7 @@ mod error;
 
 const CONFIG_FILENAME: &'static str = "Cukes.toml";
 // TODO: Use ENV_VAR_PREFIX
-const _ENV_VAR_PREFIX: &'static str = "CUKES_";
+const _ENV_VAR_PREFIX: &'static str = "CUKE_";
 
 #[derive(Debug)]
 pub struct CukeConfig {
