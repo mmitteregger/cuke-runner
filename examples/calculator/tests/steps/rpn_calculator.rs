@@ -2,6 +2,19 @@ use cuke_runner::State;
 
 use calculator::RpnCalculator;
 
+pub mod in_rpn_1 {
+    fn foo() {}
+
+    pub mod in_rpn_2 {
+        pub fn bar() {}
+        fn fn_not_public() {}
+    }
+
+    mod mod_not_public {
+        pub fn baz() {}
+    }
+}
+
 #[given("a calculator I just turned on")]
 pub fn reset_calculator(mut calc: State<RpnCalculator>) {
     calc.reset();

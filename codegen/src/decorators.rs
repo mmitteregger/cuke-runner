@@ -5,7 +5,7 @@ use ::{PARAM_PREFIX, STEP_STRUCT_PREFIX, STEP_FN_PREFIX};
 use ::{STEP_ATTR, STEP_INFO_ATTR};
 
 use utils::*;
-use parser::{Param, StepParams};
+use parser::{StepParams};
 
 use syntax::codemap::{Span, Spanned, dummy_spanned};
 use syntax::tokenstream::TokenTree;

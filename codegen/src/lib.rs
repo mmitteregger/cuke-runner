@@ -13,6 +13,8 @@ extern crate regex;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+extern crate walkdir;
+extern crate syn;
 
 #[macro_use]
 mod utils;
@@ -33,6 +35,8 @@ const STEP_FN_PREFIX: &'static str = "cuke_step_fn_";
 
 const STEP_ATTR: &'static str = "cuke_step";
 const STEP_INFO_ATTR: &'static str = "cuke_step_info";
+
+const STEP_FN_ATTR_NAMES: &[&str] = &["step", "given", "when", "then"];
 
 macro_rules! register_macros {
     ($reg:expr, $($n:expr => $f:ident),+) => (
@@ -62,6 +66,7 @@ pub fn plugin_registrar(reg: &mut Registry) {
         "cuke_runner" => cuke_runner
     );
 
+    // Keep these in sync with STEP_FN_ATTR_NAMES
     register_decorators!(reg,
         "step" => step_decorator,
         "given" => given_decorator,

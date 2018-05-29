@@ -1,4 +1,3 @@
-use super::step::param_to_ident;
 use syntax::ast::*;
 use syntax::codemap::{dummy_spanned, Span, Spanned};
 use syntax::ext::base::ExtCtxt;

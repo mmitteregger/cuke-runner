@@ -50,10 +50,6 @@ impl StepParams {
             ecx.span_fatal(sp, "attribute requires at least 1 parameter");
         }
 
-        // Figure out the step keyword.
-        // If it is known (i.e, because we're parsing a helper attribute),
-        // use that method directly.
-        // Otherwise, try to parse it from the list of meta items.
         let (keyword, attr_params) = match known_keyword {
             Some(step_keyword) => (step_keyword, meta_items),
             None => (parse_keyword(ecx, &meta_items[0]), &meta_items[1..])
@@ -66,36 +62,7 @@ impl StepParams {
             ecx.span_fatal(sp, "malformed attribute");
         }
 
-        // Parse the required text
         let text = parse_text(ecx, &attr_params[0]);
-
-        // Parse all of the optional parameters.
-        let mut seen_keys = HashSet::new();
-        for param in &attr_params[1..] {
-            let kv_opt = kv_from_nested(param);
-            if kv_opt.is_none() {
-                ecx.span_err(param.span(), "expected key = value");
-                continue;
-            }
-
-            let kv = kv_opt.unwrap();
-            match kv.key().as_str() {
-                _ => {
-                    let msg = format!("'{}' is not a known parameter", kv.key());
-                    ecx.span_err(kv.span, &msg);
-                    continue;
-                }
-            }
-
-            if seen_keys.contains(kv.key()) {
-                let msg = format!("{} was already defined", kv.key());
-                ecx.struct_span_warn(param.span, &msg)
-                   .note("the last declared value will be used")
-                   .emit();
-            } else {
-                seen_keys.insert(kv.key().clone());
-            }
-        }
 
         StepParams {
             keyword,
@@ -114,22 +81,6 @@ pub fn kv_from_nested(item: &NestedMetaItem) -> Option<KVSpanned<LitKind>> {
             span: item.span(),
         }
     })
-}
-
-pub fn param_to_ident(ecx: &ExtCtxt, s: Spanned<&str>) -> Option<Spanned<Ident>> {
-    let string = s.node;
-    if string.starts_with('<') && string.ends_with('>') {
-        let param = &string[1..(string.len() - 1)];
-        if is_valid_ident(param) {
-            return Some(span(Ident::from_str(param), s.span.trim(1)));
-        }
-
-        ecx.span_err(s.span, "parameter name must be alphanumeric");
-    } else {
-        ecx.span_err(s.span, "parameters must start with '<' and end with '>'");
-    }
-
-    None
 }
 
 fn parse_keyword(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<StepKeyword> {
@@ -173,10 +124,4 @@ fn parse_text(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<Regex> {
     }
 
     dummy_spanned(Regex::new("").unwrap())
-}
-
-fn parse_opt<O, T, F>(ecx: &ExtCtxt, kv: &KVSpanned<T>, f: F) -> Option<KVSpanned<O>>
-    where F: Fn(&ExtCtxt, &KVSpanned<T>) -> O
-{
-    Some(kv.map_ref(|_| f(ecx, kv)))
 }
