@@ -1,9 +1,12 @@
+//! Step keywords like "Given", "When" and "Then".
+
 use std::fmt;
 use std::str::FromStr;
 
 use error::{Result, Error};
 use self::StepKeyword::*;
 
+/// A step keyword like "Given", "When" and "Then".
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum StepKeyword {
     Given,
@@ -33,7 +36,7 @@ impl FromStr for StepKeyword {
             _ if When.as_str() == s => Ok(When),
             _ if Then.as_str() == s => Ok(Then),
             _ if Star.as_str() == s => Ok(Star),
-            _ => panic!("bad step keyword"),
+            _ => panic!("bad step keyword: {}", s),
         }
     }
 }

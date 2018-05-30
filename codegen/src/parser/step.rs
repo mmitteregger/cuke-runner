@@ -1,4 +1,4 @@
-use cuke_runner::StepKeyword;
+use cuke_runner::data::StepKeyword;
 use regex::Regex;
 use std::collections::HashSet;
 use std::str::FromStr;

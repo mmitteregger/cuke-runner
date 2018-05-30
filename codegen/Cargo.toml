@@ -18,8 +18,4 @@ cuke_runner = { path = "../lib" }
 regex = "1"
 log = "0.4"
 env_logger = "0.5"
-walkdir = "2"
-
-[dependencies.syn]
-version = "0.14.1"
-features = ["full"]
+syn = { version = "0.14.1", features = ["full"] }

@@ -13,7 +13,6 @@ extern crate regex;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-extern crate walkdir;
 extern crate syn;
 
 #[macro_use]

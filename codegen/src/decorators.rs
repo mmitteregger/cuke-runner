@@ -16,10 +16,10 @@ use syntax::parse::token;
 use syntax::symbol::LocalInternedString;
 use syntax::ptr::P;
 
-use cuke_runner::StepKeyword;
+use cuke_runner::data::StepKeyword;
 
 fn keyword_to_path(ecx: &ExtCtxt, keyword: StepKeyword) -> Path {
-    quote_enum!(ecx, keyword => ::cuke_runner::StepKeyword {
+    quote_enum!(ecx, keyword => ::cuke_runner::data::StepKeyword {
         Given, When, Then, Star;
     })
 }
@@ -58,6 +58,7 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
     let step = StepParams::from(ecx, sp, known_keyword, meta_item, &annotated);
     debug!("Step params: {:?}", step);
 
+    let param_statements = step.generate_param_statements(ecx);
     let fn_arguments = step.generate_fn_arguments(ecx);
 
     // Generate and emit the wrapping function with the Rocket handler signature.
@@ -67,10 +68,10 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
         // Allow the `unreachable_code` lint for those FromParam impls that have
         // an `Error` associated type of !.
         #[allow(unreachable_code)]
-        fn $step_fn_name<'_b>() -> ::cuke_runner::Result<()> {
-            // $user_fn_name($fn_arguments);
-            //let responder = $user_fn_name($fn_arguments);
-            //::rocket::handler::Outcome::from(__req, responder)
+        fn $step_fn_name(__cuke_runner_step_data: &::cuke_runner::data::StepData) -> ::cuke_runner::Result<()> {
+            $param_statements
+            // TODO: $user_fn_name should be able to return nothing () or a cuke_runner::Result
+            $user_fn_name($fn_arguments);
             Ok(())
         }
     ).unwrap());
@@ -82,8 +83,8 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
     let static_step_info_item =  quote_item!(ecx,
         /// Cuke Runner code generated static step information structure.
         #[allow(non_upper_case_globals)]
-        pub static $struct_name: ::cuke_runner::StaticStepInfo =
-            ::cuke_runner::StaticStepInfo {
+        pub static $struct_name: ::cuke_runner::codegen::StaticStepDefInfo =
+            ::cuke_runner::codegen::StaticStepDefInfo {
                 name: $name,
                 keyword: $keyword,
                 text: $text,
@@ -111,6 +112,29 @@ impl StepParams {
             .span_note(fn_span, &format!("expected argument named `{}` in `{}` handler",
                 arg.node, fn_name))
             .emit();
+    }
+
+    fn generate_param_statements(&self, ecx: &ExtCtxt) -> Vec<Stmt> {
+        let mut fn_param_statements = vec![];
+
+        // Generate the code for `from_step_data` parameters.
+        let all = &self.annotated_fn.decl().inputs;
+        for arg in all.iter() {
+            let ident = arg.ident().unwrap().prepend(PARAM_PREFIX);
+            let ty = strip_ty_lifetimes(arg.ty.clone());
+            fn_param_statements.push(quote_stmt!(ecx,
+                #[allow(non_snake_case, unreachable_patterns)]
+                let $ident: $ty = match
+                        ::cuke_runner::data::FromStepData::from_step_data(__cuke_runner_step_data) {
+                    Ok(step_data) => step_data,
+                    Err(error) => {
+                        return Err(error.into())
+                    },
+                };
+            ).expect("undeclared param parsing statement"));
+        }
+
+        fn_param_statements
     }
 
     fn generate_fn_arguments(&self, ecx: &ExtCtxt) -> Vec<TokenTree> {

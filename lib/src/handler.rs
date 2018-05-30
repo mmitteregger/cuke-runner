@@ -1,2 +1,4 @@
+use data::StepData;
+
 /// The type of a step handler.
-pub type Handler = fn() -> ::error::Result<()>;
+pub type StepHandler = fn(&StepData) -> ::error::Result<()>;

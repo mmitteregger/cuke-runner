@@ -15,9 +15,6 @@ use gherkin::ast::GherkinDocument;
 use walkdir::{WalkDir, DirEntry};
 
 pub use state::State;
-pub use step_keyword::StepKeyword;
-#[doc(hidden)]
-pub use codegen::*;
 
 use config::CukeConfig;
 pub use error::{Result, Error};
@@ -25,9 +22,10 @@ pub use error::{Result, Error};
 mod config;
 mod error;
 mod state;
-mod step_keyword;
-mod codegen;
+#[doc(hidden)]
+pub mod codegen;
 mod handler;
+pub mod data;
 
 pub fn run_cukes<P: AsRef<Path>>(tests_base_path: P) {
     match run(tests_base_path) {

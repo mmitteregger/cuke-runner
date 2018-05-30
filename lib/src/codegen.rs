@@ -1,14 +1,19 @@
 use std::path::PathBuf;
 use std::env;
 
-use handler::Handler;
-use StepKeyword;
+use handler::StepHandler;
+use data::StepKeyword;
 
-pub struct StaticStepInfo {
+/// Generated info for a step definition (a `#[step(...)]` annotated function).
+pub struct StaticStepDefInfo {
+    /// Name of the step definition function.
     pub name: &'static str,
+    /// Step definition keyword like "Given", "When" and "Then".
     pub keyword: StepKeyword,
+    /// The step definition text to match a step in a cucumber scenario.
     pub text: &'static str,
-    pub handler: Handler,
+    /// The generated handler responsible for calling the step definition function.
+    pub handler: StepHandler,
 }
 
 pub fn __cuke_runner_project_dir() -> PathBuf {
