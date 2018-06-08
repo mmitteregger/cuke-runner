@@ -2,23 +2,22 @@ use cuke_runner::State;
 
 use calculator::RpnCalculator;
 
-pub mod in_rpn_1 {
-    fn foo() {}
-
-    pub mod in_rpn_2 {
-        pub fn bar() {}
-        fn fn_not_public() {}
-    }
-
-    mod mod_not_public {
-        pub fn baz() {}
-    }
+//#[before]
+pub fn init() {
+    State::init(|| RpnCalculator::new());
 }
 
 #[given("a calculator I just turned on")]
 pub fn reset_calculator(mut calc: State<RpnCalculator>) {
     calc.reset();
 }
+
+// Another option:
+//#[given("a calculator I just turned on")]
+//pub fn reset_calculator_2() {
+//    let mut calc = State::<RpnCalculator>::get();
+//    calc.reset();
+//}
 
 #[when("I add (\\d+) and (\\d+)")]
 pub fn add(mut calc: State<RpnCalculator>, arg1: &str, arg2: &str) {
@@ -37,9 +36,6 @@ pub fn assert_result(calc: State<RpnCalculator>, expected: f64) {
     assert_eq!(calc.value(), expected);
 }
 
-//Before(new String[]{"not @foo"}, (Scenario scenario) -> {
-//    scenario.write("Runs before scenarios *not* tagged with @foo");
-//});
 //
 //After((Scenario scenario) -> {
 //    // result.write("HELLLLOO");

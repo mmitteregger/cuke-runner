@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 use std::env;
 
-use handler::StepHandler;
-use data::StepKeyword;
+use data::{StepData, StepKeyword};
+
+/// The type of a step handler.
+pub type StepHandler = fn(&StepData) -> ::error::Result<()>;
 
 /// Generated info for a step definition (a `#[step(...)]` annotated function).
 pub struct StaticStepDefInfo {

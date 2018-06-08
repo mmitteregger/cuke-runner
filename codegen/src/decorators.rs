@@ -9,10 +9,11 @@ use parser::{StepParams};
 
 use syntax::codemap::{Span, Spanned, dummy_spanned};
 use syntax::tokenstream::TokenTree;
-use syntax::ast::{Arg, Ident, Item, Stmt, Expr, MetaItem, Path};
+use syntax::ast::{Arg, Ident, Item, Stmt, Expr, MetaItem, Path, TyKind};
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::parse::token;
+use syntax::print::pprust;
 use syntax::symbol::LocalInternedString;
 use syntax::ptr::P;
 
@@ -68,7 +69,7 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
         // Allow the `unreachable_code` lint for those FromParam impls that have
         // an `Error` associated type of !.
         #[allow(unreachable_code)]
-        fn $step_fn_name(__cuke_runner_step_data: &::cuke_runner::data::StepData) -> ::cuke_runner::Result<()> {
+        fn $step_fn_name(__step_data: &::cuke_runner::data::StepData) -> ::cuke_runner::Result<()> {
             $param_statements
             // TODO: $user_fn_name should be able to return nothing () or a cuke_runner::Result
             $user_fn_name($fn_arguments);
@@ -122,10 +123,11 @@ impl StepParams {
         for arg in all.iter() {
             let ident = arg.ident().unwrap().prepend(PARAM_PREFIX);
             let ty = strip_ty_lifetimes(arg.ty.clone());
+
             fn_param_statements.push(quote_stmt!(ecx,
                 #[allow(non_snake_case, unreachable_patterns)]
                 let $ident: $ty = match
-                        ::cuke_runner::data::FromStepData::from_step_data(__cuke_runner_step_data) {
+                        ::cuke_runner::data::FromStepData::from_step_data(__step_data) {
                     Ok(step_data) => step_data,
                     Err(error) => {
                         return Err(error.into())
