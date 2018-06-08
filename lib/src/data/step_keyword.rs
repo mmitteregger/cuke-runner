@@ -7,7 +7,7 @@ use error::{Result, Error};
 use self::StepKeyword::*;
 
 /// A step keyword like "Given", "When" and "Then".
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum StepKeyword {
     Given,
     When,

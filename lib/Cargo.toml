@@ -18,3 +18,4 @@ failure_derive = "0.1"
 walkdir = "2"
 state = { version = "0.4", features = ["tls"] }
 lazy_static = "1"
+downcast-rs = "1"

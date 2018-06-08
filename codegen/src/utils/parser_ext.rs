@@ -2,7 +2,7 @@ use syntax::parse::parser::{PathStyle, Parser};
 use syntax::parse::PResult;
 use syntax::ast::{self, Path, StrStyle, Ident};
 use syntax::parse::token::Token::{Eof, Comma};
-use syntax::parse::common::SeqSep;
+use syntax::parse::SeqSep;
 use syntax::symbol::Symbol;
 
 pub trait ParserExt<'a> {

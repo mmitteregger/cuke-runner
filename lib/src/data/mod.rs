@@ -14,5 +14,6 @@ pub use self::from_step_data::Result as FromStepDataResult;
 pub use self::from_step_data::Error as FromStepDataError;
 pub use self::state::State;
 
+#[derive(Debug)]
 pub struct StepData {
 }

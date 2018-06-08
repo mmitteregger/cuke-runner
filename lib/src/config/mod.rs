@@ -24,7 +24,7 @@ pub struct CukeConfig {
 }
 
 /// Controls how the cucumber tests are executed in parallel.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 // TODO: Use...
 #[allow(unused)]
 pub enum ParallelScheme {

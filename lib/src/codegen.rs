@@ -1,10 +1,15 @@
 use std::path::PathBuf;
 use std::env;
+use std::fmt;
 
 use data::{StepData, StepKeyword};
+use error::Result;
 
-/// The type of a step handler.
-pub type StepHandler = fn(&StepData) -> ::error::Result<()>;
+/// The type of a generated hook handler (wraps a user defined hook function).
+pub type HookHandler = fn() -> Result<()>;
+
+/// The type of a step handler (wraps a user defined step function).
+pub type StepHandler = fn(&StepData) -> Result<()>;
 
 /// Generated info for a step definition (a `#[step(...)]` annotated function).
 pub struct StaticStepDefInfo {

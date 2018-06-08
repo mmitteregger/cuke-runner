@@ -2,10 +2,22 @@ use cuke_runner::State;
 
 use calculator::RpnCalculator;
 
-//#[before]
+// #[before_scenario]
 pub fn init() {
     State::init(|| RpnCalculator::new());
 }
+
+// // Other hooks and attributes that should be supported:
+// #[before_scenario(order, tags)]
+// #[after_scenario(order, tags)]
+// #[before_step(order, tags)]
+// #[after_step(order, tags)]
+// // hook that should be executed before the tests are run (one-only global setup hook)
+// #[before_all(order)]
+// // reverse of #before_all
+// #[after_all(order)]
+// // not sure about this one yet...
+// // #[after_configuration] taking configuration as function argument
 
 #[given("a calculator I just turned on")]
 pub fn reset_calculator(mut calc: State<RpnCalculator>) {

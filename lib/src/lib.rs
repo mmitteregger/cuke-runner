@@ -10,12 +10,12 @@ extern crate walkdir;
 extern crate state;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate downcast_rs;
 
-use std::fs::File;
 use std::path::Path;
 
 use gherkin::ast::*;
-use walkdir::{WalkDir, DirEntry};
 
 pub use data::State;
 
@@ -27,6 +27,10 @@ mod error;
 #[doc(hidden)]
 pub mod codegen;
 pub mod data;
+mod parser;
+mod api;
+mod runner;
+mod runtime;
 
 pub fn run_cukes<P: AsRef<Path>>(tests_base_path: P) {
     match run(tests_base_path) {
@@ -40,7 +44,7 @@ pub fn run_cukes<P: AsRef<Path>>(tests_base_path: P) {
 
 fn run<P: AsRef<Path>>(tests_base_path: P) -> Result<()> {
     let config = CukeConfig::read(tests_base_path)?;
-    let gherkin_documents = parse_gherkin_documents(&config.features)?;
+    let gherkin_documents = parser::parse_gherkin_documents(&config.features)?;
 
     gherkin_documents.into_iter()
         .for_each(|gherkin_document| {
@@ -78,31 +82,4 @@ fn run<P: AsRef<Path>>(tests_base_path: P) -> Result<()> {
         });
 
     Ok(())
-}
-
-fn parse_gherkin_documents<P: AsRef<Path>>(features_dir: P) -> Result<Vec<GherkinDocument>> {
-    let walk_dir = WalkDir::new(features_dir.as_ref())
-        .follow_links(true);
-
-    let mut parser = gherkin::Parser::default();
-    let mut gherkin_documents = Vec::new();
-
-    for entry in walk_dir {
-        let entry: DirEntry = entry?;
-        let path = entry.path();
-
-        if !is_feature_file(&entry) {
-            continue;
-        }
-
-        let file = File::open(path)?;
-        let gherkin_document = parser.parse_reader(&file)?;
-        gherkin_documents.push(gherkin_document);
-    }
-
-    Ok(gherkin_documents)
-}
-
-fn is_feature_file(entry: &DirEntry) -> bool {
-    entry.file_name().to_string_lossy().ends_with(".feature")
 }
