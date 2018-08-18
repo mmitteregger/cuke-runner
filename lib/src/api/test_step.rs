@@ -2,13 +2,13 @@ use std::fmt::Debug;
 
 use gherkin::pickle::PickleStep;
 
-use api::{self, FnDefLocation};
+use api::{self, SourceCodeLocation};
 
 /// A test step can either represent the execution of a hook or a pickle step.
 /// Each step is tied to some glue code.
 pub trait TestStep: Debug + Send + Sync {
-    /// Representation of the glue code location.
-    fn get_code_location(&self) -> &FnDefLocation;
+    /// Representation of the source code location of the glue.
+    fn get_location(&self) -> &SourceCodeLocation;
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]

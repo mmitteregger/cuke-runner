@@ -1,11 +1,11 @@
 [package]
-name = "cuke_runner_codegen"
+name = "cuke_runner_plugin"
 version = "0.0.1"
 authors = ["Michael Mitteregger <michael.mitteregger@gmx.at>"]
-description = "Code generation for cuke-runner"
+description = "Code generation via compiler plugin for cuke-runner"
 homepage = "https://github.com/mmitteregger/cuke-runner"
 repository = "https://github.com/mmitteregger/cuke-runner"
-readme = "../README.md"
+readme = "../../README.md"
 keywords = ["cucumber", "bdd", "testing", "gherkin"]
 categories = ["development-tools::testing"]
 license = "MIT"
@@ -14,8 +14,9 @@ license = "MIT"
 plugin = true
 
 [dependencies]
-cuke_runner = { path = "../lib" }
+cuke_runner = { path = "../../lib" }
 regex = "1"
 log = "0.4"
 env_logger = "0.5"
-syn = { version = "0.14.1", features = ["full"] }
+syn = { version = "0.14", features = ["full"] }
+proc-macro2 = "0.4"

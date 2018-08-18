@@ -24,7 +24,7 @@ use syntax::ext::quote::rt::ToTokens;
 use syntax::print::pprust::item_to_string;
 use syntax::ptr::P;
 use syntax::fold::Folder;
-use syntax::ast::{Attribute, Lifetime, Ty};
+use syntax::ast::{Attribute, Ty};
 use syntax::attr::HasAttrs;
 use syntax::symbol::{Ident, Symbol};
 
@@ -56,6 +56,12 @@ pub fn option_as_expr<T: ToTokens>(ecx: &ExtCtxt, opt: &Option<T>) -> P<Expr> {
 pub fn emit_item(items: &mut Vec<Annotatable>, item: P<Item>) {
     debug!("Emitting item:\n{}", item_to_string(&item));
     items.push(Annotatable::Item(item));
+}
+
+pub fn emit_annotatable(items: &mut Vec<Annotatable>, annotatable: Annotatable) {
+    if let Annotatable::Item(item) = annotatable {
+        emit_item(items, item);
+    }
 }
 
 pub fn attach_and_emit(out: &mut Vec<Annotatable>, attr: Attribute, to: Annotatable) {
@@ -151,27 +157,4 @@ macro_rules! quote_enum {
             $($extra => $result),*
         }
     })
-}
-
-macro_rules! try_parse {
-    ($sp:expr, $parse:expr) => (
-        match $parse {
-            Ok(v) => v,
-            Err(mut e) => { e.emit(); return DummyResult::expr($sp); }
-        }
-    )
-}
-
-macro_rules! p {
-    ("parameter", $num:expr) => (
-        if $num == 1 { "parameter" } else { "parameters" }
-    );
-
-    ($num:expr, "was") => (
-        if $num == 1 { "1 was".into() } else { format!("{} were", $num) }
-    );
-
-    ($num:expr, "parameter") => (
-        if $num == 1 { "1 parameter".into() } else { format!("{} parameters", $num) }
-    )
 }

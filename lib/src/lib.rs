@@ -1,26 +1,28 @@
 /*!
 Cucumber for Rust with a focus on ease-of-use.
 */
+#![feature(nll)]
 
-extern crate gherkin;
+extern crate downcast_rs;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
-extern crate walkdir;
-extern crate state;
+extern crate gherkin;
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate downcast_rs;
+extern crate state;
+extern crate walkdir;
+extern crate regex;
+extern crate rayon;
 
 use std::path::Path;
 
 use gherkin::ast::*;
 
+pub use config::{Config, ExecutionMode};
 pub use data::State;
-
-use config::CukeConfig;
-pub use error::{Result, Error};
+pub use error::{Error, Result};
+pub use runtime::Glue;
 
 mod config;
 mod error;
@@ -28,58 +30,15 @@ mod error;
 pub mod codegen;
 pub mod data;
 mod parser;
-mod api;
+pub mod api;
 mod runner;
 mod runtime;
 
-pub fn run_cukes<P: AsRef<Path>>(tests_base_path: P) {
-    match run(tests_base_path) {
-        Ok(_) => (),
-        Err(error) => {
-            eprintln!("Uh oh, looks like some cukes have rotten: {}", error);
-            ::std::process::exit(-1);
-        },
-    };
-}
+pub fn execute_cucumber_tests(glue: Glue, config: Config) {
+    let exit_status = runtime::run(glue, config);
 
-fn run<P: AsRef<Path>>(tests_base_path: P) -> Result<()> {
-    let config = CukeConfig::read(tests_base_path)?;
-    let gherkin_documents = parser::parse_gherkin_documents(&config.features)?;
-
-    gherkin_documents.into_iter()
-        .for_each(|gherkin_document| {
-            let feature = match gherkin_document.get_feature() {
-                Some(feature) => feature,
-                None => return,
-            };
-
-            println!("Feature: {}\n", feature.get_name());
-            let scenario_definitions = feature.get_children();
-
-            let mut background_printed = false;
-            let mut scenario_printed = false;
-            for scenario_definition in scenario_definitions {
-                if let Some(background) = scenario_definition.downcast_ref::<Background>() {
-                    if !background_printed {
-                        println!("  Background:");
-                        background_printed = true;
-                    }
-
-                    println!("    {}", background.get_name());
-                } else if let Some(scenario) = scenario_definition.downcast_ref::<Scenario>() {
-                    if !scenario_printed {
-                        println!("  Scenario:");
-                        scenario_printed = true;
-                    }
-
-                    println!("    {}", scenario.get_name());
-                } else if let Some(scenario_outline) = scenario_definition.downcast_ref::<ScenarioOutline>() {
-                    // unimplemented!();
-                } else {
-                    panic!("Unexpected scenario definition: {:?}", scenario_definition);
-                }
-            }
-        });
-
-    Ok(())
+    if exit_status != 0 {
+        eprintln!("Uh oh, looks like some cukes have rotten");
+        ::std::process::exit(-1);
+    }
 }

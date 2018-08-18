@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "lib/",
-  "codegen/",
+  "codegen/plugin",
+  "codegen/derive",
   "examples/calculator",
 ]

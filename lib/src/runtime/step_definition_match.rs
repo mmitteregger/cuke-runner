@@ -3,16 +3,16 @@ use std::any::Any;
 
 use gherkin::pickle::PickleStep;
 
-use api::FnDefLocation;
-use runtime::{HookDefinition, Scenario, StepDefinition};
-use runtime::step_expression::Argument;
+use api::SourceCodeLocation;
+use runtime::{HookDefinition, StepDefinition, Argument};
+use runtime::Scenario;
 
 pub trait StepDefinitionMatch: Debug + Send + Sync {
     fn run_step(&self, language: &str, scenario: &mut Scenario);
 
     fn dry_run_step(&self, language: &str, scenario: &mut Scenario);
 
-    fn get_code_location(&self) -> &FnDefLocation;
+    fn get_location(&self) -> &SourceCodeLocation;
 }
 
 
@@ -30,7 +30,7 @@ impl StepDefinitionMatch for HookDefinitionMatch {
         // Do nothing
     }
 
-    fn get_code_location(&self) -> &FnDefLocation {
+    fn get_location(&self) -> &SourceCodeLocation {
         self.hook_definition.get_location()
     }
 }
@@ -66,7 +66,7 @@ impl PickleStepDefinitionMatch {
         &self.arguments
     }
 
-    pub fn get_location(&self) -> &FnDefLocation {
+    pub fn get_location(&self) -> &SourceCodeLocation {
         self.step_definition.get_location()
     }
 }
@@ -80,7 +80,7 @@ impl StepDefinitionMatch for PickleStepDefinitionMatch {
         // Do nothing
     }
 
-    fn get_code_location(&self) -> &FnDefLocation {
+    fn get_location(&self) -> &SourceCodeLocation {
         self.step_definition.get_location()
     }
 }

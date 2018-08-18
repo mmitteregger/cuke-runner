@@ -1,18 +1,14 @@
-use std::fs::File;
-use std::path::Path;
-
-use gherkin::Parser;
-use gherkin::ast::*;
-use walkdir::{WalkDir, DirEntry};
-
 use error::Result;
+use gherkin::event::{self, PickleEvent};
+use std::fs;
+use std::path::Path;
+use walkdir::{DirEntry, WalkDir};
 
-pub fn parse_gherkin_documents<P: AsRef<Path>>(features_dir: P) -> Result<Vec<GherkinDocument>> {
+pub fn parse_pickle_events<P: AsRef<Path>>(features_dir: P) -> Result<Vec<PickleEvent>> {
     let walk_dir = WalkDir::new(features_dir.as_ref())
         .follow_links(true);
 
-    let mut parser = Parser::default();
-    let mut gherkin_documents = Vec::new();
+    let mut pickle_events = Vec::new();
 
     for entry in walk_dir {
         let entry: DirEntry = entry?;
@@ -22,12 +18,20 @@ pub fn parse_gherkin_documents<P: AsRef<Path>>(features_dir: P) -> Result<Vec<Gh
             continue;
         }
 
-        let file = File::open(path)?;
-        let gherkin_document = parser.parse_reader(&file)?;
-        gherkin_documents.push(gherkin_document);
+        let feature = fs::read_to_string(path)?;
+        let uri = path.to_string_lossy().to_owned();
+
+        let cucumber_events = event::generate(feature, uri)?;
+        pickle_events.reserve(cucumber_events.len());
+
+        for cucumber_event in cucumber_events {
+            if let Ok(pickle_event) = cucumber_event.downcast::<PickleEvent>() {
+                pickle_events.push(*pickle_event);
+            }
+        }
     }
 
-    Ok(gherkin_documents)
+    Ok(pickle_events)
 }
 
 fn is_feature_file(entry: &DirEntry) -> bool {

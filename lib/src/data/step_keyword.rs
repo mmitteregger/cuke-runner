@@ -31,11 +31,11 @@ impl FromStr for StepKeyword {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<StepKeyword> {
-        match s {
-            _ if Given.as_str() == s => Ok(Given),
-            _ if When.as_str() == s => Ok(When),
-            _ if Then.as_str() == s => Ok(Then),
-            _ if Star.as_str() == s => Ok(Star),
+        match s.to_lowercase().as_ref() {
+            "given" => Ok(Given),
+            "when" => Ok(When),
+            "then" => Ok(Then),
+            "*" => Ok(Star),
             _ => panic!("bad step keyword: {}", s),
         }
     }

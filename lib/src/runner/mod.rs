@@ -8,23 +8,25 @@ pub mod util;
 use gherkin::event::PickleEvent;
 use gherkin::pickle::PickleTag;
 
+use Config;
+use runtime::{Glue, HookDefinition};
 use api::HookType;
-use runtime::{Glue, RuntimeOptions, TestCase, HookDefinition, HookDefinitionMatch};
+use runtime::{TestCase, HookDefinitionMatch};
 
 pub struct Runner {
     glue: Glue,
-    runtime_options: RuntimeOptions,
+    dry_run: bool,
 }
 
 impl Runner {
-    pub fn new(glue: Glue, runtime_options: RuntimeOptions) -> Runner {
+    pub fn new(glue: Glue, dry_run: bool) -> Runner {
         Runner {
             glue,
-            runtime_options,
+            dry_run,
         }
     }
 
-    pub fn run_pickle<'a>(&self, pickle_event: PickleEvent, event_bus: &'a EventBus<'a>) {
+    pub fn run_pickle(&self, pickle_event: PickleEvent, event_bus: &EventBus) {
         let test_case = self.create_test_case_for_pickle_event(pickle_event);
         test_case.run(event_bus);
     }
@@ -53,16 +55,18 @@ impl Runner {
             before_hooks,
             after_hooks,
             pickle_event,
-            dry_run: self.runtime_options.dry_run,
+            dry_run: self.dry_run,
         }
     }
 
     fn create_before_scenario_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
-        self.create_hooks(tags, self.glue.get_before_scenario_hooks(), HookType::BeforeScenario)
+        let hook_definitions = &self.glue.get_before_scenario_hooks();
+        self.create_hooks(tags, hook_definitions, HookType::BeforeScenario)
     }
 
     fn create_after_scenario_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
-        self.create_hooks(tags, self.glue.get_after_scenario_hooks(), HookType::AfterScenario)
+        let hook_definitions = &self.glue.get_after_scenario_hooks();
+        self.create_hooks(tags, hook_definitions, HookType::AfterScenario)
     }
 
     fn create_hooks(&self, tags: &Vec<PickleTag>, hook_definitions: &Vec<HookDefinition>,
@@ -85,6 +89,39 @@ impl Runner {
 
     fn create_test_steps(&self, pickle_event: &PickleEvent) -> Vec<PickleStepTestStep> {
         unimplemented!();
+
+        for step in pickle_event.pickle.get_steps() {
+
+        };
+
+        Vec::new()
+//        for (PickleStep step : pickleEvent.pickle.getSteps()) {
+//            PickleStepDefinitionMatch match;
+//            try {
+//                match = glue.stepDefinitionMatch(pickleEvent.uri, step);
+//                if (match == null) {
+//                    List<String> snippets = new ArrayList<String>();
+//                    for (Backend backend : backends) {
+//                        String snippet = backend.getSnippet(step, "**KEYWORD**", runtimeOptions.getSnippetType().getFunctionNameGenerator());
+//                        if (snippet != null) {
+//                            snippets.add(snippet);
+//                        }
+//                    }
+//                    if (!snippets.isEmpty()) {
+//                        bus.send(new SnippetsSuggestedEvent(bus.getTime(), pickleEvent.uri, step.getLocations(), snippets));
+//                    }
+//                    match = new UndefinedPickleStepDefinitionMatch(step);
+//                }
+//            } catch (AmbiguousStepDefinitionsException e) {
+//                match = new AmbiguousPickleStepDefinitionsMatch(pickleEvent.uri, step, e);
+//            } catch (Throwable t) {
+//                match = new FailedPickleStepInstantiationMatch(pickleEvent.uri, step, t);
+//            }
+//
+//            List<HookTestStep> afterStepHookSteps = getAfterStepHooks(pickleEvent.pickle.getTags());
+//            List<HookTestStep> beforeStepHookSteps = getBeforeStepHooks(pickleEvent.pickle.getTags());
+//            testSteps.add(new PickleStepTestStep(pickleEvent.uri, step, beforeStepHookSteps, afterStepHookSteps, match));
+//        }
     }
 }
 

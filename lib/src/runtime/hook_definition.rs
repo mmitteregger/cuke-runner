@@ -2,11 +2,11 @@ use std::time::Duration;
 
 use gherkin::pickle::PickleTag;
 
-use api::FnDefLocation;
+use api::SourceCodeLocation;
 use error::Result;
 use codegen::HookHandler;
-use runtime::TagPredicate;
 use runtime::Scenario;
+use super::TagPredicate;
 
 #[derive(Debug, Clone)]
 pub struct HookDefinition {
@@ -14,11 +14,11 @@ pub struct HookDefinition {
     order: u32,
     timeout: Option<Duration>,
     handler: HookHandler,
-    location: FnDefLocation,
+    location: SourceCodeLocation,
 }
 
 impl HookDefinition {
-    pub fn get_location(&self) -> &FnDefLocation {
+    pub fn get_location(&self) -> &SourceCodeLocation {
         &self.location
     }
 

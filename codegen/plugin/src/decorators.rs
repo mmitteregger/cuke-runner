@@ -1,13 +1,12 @@
-use std::collections::HashSet;
 use std::fmt::Display;
 
 use ::{PARAM_PREFIX, STEP_STRUCT_PREFIX, STEP_FN_PREFIX};
-use ::{STEP_ATTR, STEP_INFO_ATTR};
+use ::{STEP_ATTR, STEP_DEFINITION_ATTR};
 
 use utils::*;
 use parser::{StepParams};
 
-use syntax::codemap::{Span, Spanned, dummy_spanned};
+use syntax::codemap::{Span, Spanned};
 use syntax::tokenstream::TokenTree;
 use syntax::ast::{Arg, Ident, Item, Stmt, Expr, MetaItem, Path, TyKind};
 use syntax::ext::base::{Annotatable, ExtCtxt};
@@ -62,14 +61,14 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
     let param_statements = step.generate_param_statements(ecx);
     let fn_arguments = step.generate_fn_arguments(ecx);
 
-    // Generate and emit the wrapping function with the Rocket handler signature.
+    // Generate and emit the wrapping function with the handler signature.
     let user_fn_name = step.annotated_fn.ident();
     let step_fn_name = user_fn_name.prepend(STEP_FN_PREFIX);
     emit_item(&mut output, quote_item!(ecx,
         // Allow the `unreachable_code` lint for those FromParam impls that have
         // an `Error` associated type of !.
         #[allow(unreachable_code)]
-        fn $step_fn_name(__step_data: &::cuke_runner::data::StepData) -> ::cuke_runner::Result<()> {
+        pub fn $step_fn_name(__step_data: &::cuke_runner::data::StepData) -> ::cuke_runner::Result<()> {
             $param_statements
             // TODO: $user_fn_name should be able to return nothing () or a cuke_runner::Result
             $user_fn_name($fn_arguments);
@@ -84,8 +83,8 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
     let static_step_info_item =  quote_item!(ecx,
         /// Cuke Runner code generated static step information structure.
         #[allow(non_upper_case_globals)]
-        pub static $struct_name: ::cuke_runner::codegen::StaticStepDefInfo =
-            ::cuke_runner::codegen::StaticStepDefInfo {
+        pub static $struct_name: ::cuke_runner::codegen::StaticStepDefinition =
+            ::cuke_runner::codegen::StaticStepDefinition {
                 name: $name,
                 keyword: $keyword,
                 text: $text,
@@ -93,8 +92,8 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
             };
     ).expect("static step info");
 
-    // Attach a `cuke_step_info` attribute to the step info and emit it.
-    let attr_name = Ident::from_str(STEP_INFO_ATTR);
+    // Attach a `cuke_step_definition` attribute to the step info and emit it.
+    let attr_name = Ident::from_str(STEP_DEFINITION_ATTR);
     let info_attr = quote_attr!(ecx, #[$attr_name]);
     attach_and_emit(&mut output, info_attr, Annotatable::Item(static_step_info_item));
 
@@ -102,6 +101,7 @@ fn generic_step_decorator(known_keyword: Option<Spanned<StepKeyword>>,
     let attr_name = Ident::from_str(STEP_ATTR);
     let step_attr = quote_attr!(ecx, #[$attr_name($struct_name)]);
     attach_and_emit(&mut output, step_attr, annotated);
+//    emit_annotatable(&mut output, annotated);
 
     output
 }

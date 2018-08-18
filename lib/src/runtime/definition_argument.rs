@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use api;
-use runtime::step_expression::{self, ExpressionArgument};
+use runtime::{step_expression, ExpressionArgument};
 
 pub struct DefinitionArgument<'a> {
     expression_argument: &'a ExpressionArgument,

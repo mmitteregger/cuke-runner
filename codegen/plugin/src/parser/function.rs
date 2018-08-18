@@ -29,8 +29,4 @@ impl Function {
     pub fn span(&self) -> Span {
         self.0.span
     }
-
-    pub fn find_input<'a>(&'a self, name: &Name) -> Option<&'a Arg> {
-        self.decl().inputs.iter().find(|arg| arg.named(name))
-    }
 }

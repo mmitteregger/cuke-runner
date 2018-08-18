@@ -45,7 +45,7 @@ impl TestResult {
 
     pub fn get_error_message(&self) -> Option<String> {
         unimplemented!("get_error_message() should include a backtrace");
-        self.error.as_ref().map(|error| error.to_string())
+//        self.error.as_ref().map(|error| error.to_string())
     }
 
     pub fn get_error(&self) -> Option<&Error> {

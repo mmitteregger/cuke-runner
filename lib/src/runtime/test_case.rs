@@ -20,7 +20,7 @@ pub struct TestCase {
 }
 
 impl TestCase {
-    pub fn run<'a>(&self, event_bus: &'a EventBus<'a>) {
+    pub fn run(&self, event_bus: &EventBus) {
         let start_time = SystemTime::now();
         event_bus.send(Event::TestCaseStarted {
             time: start_time,

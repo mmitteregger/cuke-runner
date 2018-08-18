@@ -14,102 +14,103 @@ const CONFIG_FILENAME: &'static str = "Cukes.toml";
 const _ENV_VAR_PREFIX: &'static str = "CUKE_";
 
 #[derive(Debug)]
-pub struct CukeConfig {
-    pub features: PathBuf,
-    pub output: PathBuf,
+pub struct Config {
+    pub features_dir: PathBuf,
+    pub output_dir: PathBuf,
     pub strict: bool,
-    pub monochrome: bool,
+    pub colored_output: bool,
+    pub dry_run: bool,
     pub tags: Vec<String>,
-    pub parallel_scheme: ParallelScheme,
+    pub execution_mode: ExecutionMode,
 }
 
-/// Controls how the cucumber tests are executed in parallel.
+/// Controls how the cucumber tests are executed.
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 // TODO: Use...
 #[allow(unused)]
-pub enum ParallelScheme {
+pub enum ExecutionMode {
     /// Execute all scenarios in parallel.
-    Scenario,
-    /// Execute all features in parallel, but not their scenarios.
-    Feature,
+    ParallelScenarios,
+    /// Execute all features in parallel, but not scenarios from the same feature.
+    ParallelFeatures,
     /// Execute every scenario one after another (no parallelism).
     Sequential,
 }
 
-impl Default for ParallelScheme {
-    fn default() -> ParallelScheme {
-        ParallelScheme::Scenario
+impl Default for ExecutionMode {
+    fn default() -> ExecutionMode {
+        ExecutionMode::ParallelScenarios
     }
 }
 
-impl CukeConfig {
-    pub fn read<P: AsRef<Path>>(base_path: P) -> Result<CukeConfig> {
-        let path: PathBuf = match CukeConfig::find(&base_path) {
-            Ok(path) => path,
-            Err(error) => match error {
-                Error::NotFound => return CukeConfig::create_default(&base_path),
-                _ => return Err(error),
-            }
-        };
-
-        let toml_config = fs::read_to_string(&path)?;
-
-        CukeConfig::parse(toml_config, &path)
-    }
-
-    /// Iteratively search for `CONFIG_FILENAME` starting at the given base path
-    /// and working up through its parents. Returns the path to the
-    /// file or an `Error::NotFound` if the file couldn't be found.
-    fn find<P: AsRef<Path>>(base_path: P) -> Result<PathBuf> {
-        let mut current = base_path.as_ref();
-
-        loop {
-            let manifest = current.join(CONFIG_FILENAME);
-            if fs::metadata(&manifest).is_ok() {
-                return Ok(manifest)
-            }
-
-            match current.parent() {
-                Some(p) => current = p,
-                None => break,
-            }
-        }
-
-        Err(Error::NotFound)
-    }
-
-    fn create_default<P: AsRef<Path>>(base_path: P) -> Result<CukeConfig> {
-        let base_path = base_path.as_ref();
-        let cargo_toml_dir = PathBuf::from(get_env_var("CARGO_MANIFEST_DIR")?);
-        let cargo_out_dir = cargo_toml_dir.join("target");
-
-        let config = CukeConfig {
-            features: base_path.join("features"),
-            output: cargo_out_dir.join("cukes"),
-            strict: false,
-            monochrome: false,
-            tags: Vec::new(),
-            parallel_scheme: ParallelScheme::default(),
-        };
-        return Ok(config);
-    }
-
-    fn parse<P: AsRef<Path>>(_src: String, path: P) -> Result<CukeConfig> {
-        let base_path = path.as_ref().join("tests");
-        let cargo_out_dir = get_env_var("CARGO_MANIFEST_DIR")?;
-
-        let config = CukeConfig {
-            features: base_path.join("features"),
-            output: PathBuf::from(cargo_out_dir).join("target").join("cukes"),
-            strict: false,
-            monochrome: false,
-            tags: Vec::new(),
-            parallel_scheme: ParallelScheme::default(),
-        };
-        Ok(config)
-    }
+impl Config {
+//    pub fn read<P: AsRef<Path>>(base_path: P) -> Result<Config> {
+//        let path: PathBuf = match Config::find(&base_path) {
+//            Ok(path) => path,
+//            Err(error) => match error {
+//                Error::NotFound => return Config::create_default(&base_path),
+//                _ => return Err(error),
+//            }
+//        };
+//
+//        let toml_config = fs::read_to_string(&path)?;
+//
+//        Config::parse(toml_config, &path)
+//    }
+//
+//    /// Iteratively search for `CONFIG_FILENAME` starting at the given base path
+//    /// and working up through its parents. Returns the path to the
+//    /// file or an `Error::NotFound` if the file couldn't be found.
+//    fn find<P: AsRef<Path>>(base_path: P) -> Result<PathBuf> {
+//        let mut current = base_path.as_ref();
+//
+//        loop {
+//            let manifest = current.join(CONFIG_FILENAME);
+//            if fs::metadata(&manifest).is_ok() {
+//                return Ok(manifest)
+//            }
+//
+//            match current.parent() {
+//                Some(p) => current = p,
+//                None => break,
+//            }
+//        }
+//
+//        Err(Error::NotFound)
+//    }
+//
+//    fn create_default<P: AsRef<Path>>(base_path: P) -> Result<Config> {
+//        let base_path = base_path.as_ref();
+//        let cargo_toml_dir = PathBuf::from(get_env_var("CARGO_MANIFEST_DIR")?);
+//        let cargo_out_dir = cargo_toml_dir.join("target");
+//
+//        let config = Config {
+//            features_dir: base_path.join("features"),
+//            output_dir: cargo_out_dir.join("cukes"),
+//            strict: false,
+//            colored_output: false,
+//            tags: Vec::new(),
+//            parallel_scheme: ParallelScheme::default(),
+//        };
+//        return Ok(config);
+//    }
+//
+//    fn parse<P: AsRef<Path>>(_src: String, path: P) -> Result<Config> {
+//        let base_path = path.as_ref().join("tests");
+//        let cargo_out_dir = get_env_var("CARGO_MANIFEST_DIR")?;
+//
+//        let config = Config {
+//            features_dir: base_path.join("features"),
+//            output_dir: PathBuf::from(cargo_out_dir).join("target").join("cukes"),
+//            strict: false,
+//            colored_output: false,
+//            tags: Vec::new(),
+//            parallel_scheme: ParallelScheme::default(),
+//        };
+//        Ok(config)
+//    }
 }
 
-fn get_env_var(key: &'static str) -> Result<String> {
-    env::var(key).map_err(|error| Error::EnvVar(error, key))
-}
+//fn get_env_var(key: &'static str) -> Result<String> {
+//    env::var(key).map_err(|error| Error::EnvVar(error, key))
+//}

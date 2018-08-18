@@ -3,19 +3,20 @@ use std::any::{TypeId, Any};
 use std::fmt;
 
 use gherkin::pickle::PickleStep;
+use regex::Regex;
 
-use api::FnDefLocation;
+use api::SourceCodeLocation;
 use error::Result;
 use codegen::StepHandler;
 use super::TagPredicate;
 use super::step_expression::{StepExpression, Argument};
 
 pub struct StepDefinition {
-    expression: StepExpression,
-    parameter_infos: Vec<TypeId>,
-    timeout: Duration,
-    handler: StepHandler,
-    location: FnDefLocation,
+    pub expression: StepExpression,
+    pub parameter_infos: Vec<TypeId>,
+//    pub timeout: Duration,
+    pub handler: StepHandler,
+    pub location: SourceCodeLocation,
 }
 
 impl fmt::Debug for StepDefinition {
@@ -23,7 +24,7 @@ impl fmt::Debug for StepDefinition {
         f.debug_struct("StepDefinition")
             .field("expression", &self.expression)
             .field("parameter_infos", &self.parameter_infos)
-            .field("timeout", &self.timeout)
+//            .field("timeout", &self.timeout)
             .field("handler", &"<step_handler_function>")
             .field("location", &self.location)
             .finish()
@@ -43,7 +44,7 @@ impl StepDefinition {
     /// The source line where the step definition is defined.
     ///
     /// Example: foo/bar/Zap.brainfuck:42
-    pub fn get_location(&self) -> &FnDefLocation {
+    pub fn get_location(&self) -> &SourceCodeLocation {
         &self.location
     }
 

@@ -72,17 +72,6 @@ impl StepParams {
     }
 }
 
-pub fn kv_from_nested(item: &NestedMetaItem) -> Option<KVSpanned<LitKind>> {
-    item.name_value().map(|(name, value)| {
-        let k_span = item.span().shorten_to(name.as_str().len());
-        KVSpanned {
-            key: span(name.to_string(), k_span),
-            value: value.clone(),
-            span: item.span(),
-        }
-    })
-}
-
 fn parse_keyword(ecx: &ExtCtxt, meta_item: &NestedMetaItem) -> Spanned<StepKeyword> {
     let default_keyword = dummy_spanned(StepKeyword::Star);
     let valid_keywords = "valid keywords are: `Given`, `When`, `Then`, `*`";

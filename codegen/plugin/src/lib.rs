@@ -6,6 +6,7 @@ extern crate cuke_runner;
 extern crate syntax;
 extern crate syntax_ext;
 extern crate syntax_pos;
+extern crate proc_macro;
 extern crate rustc_plugin;
 extern crate rustc_target;
 //extern crate symbol;
@@ -14,6 +15,7 @@ extern crate regex;
 extern crate log;
 extern crate env_logger;
 extern crate syn;
+extern crate proc_macro2;
 
 #[macro_use]
 mod utils;
@@ -29,31 +31,31 @@ use syntax::symbol::Symbol;
 const DEBUG_ENV_VAR: &'static str = "CUKE_CODEGEN_DEBUG";
 
 const PARAM_PREFIX: &'static str = "cuke_param_";
-const STEP_STRUCT_PREFIX: &'static str = "static_cuke_step_info_for_";
+const STEP_STRUCT_PREFIX: &'static str = "static_step_definition_for_";
 const STEP_FN_PREFIX: &'static str = "cuke_step_fn_";
 
 const STEP_ATTR: &'static str = "cuke_step";
-const STEP_INFO_ATTR: &'static str = "cuke_step_info";
+const STEP_DEFINITION_ATTR: &'static str = "cuke_step_definition";
 
 const STEP_FN_ATTR_NAMES: &[&str] = &["step", "given", "when", "then"];
 
-macro_rules! register_macros {
-    ($reg:expr, $($n:expr => $f:ident),+) => (
-        $($reg.register_macro($n, macros::$f);)+
-    )
-}
-
 macro_rules! register_decorators {
-    ($registry:expr, $($name:expr => $func:ident),+) => (
+    ($registry:expr, $($name:expr => $func:ident),+ $(,)*) => (
         $($registry.register_syntax_extension(Symbol::intern($name),
                 SyntaxExtension::MultiModifier(Box::new(decorators::$func)));
          )+
     )
 }
 
+//macro_rules! register_macros {
+//    ($registry:expr, $($n:expr => $f:ident),+ $(,)*) => (
+//        $($registry.register_macro($n, macros::$f);)+
+//    )
+//}
+
 /// Compiler hook for Rust to register plugins.
 #[plugin_registrar]
-pub fn plugin_registrar(reg: &mut Registry) {
+pub fn plugin_registrar(registry: &mut Registry) {
     // Enable logging early if the DEBUG_ENV_VAR is set.
     if env::var(DEBUG_ENV_VAR).is_ok() {
         env_logger::Builder::from_default_env()
@@ -61,15 +63,16 @@ pub fn plugin_registrar(reg: &mut Registry) {
             .init();
     }
 
-    register_macros!(reg,
-        "cuke_runner" => cuke_runner
-    );
-
     // Keep these in sync with STEP_FN_ATTR_NAMES
-    register_decorators!(reg,
+    register_decorators!(registry,
         "step" => step_decorator,
         "given" => given_decorator,
         "when" => when_decorator,
-        "then" => then_decorator
+        "then" => then_decorator,
     );
+
+//    register_macros!(registry,
+//        "cuke_runner" => cuke_runner,
+//    );
 }
+

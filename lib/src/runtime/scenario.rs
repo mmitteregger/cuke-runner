@@ -10,18 +10,18 @@ use api::{self, TestResult, TestResultStatus};
 use api::event::Event;
 
 #[derive(Debug)]
-pub struct Scenario<'a, 'b> {
+pub struct Scenario<'a, 'b, 'c: 'b> {
     test_results: Vec<TestResult>,
     tags: &'a Vec<PickleTag>,
     uri: &'a String,
     name: &'a String,
     id: String,
     lines: Vec<u32>,
-    event_bus: &'b EventBus<'b>,
+    event_bus: &'b EventBus<'c>,
 }
 
-impl<'a, 'b> Scenario<'a, 'b> {
-    pub fn new(pickle_event: &'a PickleEvent, event_bus: &'b EventBus<'b>) -> Scenario<'a, 'b> {
+impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
+    pub fn new(pickle_event: &'a PickleEvent, event_bus: &'b EventBus<'c>) -> Scenario<'a, 'b, 'c> {
         let pickle = &pickle_event.pickle;
 
         let test_results = Vec::new();
@@ -61,7 +61,7 @@ impl<'a, 'b> Scenario<'a, 'b> {
     }
 }
 
-impl<'a, 'b> api::Scenario for Scenario<'a, 'b> {
+impl<'a, 'b, 'c> api::Scenario for Scenario<'a, 'b, 'c> {
     fn get_status(&self) -> TestResultStatus {
         self.test_results.iter()
             .map(TestResult::get_status)

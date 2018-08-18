@@ -3,7 +3,7 @@ use std::time::{SystemTime, Duration};
 use gherkin::pickle::{PickleStep, PickleLocation};
 
 use error::{Result, Error};
-use api::{self, event::Event, HookType, FnDefLocation, TestResult, TestResultStatus};
+use api::{self, event::Event, HookType, SourceCodeLocation, TestResult, TestResultStatus};
 use runner::util;
 use runner::EventBus;
 use runtime::{
@@ -68,8 +68,8 @@ impl api::HookTestStep for HookTestStep {
 }
 
 impl api::TestStep for HookTestStep {
-    fn get_code_location(&self) -> &FnDefLocation {
-        self.definition_match.get_code_location()
+    fn get_location(&self) -> &SourceCodeLocation {
+        self.definition_match.get_location()
     }
 }
 
@@ -153,8 +153,8 @@ impl api::PickleStepTestStep for PickleStepTestStep {
 }
 
 impl api::TestStep for PickleStepTestStep {
-    fn get_code_location(&self) -> &FnDefLocation {
-        self.definition_match.get_code_location()
+    fn get_location(&self) -> &SourceCodeLocation {
+        self.definition_match.get_location()
     }
 }
 
