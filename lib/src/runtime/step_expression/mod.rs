@@ -4,7 +4,7 @@ pub use self::argument::*;
 
 mod argument;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StepExpression {
     pub regex: Regex,
 }

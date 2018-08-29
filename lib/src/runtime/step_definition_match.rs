@@ -1,18 +1,23 @@
 use std::fmt::Debug;
-use std::any::Any;
+use std::sync::Arc;
 
 use gherkin::pickle::PickleStep;
 
+use error::{Result, Error};
 use api::SourceCodeLocation;
-use runtime::{HookDefinition, StepDefinition, Argument};
+use runtime::{Argument, HookDefinition, StepDefinition};
 use runtime::Scenario;
 
 pub trait StepDefinitionMatch: Debug + Send + Sync {
-    fn run_step(&self, language: &str, scenario: &mut Scenario);
+    fn get_step(&self) -> &PickleStep;
 
-    fn dry_run_step(&self, language: &str, scenario: &mut Scenario);
+    fn run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()>;
+
+    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()>;
 
     fn get_location(&self) -> &SourceCodeLocation;
+
+    fn get_pattern(&self) -> Option<&String>;
 }
 
 
@@ -22,39 +27,33 @@ pub struct HookDefinitionMatch {
 }
 
 impl StepDefinitionMatch for HookDefinitionMatch {
-    fn run_step(&self, language: &str, scenario: &mut Scenario) {
-        self.hook_definition.execute(scenario);
+    fn get_step(&self) -> &PickleStep {
+        unimplemented!("HookDefinitionMatch::get_step(&self)");
     }
 
-    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) {
-        // Do nothing
+    fn run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
+        self.hook_definition.execute(scenario)
+    }
+
+    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
+        Ok(())
     }
 
     fn get_location(&self) -> &SourceCodeLocation {
         self.hook_definition.get_location()
     }
+
+    fn get_pattern(&self) -> Option<&String> {
+        None
+    }
 }
 
 #[derive(Debug)]
 pub struct PickleStepDefinitionMatch {
-    arguments: Vec<Box<Argument>>,
-    step_definition: StepDefinition,
-    feature_path: String,
-    step: PickleStep,
-}
-
-impl PickleStepDefinitionMatch {
-    pub fn new(arguments: Vec<Box<Argument>>, step_definition: StepDefinition, feature_path: String,
-               step: PickleStep)
-        -> PickleStepDefinitionMatch
-    {
-        PickleStepDefinitionMatch {
-            arguments,
-            step_definition,
-            feature_path,
-            step,
-        }
-    }
+    pub arguments: Vec<Box<Argument>>,
+    pub step_definition: StepDefinition,
+    pub feature_path: String,
+    pub step: Arc<PickleStep>,
 }
 
 impl PickleStepDefinitionMatch {
@@ -72,15 +71,78 @@ impl PickleStepDefinitionMatch {
 }
 
 impl StepDefinitionMatch for PickleStepDefinitionMatch {
-    fn run_step(&self, language: &str, scenario: &mut Scenario) {
+    fn get_step(&self) -> &PickleStep {
+        &self.step
+    }
+
+    fn run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
         unimplemented!();
     }
 
-    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) {
-        // Do nothing
+    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
+        Ok(())
     }
 
     fn get_location(&self) -> &SourceCodeLocation {
         self.step_definition.get_location()
+    }
+
+    fn get_pattern(&self) -> Option<&String> {
+        Some(self.step_definition.get_pattern())
+    }
+}
+
+#[derive(Debug)]
+pub struct AmbiguousPickleStepDefinitionMatch {
+    pub feature_path: String,
+    pub step: Arc<PickleStep>,
+}
+
+impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
+    fn get_step(&self) -> &PickleStep {
+        &self.step
+    }
+
+    fn run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
+        unimplemented!();
+    }
+
+    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
+        self.run_step(language, scenario)
+    }
+
+    fn get_location(&self) -> &SourceCodeLocation {
+        unimplemented!();
+    }
+
+    fn get_pattern(&self) -> Option<&String> {
+        None
+    }
+}
+
+#[derive(Debug)]
+pub struct UndefinedPickleStepDefinitionMatch {
+    pub step: Arc<PickleStep>,
+}
+
+impl StepDefinitionMatch for UndefinedPickleStepDefinitionMatch {
+    fn get_step(&self) -> &PickleStep {
+        &self.step
+    }
+
+    fn run_step(&self, _language: &str, _scenario: &mut Scenario) -> Result<()> {
+        Err(Error::UndefinedStepDefinition)
+    }
+
+    fn dry_run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()> {
+        self.run_step(language, scenario)
+    }
+
+    fn get_location(&self) -> &SourceCodeLocation {
+        unimplemented!();
+    }
+
+    fn get_pattern(&self) -> Option<&String> {
+        None
     }
 }

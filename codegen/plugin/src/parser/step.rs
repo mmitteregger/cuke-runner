@@ -1,14 +1,12 @@
 use cuke_runner::data::StepKeyword;
 use regex::Regex;
-use std::collections::HashSet;
 use std::str::FromStr;
 use super::Function;
-use super::keyvalue::KVSpanned;
 use super::regex::validate_regex;
 use syntax::ast::*;
 use syntax::codemap::{dummy_spanned, Span, Spanned};
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use utils::{is_valid_ident, MetaItemExt, span, SpanExt};
+use utils::{MetaItemExt, span};
 
 /// This structure represents the parsed `step` attribute.
 ///

@@ -29,7 +29,7 @@ pub trait HookTestStep: TestStep {
 pub trait PickleStepTestStep: TestStep {
 
     /// The pattern or expression used to match the glue code to the Gherkin step.
-    fn get_pattern(&self) -> &String;
+    fn get_pattern(&self) -> Option<&String>;
 
     /// The matched Gherkin step as a compiled Pickle.
     fn get_pickle_step(&self) -> &PickleStep;

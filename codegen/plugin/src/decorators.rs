@@ -8,13 +8,11 @@ use parser::{StepParams};
 
 use syntax::codemap::{Span, Spanned};
 use syntax::tokenstream::TokenTree;
-use syntax::ast::{Arg, Ident, Item, Stmt, Expr, MetaItem, Path, TyKind};
+use syntax::ast::{Ident, Stmt, MetaItem, Path};
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::parse::token;
-use syntax::print::pprust;
 use syntax::symbol::LocalInternedString;
-use syntax::ptr::P;
 
 use cuke_runner::data::StepKeyword;
 

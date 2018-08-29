@@ -28,7 +28,7 @@ impl TestCase {
 
         let mut skip_next_step = self.dry_run;
         let mut scenario = runtime::Scenario::new(&self.pickle_event, event_bus);
-        let language = self.pickle_event.pickle.get_language();
+        let language = &self.pickle_event.pickle.language;
 
         for before_hook in &self.before_hooks {
             let hook_result = before_hook.run(event_bus, language, &mut scenario, self.dry_run);

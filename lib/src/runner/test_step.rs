@@ -1,18 +1,12 @@
 use std::time::{SystemTime, Duration};
 
-use gherkin::pickle::{PickleStep, PickleLocation};
+use gherkin::pickle::PickleStep;
 
 use error::{Result, Error};
 use api::{self, event::Event, HookType, SourceCodeLocation, TestResult, TestResultStatus};
 use runner::util;
 use runner::EventBus;
-use runtime::{
-    StepDefinitionMatch,
-    HookDefinitionMatch,
-    PickleStepDefinitionMatch,
-    Scenario,
-    DefinitionArgument,
-};
+use runtime::{StepDefinitionMatch, HookDefinitionMatch, Scenario};
 
 #[derive(Debug)]
 pub struct HookTestStep {
@@ -32,33 +26,6 @@ impl HookTestStep {
         let test_step = self as &api::TestStep;
         run_test_step(test_step, &self.definition_match, event_bus, language, scenario, skip)
     }
-
-//    private Result.Type mapThrowableToStatus(Throwable t) {
-//        if (t.getClass().isAnnotationPresent(Pending.class)) {
-//            return Result.Type.PENDING;
-//        }
-//        if (Arrays.binarySearch(ASSUMPTION_VIOLATED_EXCEPTIONS, t.getClass().getName()) >= 0) {
-//            return Result.Type.SKIPPED;
-//        }
-//        if (t.getClass() == UndefinedStepDefinitionException.class) {
-//            return Result.Type.UNDEFINED;
-//        }
-//        if (t.getClass() == AmbiguousStepDefinitionsException.class) {
-//            return Result.Type.AMBIGUOUS;
-//        }
-//        return Result.Type.FAILED;
-//    }
-
-//    private Result mapStatusToResult(Result.Type status, Throwable error, long duration) {
-//        Long resultDuration = duration;
-//        if (status == Result.Type.SKIPPED && error == null) {
-//            return Result.SKIPPED;
-//        }
-//        if (status == Result.Type.UNDEFINED) {
-//            return Result.UNDEFINED;
-//        }
-//        return new Result(status, resultDuration, error);
-//    }
 }
 
 impl api::HookTestStep for HookTestStep {
@@ -75,11 +42,10 @@ impl api::TestStep for HookTestStep {
 
 #[derive(Debug)]
 pub struct PickleStepTestStep {
-    uri: String,
-    step: PickleStep,
-    before_step_hook_steps: Vec<HookTestStep>,
-    after_step_hook_steps: Vec<HookTestStep>,
-    definition_match: PickleStepDefinitionMatch,
+    pub uri: String,
+    pub before_step_hook_steps: Vec<HookTestStep>,
+    pub after_step_hook_steps: Vec<HookTestStep>,
+    pub step_definition_match: Box<StepDefinitionMatch>,
 }
 
 impl PickleStepTestStep {
@@ -105,7 +71,7 @@ impl PickleStepTestStep {
         }
 
         let test_step = self as &api::TestStep;
-        let self_result = run_test_step(test_step, &self.definition_match,
+        let self_result = run_test_step(test_step, &*self.step_definition_match,
                 event_bus, language, scenario, skip_self);
         results.push(self_result);
 
@@ -121,25 +87,26 @@ impl PickleStepTestStep {
 }
 
 impl api::PickleStepTestStep for PickleStepTestStep {
-    fn get_pattern(&self) -> &String {
-        self.definition_match.get_pattern()
+    fn get_pattern(&self) -> Option<&String> {
+        self.step_definition_match.get_pattern()
     }
 
     fn get_pickle_step(&self) -> &PickleStep {
-        &self.step
+        &self.step_definition_match.get_step()
     }
 
     fn get_definition_argument(&self) -> &Vec<Box<api::Argument>> {
-        DefinitionArgument::create_arguments(self.definition_match.get_arguments())
+        unimplemented!();
+//        DefinitionArgument::create_arguments(self.step_definition_match.get_arguments())
     }
 
     fn get_step_argument(&self) -> &Vec<Box<::gherkin::pickle::Argument>> {
-        &self.step.get_argument()
+        &self.step_definition_match.get_step().arguments
     }
 
     fn get_step_line(&self) -> u32 {
-        self.step.get_locations().last()
-            .map(PickleLocation::get_line)
+        self.step_definition_match.get_step().locations.last()
+            .map(|location| location.line)
             .unwrap_or(0)
     }
 
@@ -148,13 +115,13 @@ impl api::PickleStepTestStep for PickleStepTestStep {
     }
 
     fn get_step_text(&self) -> &String {
-        &self.step.get_text()
+        &self.step_definition_match.get_step().text
     }
 }
 
 impl api::TestStep for PickleStepTestStep {
     fn get_location(&self) -> &SourceCodeLocation {
-        self.definition_match.get_location()
+        self.step_definition_match.get_location()
     }
 }
 
@@ -201,20 +168,23 @@ fn execute_step(
 ) -> Result<TestResultStatus>
 {
     let test_result_type = if skip {
-        definition_match.dry_run_step(language, scenario);
+        definition_match.dry_run_step(language, scenario)?;
         TestResultStatus::Skipped
     } else {
-        definition_match.run_step(language, scenario);
+        definition_match.run_step(language, scenario)?;
         TestResultStatus::Passed
     };
 
     Ok(test_result_type)
 }
 
-fn map_error_to_status(error: &Error)
-    -> TestResultStatus
-{
-    unimplemented!();
+fn map_error_to_status(error: &Error) -> TestResultStatus {
+    match error {
+        Error::AmbiguousStepDefinitions => TestResultStatus::Ambiguous,
+        Error::UndefinedStepDefinition => TestResultStatus::Undefined,
+        Error::Pending => TestResultStatus::Pending,
+        _ => TestResultStatus::Failed,
+    }
 }
 
 fn map_status_to_result(status: TestResultStatus, error: Option<Error>, duration: Duration)

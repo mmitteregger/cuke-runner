@@ -8,7 +8,6 @@ pub mod util;
 use gherkin::event::PickleEvent;
 use gherkin::pickle::PickleTag;
 
-use Config;
 use runtime::{Glue, HookDefinition};
 use api::HookType;
 use runtime::{TestCase, HookDefinitionMatch};
@@ -31,22 +30,23 @@ impl Runner {
         test_case.run(event_bus);
     }
 
-    fn create_test_case_for_pickle_event(&self, pickle_event: PickleEvent) -> TestCase {
+    fn create_test_case_for_pickle_event(&self, mut pickle_event: PickleEvent) -> TestCase {
         let (
             before_hooks,
+            after_hooks,
             test_steps,
-            after_hooks
-        ) = if pickle_event.pickle.get_steps().is_empty() {
+        ) = if pickle_event.pickle.steps.is_empty() {
             (
                 Vec::new(),
                 Vec::new(),
                 Vec::new(),
             )
         } else {
+            let tags = &pickle_event.pickle.tags;
             (
-                self.create_before_scenario_hooks(pickle_event.pickle.get_tags()),
-                self.create_test_steps(&pickle_event),
-                self.create_after_scenario_hooks(pickle_event.pickle.get_tags()),
+                self.create_before_scenario_hooks(tags),
+                self.create_after_scenario_hooks(tags),
+                self.create_test_steps(&mut pickle_event),
             )
         };
 
@@ -87,41 +87,36 @@ impl Runner {
         hooks
     }
 
-    fn create_test_steps(&self, pickle_event: &PickleEvent) -> Vec<PickleStepTestStep> {
-        unimplemented!();
+    fn create_test_steps(&self, pickle_event: &mut PickleEvent) -> Vec<PickleStepTestStep> {
+        let mut test_steps = Vec::new();
 
-        for step in pickle_event.pickle.get_steps() {
+        let feature_path = &pickle_event.uri;
+        let tags = &pickle_event.pickle.tags;
 
-        };
+        for step in pickle_event.pickle.steps.drain(..) {
+            let step_definition_match = self.glue.step_definition_match(feature_path, step);
+            let before_step_hook_steps = self.get_before_step_hooks(tags);
+            let after_step_hook_steps = self.get_after_step_hooks(tags);
 
-        Vec::new()
-//        for (PickleStep step : pickleEvent.pickle.getSteps()) {
-//            PickleStepDefinitionMatch match;
-//            try {
-//                match = glue.stepDefinitionMatch(pickleEvent.uri, step);
-//                if (match == null) {
-//                    List<String> snippets = new ArrayList<String>();
-//                    for (Backend backend : backends) {
-//                        String snippet = backend.getSnippet(step, "**KEYWORD**", runtimeOptions.getSnippetType().getFunctionNameGenerator());
-//                        if (snippet != null) {
-//                            snippets.add(snippet);
-//                        }
-//                    }
-//                    if (!snippets.isEmpty()) {
-//                        bus.send(new SnippetsSuggestedEvent(bus.getTime(), pickleEvent.uri, step.getLocations(), snippets));
-//                    }
-//                    match = new UndefinedPickleStepDefinitionMatch(step);
-//                }
-//            } catch (AmbiguousStepDefinitionsException e) {
-//                match = new AmbiguousPickleStepDefinitionsMatch(pickleEvent.uri, step, e);
-//            } catch (Throwable t) {
-//                match = new FailedPickleStepInstantiationMatch(pickleEvent.uri, step, t);
-//            }
-//
-//            List<HookTestStep> afterStepHookSteps = getAfterStepHooks(pickleEvent.pickle.getTags());
-//            List<HookTestStep> beforeStepHookSteps = getBeforeStepHooks(pickleEvent.pickle.getTags());
-//            testSteps.add(new PickleStepTestStep(pickleEvent.uri, step, beforeStepHookSteps, afterStepHookSteps, match));
-//        }
+            test_steps.push(PickleStepTestStep {
+                uri: feature_path.clone(),
+                before_step_hook_steps,
+                after_step_hook_steps,
+                step_definition_match,
+            });
+        }
+
+        test_steps
+    }
+
+    fn get_before_step_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
+        let hook_definitions = &self.glue.get_before_step_hooks();
+        self.create_hooks(tags, hook_definitions, HookType::BeforeStep)
+    }
+
+    fn get_after_step_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
+        let hook_definitions = &self.glue.get_after_step_hooks();
+        self.create_hooks(tags, hook_definitions, HookType::AfterStep)
     }
 }
 

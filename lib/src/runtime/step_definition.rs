@@ -1,16 +1,14 @@
-use std::time::Duration;
+//use std::time::Duration;
 use std::any::{TypeId, Any};
 use std::fmt;
 
 use gherkin::pickle::PickleStep;
-use regex::Regex;
 
 use api::SourceCodeLocation;
-use error::Result;
 use codegen::StepHandler;
-use super::TagPredicate;
 use super::step_expression::{StepExpression, Argument};
 
+#[derive(Clone)]
 pub struct StepDefinition {
     pub expression: StepExpression,
     pub parameter_infos: Vec<TypeId>,
@@ -37,7 +35,7 @@ impl StepDefinition {
     /// Returns `None` if the step definition doesn't match at all.
     /// Returns an empty `Vec` if it matches with 0 arguments
     /// and bigger sizes if it matches several.
-    pub fn matched_arguments(&self, step: PickleStep) -> Option<Vec<Box<Argument>>> {
+    pub fn matched_arguments(&self, step: &PickleStep) -> Option<Vec<Box<Argument>>> {
         unimplemented!();
     }
 

@@ -1,7 +1,7 @@
 use syntax::ast::*;
 use syntax::codemap::{Span, Spanned};
 use syntax::ext::base::Annotatable;
-use utils::{ArgExt, span};
+use utils;
 
 #[derive(Debug)]
 pub struct Function(Spanned<(Ident, FnDecl)>);
@@ -11,7 +11,7 @@ impl Function {
         if let Annotatable::Item(ref item) = *annotated {
             if let ItemKind::Fn(ref decl, ..) = item.node {
                 let inner = (item.ident, decl.clone().into_inner());
-                return Ok(Function(span(inner, item.span)));
+                return Ok(Function(utils::span(inner, item.span)));
             }
         }
 

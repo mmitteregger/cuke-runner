@@ -56,7 +56,7 @@ pub enum Event<'a> {
     /// Sent after the execution of a test step.
     TestCaseFinished {
         time: SystemTime,
-        test_case: &'static TestCase,
+        test_case: &'a TestCase,
         result: TestResult,
     },
     /// Sent after all executions of test steps are finished.

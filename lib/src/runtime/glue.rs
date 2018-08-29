@@ -1,11 +1,19 @@
 use std::collections::HashMap;
+use std::sync::Arc;
+
+use gherkin::pickle::PickleStep;
 
 use codegen::StaticStepDefinition;
-use runtime::{StepDefinition, HookDefinition};
+use runtime::{
+    AmbiguousPickleStepDefinitionMatch, HookDefinition, PickleStepDefinitionMatch,
+    StepDefinition, StepDefinitionMatch, UndefinedPickleStepDefinitionMatch,
+};
+use runtime::step_expression::StepExpression;
+use api::SourceCodeLocation;
 
 #[derive(Debug)]
 pub struct Glue {
-    step_definitions_by_pattern: HashMap<String, StepDefinition>,
+    step_definitions_by_pattern: HashMap<&'static str, StepDefinition>,
     before_scenario_hooks: Vec<HookDefinition>,
     before_step_hooks: Vec<HookDefinition>,
     after_step_hooks: Vec<HookDefinition>,
@@ -14,8 +22,25 @@ pub struct Glue {
 
 impl From<&'static [&'static StaticStepDefinition]> for Glue {
     fn from(step_definitions: &'static [&'static StaticStepDefinition]) -> Glue {
+        let mut step_definitions_by_pattern =
+            HashMap::with_capacity(step_definitions.len());
+
+        for step_definition in step_definitions {
+            let definition = StepDefinition {
+                expression: StepExpression::from_regex(step_definition.text),
+                parameter_infos: Vec::new(),
+                handler: step_definition.handler,
+                location: SourceCodeLocation {
+                    file_path: String::new(),
+                    line_number: 0,
+                },
+            };
+
+            step_definitions_by_pattern.insert(step_definition.text, definition);
+        }
+
         Glue {
-            step_definitions_by_pattern: HashMap::new(),
+            step_definitions_by_pattern,
             before_scenario_hooks: Vec::new(),
             before_step_hooks: Vec::new(),
             after_step_hooks: Vec::new(),
@@ -45,11 +70,7 @@ impl Glue {
         }
     }
 
-//    pub fn add_static_step_definition(&mut self, static_step_definition: StaticStepDefinition) {
-//
-//    }
-
-    pub fn get_step_definitions_by_pattern(&self) -> &HashMap<String, StepDefinition> {
+    pub fn get_step_definitions_by_pattern(&self) -> &HashMap<&'static str, StepDefinition> {
         &self.step_definitions_by_pattern
     }
 
@@ -67,5 +88,49 @@ impl Glue {
 
     pub fn get_after_scenario_hooks(&self) -> &Vec<HookDefinition> {
         &self.after_scenario_hooks
+    }
+
+    pub fn step_definition_match(&self, feature_path: &String, step: PickleStep)
+        -> Box<StepDefinitionMatch> {
+
+        let step = Arc::new(step);
+
+        let mut matches = self.step_definition_matches(feature_path, step.clone());
+
+        if matches.is_empty() {
+            return Box::new(UndefinedPickleStepDefinitionMatch {
+                step,
+            });
+        }
+        if matches.len() > 1 {
+            return Box::new(AmbiguousPickleStepDefinitionMatch {
+                feature_path: feature_path.clone(),
+                step,
+            });
+        }
+
+        let step_definition_match = matches.pop().unwrap();
+        Box::new(step_definition_match)
+    }
+
+    pub fn step_definition_matches(&self, feature_path: &String, step: Arc<PickleStep>)
+        -> Vec<PickleStepDefinitionMatch> {
+
+        let mut matches = Vec::new();
+
+        for step_definition in self.step_definitions_by_pattern.values() {
+            let arguments = step_definition.matched_arguments(&step);
+
+            if let Some(arguments) = arguments {
+                matches.push(PickleStepDefinitionMatch {
+                    arguments,
+                    step_definition: step_definition.clone(),
+                    feature_path: feature_path.clone(),
+                    step: step.clone(),
+                });
+            }
+        }
+
+        matches
     }
 }

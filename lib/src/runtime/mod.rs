@@ -28,31 +28,6 @@ mod definition_argument;
 mod exit_status;
 
 
-//pub struct Runtime<'a> {
-//    event_bus: EventBus<'a>,
-//    runner: Runner,
-//    exit_status_listener: ExitStatusListener,
-//}
-//
-//impl<'a> Runtime<'a> {
-//    pub fn new(glue: Glue, runtime_options: RuntimeOptions) -> Runtime<'a> {
-//        let mut event_bus = EventBus::new();
-//
-//        let mut exit_status_listener = ExitStatusListener::new();
-//        let runner = Runner::new(glue, runtime_options);
-//
-//        let runtime = Runtime {
-//            event_bus,
-//            runner,
-//            exit_status_listener,
-//        };
-//
-//        runtime.
-//
-//        runtime
-//    }
-//}
-
 pub fn run(glue: Glue, config: Config) -> i32 {
     let mut exit_status_listener = ExitStatusListener::new();
 
@@ -72,7 +47,7 @@ pub fn run(glue: Glue, config: Config) -> i32 {
 }
 
 fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
-    let mut pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
+    let pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
 
     for pickle_event in pickle_events {
         runner.run_pickle(pickle_event, &event_bus);
@@ -80,7 +55,7 @@ fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
 }
 
 fn run_parallel_features(runner: Runner, event_bus: EventBus, config: &Config) {
-    let mut pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
+    let pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
     let mut pickle_events_per_feature = HashMap::new();
 
     for pickle_event in pickle_events {
@@ -97,7 +72,7 @@ fn run_parallel_features(runner: Runner, event_bus: EventBus, config: &Config) {
 }
 
 fn run_parallel_scenarios(runner: Runner, event_bus: EventBus, config: &Config) {
-    let mut pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
+    let pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
 
     unimplemented!("run_parallel_scenarios");
 //    pickle_events.into_par_iter()

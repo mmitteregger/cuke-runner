@@ -1,9 +1,5 @@
-use std::path::PathBuf;
-use std::env;
-use std::collections::HashMap;
 use std::fmt;
 
-use Glue;
 use data::{StepData, StepKeyword};
 use error::Result;
 
@@ -14,18 +10,14 @@ pub type HookHandler = fn() -> Result<()>;
 pub type StepHandler = fn(&StepData) -> Result<()>;
 
 /// Generated info for a step definition (a `#[step(...)]` annotated function).
-//#[derive(Debug)]
 pub struct StaticStepDefinition {
     /// Name of the step definition function.
-//    pub name: String,
     pub name: &'static str,
     /// Step definition keyword like "Given", "When" and "Then".
     pub keyword: StepKeyword,
     /// The step definition text to match a step in a cucumber scenario.
-//    pub text: String,
     pub text: &'static str,
     /// The generated handler responsible for calling the step definition function.
-//    pub handler: String,
     pub handler: StepHandler,
 }
 

@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
 use gherkin::event::PickleEvent;
-use gherkin::pickle::{Pickle, PickleTag, PickleLocation};
+use gherkin::pickle::{PickleTag};
 
 use error::Error;
 use runner::EventBus;
@@ -25,13 +25,13 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
         let pickle = &pickle_event.pickle;
 
         let test_results = Vec::new();
-        let tags = pickle.get_tags();
+        let tags = &pickle.tags;
         let uri = &pickle_event.uri;
-        let name = pickle.get_name();
-        let locations = pickle.get_locations();
-        let id = pickle_event.uri.clone() + ":" + &locations[0].get_line().to_string();
+        let name = &pickle.name;
+        let locations = &pickle.locations;
+        let id = pickle_event.uri.clone() + ":" + &locations[0].line.to_string();
         let lines = locations.iter()
-            .map(|location| location.get_line())
+            .map(|location| location.line)
             .collect::<Vec<u32>>();
 
         Scenario {

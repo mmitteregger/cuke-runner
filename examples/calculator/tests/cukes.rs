@@ -2,11 +2,8 @@
 #![plugin(cuke_runner_plugin)]
 
 extern crate calculator;
-#[macro_use]
 extern crate cuke_runner;
 extern crate cuke_runner_derive;
-
-use std::path::PathBuf;
 
 use cuke_runner::{Config, ExecutionMode, Glue};
 

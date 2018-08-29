@@ -24,6 +24,9 @@ pub enum Error {
     Gherkin(#[cause] gherkin::Error),
     /// An error that occurred while converting step data to a step definition function parameter.
     FromStepData(#[cause] data::FromStepDataError),
+    AmbiguousStepDefinitions,
+    UndefinedStepDefinition,
+    Pending,
     /// Hints that destructuring should not be exhaustive.
     ///
     /// This enum may grow additional variants, so this makes sure clients
@@ -71,6 +74,9 @@ impl fmt::Display for Error {
             Error::WalkDir(ref err) => err.fmt(f),
             Error::Gherkin(ref err) => err.fmt(f),
             Error::FromStepData(ref err) => err.fmt(f),
+            Error::AmbiguousStepDefinitions => write!(f, "AmbiguousStepDefinitions"),
+            Error::UndefinedStepDefinition => write!(f, "UndefinedStepDefinition"),
+            Error::Pending => write!(f, "TODO: implement me"),
             Error::__Nonexhaustive => unreachable!(),
         }
     }

@@ -15,10 +15,6 @@ extern crate walkdir;
 extern crate regex;
 extern crate rayon;
 
-use std::path::Path;
-
-use gherkin::ast::*;
-
 pub use config::{Config, ExecutionMode};
 pub use data::State;
 pub use error::{Error, Result};
@@ -38,7 +34,6 @@ pub fn execute_cucumber_tests(glue: Glue, config: Config) {
     let exit_status = runtime::run(glue, config);
 
     if exit_status != 0 {
-        eprintln!("Uh oh, looks like some cukes have rotten");
-        ::std::process::exit(-1);
+        panic!("Uh oh, looks like some cukes have rotten");
     }
 }

@@ -21,7 +21,6 @@ extern crate proc_macro2;
 mod utils;
 mod decorators;
 mod parser;
-mod macros;
 
 use std::env;
 use rustc_plugin::Registry;
@@ -36,8 +35,6 @@ const STEP_FN_PREFIX: &'static str = "cuke_step_fn_";
 
 const STEP_ATTR: &'static str = "cuke_step";
 const STEP_DEFINITION_ATTR: &'static str = "cuke_step_definition";
-
-const STEP_FN_ATTR_NAMES: &[&str] = &["step", "given", "when", "then"];
 
 macro_rules! register_decorators {
     ($registry:expr, $($name:expr => $func:ident),+ $(,)*) => (
@@ -57,10 +54,12 @@ macro_rules! register_decorators {
 #[plugin_registrar]
 pub fn plugin_registrar(registry: &mut Registry) {
     // Enable logging early if the DEBUG_ENV_VAR is set.
-    if env::var(DEBUG_ENV_VAR).is_ok() {
-        env_logger::Builder::from_default_env()
-            .filter(None, log::LevelFilter::Debug)
-            .init();
+    if let Ok(debug_env_var) = env::var(DEBUG_ENV_VAR) {
+        if debug_env_var.as_str() == "true" {
+            env_logger::Builder::from_default_env()
+                .filter(None, log::LevelFilter::Debug)
+                .init();
+        }
     }
 
     // Keep these in sync with STEP_FN_ATTR_NAMES
