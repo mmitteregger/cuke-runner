@@ -1,5 +1,6 @@
 const OPS: &[char] = &['-', '+', '*', '/'];
 
+#[derive(Debug)]
 pub struct RpnCalculator {
     stack: Vec<f64>,
 }

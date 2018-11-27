@@ -1,0 +1,15 @@
+[package]
+name = "cuke_runner_glue"
+version = "0.0.1"
+authors = ["Michael Mitteregger <michael.mitteregger@gmx.at>"]
+description = "Shared code for codegen and lib"
+homepage = "https://github.com/mmitteregger/cuke-runner"
+repository = "https://github.com/mmitteregger/cuke-runner"
+readme = "../../README.md"
+keywords = ["cucumber", "bdd", "testing", "glue"]
+categories = ["development-tools::testing"]
+license = "MIT"
+
+[dependencies]
+failure = "0.1"
+failure_derive = "0.1"

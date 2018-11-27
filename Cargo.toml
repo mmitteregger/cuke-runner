@@ -1,7 +1,10 @@
+[profile.dev]
+codegen-units = 4
+
 [workspace]
 members = [
-  "lib/",
-  "codegen/plugin",
-  "codegen/derive",
+  "core/glue",
+  "core/codegen",
+  "core/lib",
   "examples/calculator",
 ]

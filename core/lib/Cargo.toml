@@ -1,0 +1,24 @@
+[package]
+name = "cuke_runner"
+version = "0.0.2"
+authors = ["Michael Mitteregger <michael.mitteregger@gmx.at>"]
+description = "Cucumber for Rust with a focus on ease-of-use"
+homepage = "https://github.com/mmitteregger/cuke-runner"
+repository = "https://github.com/mmitteregger/cuke-runner"
+readme = "../README.md"
+keywords = ["cucumber", "bdd", "testing", "gherkin"]
+categories = ["development-tools::testing"]
+license = "MIT"
+
+[dependencies]
+cuke_runner_glue = { path = "../glue" }
+cuke_runner_codegen = { path = "../codegen" }
+gherkin = { path = "../../../cucumber/gherkin/rust" }
+failure = "0.1"
+failure_derive = "0.1"
+walkdir = "2"
+state = { version = "0.4", features = ["tls"] }
+lazy_static = "1"
+downcast-rs = "1"
+regex = "1"
+rayon = "1.0.2"

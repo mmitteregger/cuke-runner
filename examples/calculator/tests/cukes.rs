@@ -1,9 +1,8 @@
-#![feature(plugin, decl_macro)]
-#![plugin(cuke_runner_plugin)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
 extern crate calculator;
+#[macro_use]
 extern crate cuke_runner;
-extern crate cuke_runner_derive;
 
 use cuke_runner::{Config, ExecutionMode, Glue};
 
