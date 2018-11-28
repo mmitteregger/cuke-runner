@@ -35,6 +35,6 @@ pub fn execute_cucumber_tests(glue: Glue, config: Config) {
     let exit_status = runtime::run(glue, config);
 
     if exit_status != 0 {
-        panic!("Uh oh, looks like some cukes have rotten");
+        panic!("Cucumber test(s) failed");
     }
 }

@@ -4,8 +4,7 @@ use parser;
 use rayon::prelude::*;
 use runner::{EventBus, Runner};
 pub use self::definition_argument::*;
-pub use self::exit_status::*;
-use self::exit_status::ExitStatusListener;
+use self::event_listener::*;
 pub use self::glue::*;
 pub use self::hook_definition::*;
 pub use self::scenario::*;
@@ -25,14 +24,16 @@ mod test_case;
 mod scenario;
 mod step_definition_match;
 mod definition_argument;
-mod exit_status;
+mod event_listener;
 
 
 pub fn run(glue: Glue, config: Config) -> i32 {
     let mut exit_status_listener = ExitStatusListener::new();
+    let mut test_summary_listener = TestSummaryListener::new();
 
     let mut event_bus = EventBus::new();
     event_bus.register_listener(&mut exit_status_listener);
+    event_bus.register_listener(&mut test_summary_listener);
 
     let runner = Runner::new(glue, config.dry_run);
 
