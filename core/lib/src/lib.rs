@@ -15,15 +15,12 @@ extern crate failure;
 #[macro_use]
 extern crate failure_derive;
 extern crate gherkin;
-#[macro_use]
-extern crate lazy_static;
-extern crate state;
 extern crate walkdir;
 extern crate regex;
 extern crate rayon;
+extern crate termcolor;
 
 pub use config::{Config, ExecutionMode};
-//pub use data::State;
 pub use error::{Error, Result};
 pub use runtime::Glue;
 
