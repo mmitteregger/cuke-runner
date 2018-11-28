@@ -2,8 +2,6 @@
 Cucumber for Rust with a focus on ease-of-use.
 */
 #![feature(nll)]
-#![feature(decl_macro)]
-#![feature(proc_macro_hygiene)]
 
 #[allow(unused_imports)] #[macro_use] extern crate cuke_runner_codegen;
 #[doc(hidden)] pub use cuke_runner_codegen::*;
