@@ -6,7 +6,6 @@ use gherkin::pickle::PickleTag;
 use api;
 use api::event::Event;
 use api::{TestResult, TestResultStatus, Scenario};
-use runner::util;
 use runner::{EventBus, PickleStepTestStep, HookTestStep};
 use runtime;
 
@@ -59,7 +58,7 @@ impl TestCase {
                 duration: Some(duration),
                 error: scenario.into_error(),
             },
-            test_case: unsafe { util::prolong_lifetime::<Self>(&self) },
+            test_case: self as &api::TestCase,
         });
     }
 }

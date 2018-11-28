@@ -3,7 +3,6 @@ pub use self::test_step::{HookTestStep, PickleStepTestStep};
 
 mod event_bus;
 mod test_step;
-pub mod util;
 
 use gherkin::event::PickleEvent;
 use gherkin::pickle::PickleTag;

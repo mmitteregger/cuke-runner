@@ -4,7 +4,6 @@ use gherkin::pickle::PickleStep;
 
 use error::{Result, Error};
 use api::{self, event::Event, HookType, SourceCodeLocation, TestResult, TestResultStatus};
-use runner::util;
 use runner::EventBus;
 use runtime::{StepDefinitionMatch, HookDefinitionMatch, Scenario};
 
@@ -137,7 +136,7 @@ fn run_test_step(
     let start_time = SystemTime::now();
     event_bus.send(Event::TestStepStarted {
         time: start_time,
-        test_step: unsafe { ::std::mem::transmute::<&api::TestStep, &'static api::TestStep>(test_step) },
+        test_step,
     });
 
     let step_result = execute_step(definition_match, language, scenario, skip);
@@ -154,8 +153,8 @@ fn run_test_step(
     let result = map_status_to_result(status, error, duration);
     event_bus.send(Event::TestStepFinished {
         time: stop_time,
-        test_step: unsafe { ::std::mem::transmute::<&api::TestStep, &'static api::TestStep>(test_step) },
-        result: unsafe { util::prolong_lifetime(&result) },
+        test_step,
+        result: &result,
     });
     result
 }

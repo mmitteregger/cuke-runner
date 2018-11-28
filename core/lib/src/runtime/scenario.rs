@@ -5,7 +5,6 @@ use gherkin::pickle::{PickleTag};
 
 use error::Error;
 use runner::EventBus;
-use runner::util;
 use api::{self, TestResult, TestResultStatus};
 use api::event::Event;
 use glue;
@@ -75,7 +74,7 @@ impl<'a, 'b, 'c> api::Scenario for Scenario<'a, 'b, 'c> {
     fn embed(&self, data: &[u8], mime_type: String) {
         self.event_bus.send(Event::Embed {
             time: SystemTime::now(),
-            data: unsafe { util::prolong_lifetime(&data) },
+            data,
             mime_type,
         });
     }
