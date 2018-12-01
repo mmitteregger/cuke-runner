@@ -20,9 +20,7 @@ quote = "0.6"
 proc-macro2 = { version = "0.4", features = ["nightly"] }
 regex = "1"
 log = "0.4"
-#env_logger = "0.5"
 devise = "0.1"
-indexmap = "1.0"
 
 [dev-dependencies]
 cuke_runner = { path = "../lib" }
