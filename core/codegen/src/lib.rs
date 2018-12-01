@@ -14,7 +14,6 @@ extern crate regex;
 extern crate syn;
 #[macro_use]
 extern crate log;
-#[macro_use]
 extern crate devise;
 extern crate indexmap;
 extern crate syntax_pos;
