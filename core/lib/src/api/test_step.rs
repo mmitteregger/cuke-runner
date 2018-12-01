@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use gherkin::pickle::PickleStep;
+use gherkin::pickle::{PickleStep, PickleArgument};
 
 use api::{self, SourceCodeLocation};
 
@@ -42,7 +42,7 @@ pub trait PickleStepTestStep: TestStep {
 
     /// Returns arguments provided to the Gherkin step.
     /// E.g: a data table or doc string.
-    fn get_step_argument(&self) -> &Vec<Box<::gherkin::pickle::Argument>>;
+    fn get_step_argument(&self) -> &Vec<PickleArgument>;
 
     /// The line in the feature file defining this step.
     fn get_step_line(&self) -> u32;

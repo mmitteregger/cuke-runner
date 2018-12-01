@@ -1,6 +1,6 @@
 use std::time::{SystemTime, Duration};
 
-use gherkin::pickle::PickleStep;
+use gherkin::pickle::{PickleStep, PickleArgument};
 
 use error::{Result, Error};
 use api::{self, event::Event, HookType, SourceCodeLocation, TestResult, TestResultStatus};
@@ -99,7 +99,7 @@ impl api::PickleStepTestStep for PickleStepTestStep {
 //        DefinitionArgument::create_arguments(self.step_definition_match.get_arguments())
     }
 
-    fn get_step_argument(&self) -> &Vec<Box<::gherkin::pickle::Argument>> {
+    fn get_step_argument(&self) -> &Vec<PickleArgument> {
         &self.step_definition_match.get_step().arguments
     }
 

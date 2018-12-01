@@ -2,7 +2,7 @@
 use std::any::{TypeId, Any};
 use std::fmt;
 
-use gherkin::pickle::{PickleStep, PickleString, PickleTable, PickleRow, PickleCell};
+use gherkin::pickle::{PickleStep, PickleString, PickleTable, PickleRow, PickleCell, PickleArgument};
 
 use api::SourceCodeLocation;
 use glue::StepFn;
@@ -50,14 +50,12 @@ impl StepDefinition {
 
             matched_arguments.reserve_exact(1);
 
-            if let Some(pickle_string) = argument.downcast_ref::<PickleString>() {
-                matched_arguments.push(Argument::DocString(pickle_string.content.clone()))
-            } else if let Some(pickle_table) = argument.downcast_ref::<PickleTable>() {
-                matched_arguments.push(Argument::DataTable)
-            } else {
-                // TODO: Convert the gherkin type to an enum
-                // for improved performance and compile time checking
-                panic!("Unknown step argument: {:?}", argument);
+            match argument {
+                PickleArgument::String(pickle_string) =>
+                    matched_arguments.push(Argument::DocString(pickle_string.content.clone())),
+                PickleArgument::Table(pickle_table) =>
+                    matched_arguments.push(Argument::DataTable),
+                _ => eprintln!("Ignoring unknown step argument: {:?}", argument),
             }
 
             Some(matched_arguments)

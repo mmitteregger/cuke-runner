@@ -1,5 +1,5 @@
 use error::Result;
-use gherkin::event::{self, PickleEvent};
+use gherkin::event::{self, CucumberEvent, PickleEvent};
 use std::fs;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
@@ -22,11 +22,11 @@ pub fn parse_pickle_events<P: AsRef<Path>>(features_dir: P) -> Result<Vec<Pickle
         let uri = path.to_string_lossy().to_owned();
 
         let cucumber_events = event::generate(feature, uri)?;
-        pickle_events.reserve(cucumber_events.len());
+        pickle_events.reserve_exact(cucumber_events.len());
 
         for cucumber_event in cucumber_events {
-            if let Ok(pickle_event) = cucumber_event.downcast::<PickleEvent>() {
-                pickle_events.push(*pickle_event);
+            if let CucumberEvent::Pickle(pickle_event) = cucumber_event {
+                pickle_events.push(pickle_event);
             }
         }
     }
