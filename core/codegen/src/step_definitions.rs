@@ -21,7 +21,8 @@ fn add_from_file(static_step_definitions: &mut Vec<String>,
 
     debug!("Searching for step definitions in: {}", &fs_path.display());
 
-    let src = fs::read_to_string(&fs_path).unwrap();
+    let src = fs::read_to_string(&fs_path)
+        .expect("could not read step source file");
     let syntax = syn::parse_file(&src)
         .expect("unable to parse step source file");
 
@@ -120,7 +121,8 @@ fn is_visible(visibility: Visibility) -> bool {
 fn get_step_attribute(attrs: Vec<Attribute>) -> Option<Attribute> {
     for attr in attrs {
         let is_step_attr = {
-            let first_attr_path_segment = attr.path.segments.first().unwrap();
+            let first_attr_path_segment = attr.path.segments.first()
+                .expect("failed to find first attribute path segment");
             let attr_name = first_attr_path_segment.value().ident.to_string();
             STEP_FN_ATTR_NAMES.contains(&attr_name.as_ref())
         };

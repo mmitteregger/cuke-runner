@@ -1,12 +1,11 @@
 use proc_macro::{Span, TokenStream};
 
 use devise::{ext::TypeExt, FromMeta, Result, Spanned, SpanWrapped, syn};
-use indexmap::IndexSet;
 use proc_macro2::TokenStream as TokenStream2;
 
 use {PARAM_PREFIX, STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
 use glue_codegen::{StepKeyword, Regex};
-use proc_macro_ext::{Diagnostics, SpanExt};
+use proc_macro_ext::{Diagnostics, StringLit};
 use syn_ext::{IdentExt, syn_to_diag};
 
 use self::syn::{Attribute, parse::Parser};
@@ -71,26 +70,7 @@ fn parse_step(attr: StepAttribute, function: syn::ItemFn) -> Result<Step> {
         inputs.push((ident.clone(), cuke_runner_ident, ty.with_stripped_lifetimes()));
     }
 
-    // Check that all of the declared parameters are function inputs.
-    let span = match function.decl.inputs.is_empty() {
-        false => function.decl.inputs.span(),
-        true => function.span()
-    };
-
     diags.head_err_or(Step { attribute: attr, function, inputs })
-}
-
-fn data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
-    quote_spanned! { span =>
-        #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::FromScenario::from_scenario(__scenario) {
-            Ok(scenario_data) => scenario_data,
-            Err(error) => {
-                return Err(error.into())
-            },
-        };
-    }
 }
 
 fn step_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
@@ -128,7 +108,7 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
     let mut data_statements = Vec::with_capacity(step.inputs.len());
     // The first capture group is the entire regex which should not be considered
     let scenario_argument_count = expression.value.0.captures_len() - 1;
-    for (index, (ident, rocket_ident, ty)) in step.inputs.iter().enumerate() {
+    for (index, (_ident, rocket_ident, ty)) in step.inputs.iter().enumerate() {
         if index < scenario_argument_count {
             data_statements.push(step_data_expr(rocket_ident, &ty));
         } else {
@@ -187,7 +167,9 @@ fn incomplete_step(
 ) -> Result<TokenStream> {
     let keyword_str = keyword.to_string().to_lowercase();
     // FIXME(proc_macro): there should be a way to get this `Span`.
-    let keyword_span = Span::call_site().subspan(2..2 + keyword_str.len()).unwrap();
+    let keyword_span = StringLit::new(format!("#[{}]", keyword), Span::call_site())
+        .subspan(2..2 + keyword_str.len())
+        .unwrap_or(Span::call_site());
     let keyword_ident = syn::Ident::new(&keyword_str, keyword_span.into());
 
     let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)

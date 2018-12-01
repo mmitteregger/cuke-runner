@@ -5,8 +5,6 @@ use syntax_pos::{Span as InnerSpan, Pos, BytePos};
 
 pub type PResult<T> = ::std::result::Result<T, Diagnostic>;
 
-pub type DResult<T> = ::std::result::Result<T, Diagnostics>;
-
 // An experiment.
 pub struct Diagnostics(Vec<Diagnostic>);
 
@@ -17,11 +15,6 @@ impl Diagnostics {
 
     pub fn push(&mut self, diag: Diagnostic) {
         self.0.push(diag);
-    }
-
-    pub fn join(mut self, mut diags: Diagnostics) -> Self {
-        self.0.append(&mut diags.0);
-        self
     }
 
     pub fn emit_head(self) -> Diagnostic {
@@ -39,13 +32,6 @@ impl Diagnostics {
         match self.0.is_empty() {
             true => Ok(ok),
             false => Err(self.emit_head())
-        }
-    }
-
-    pub fn err_or<T>(self, ok: T) -> DResult<T> {
-        match self.0.is_empty() {
-            true => Ok(ok),
-            false => Err(self)
         }
     }
 }
@@ -118,10 +104,6 @@ impl StringLit {
         let mut lit = Literal::string(&string);
         lit.set_span(span);
         StringLit(string, lit)
-    }
-
-    pub fn span(&self) -> Span {
-        self.1.span()
     }
 
     pub fn subspan<R: RangeBounds<usize>>(&self, range: R) -> Option<Span> {

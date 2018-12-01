@@ -1,9 +1,9 @@
 use quote::ToTokens;
 use proc_macro2::TokenStream as TokenStream2;
-use devise::{FromMeta, MetaItem, Result, ext::Split2};
+use devise::{FromMeta, MetaItem, Result};
 use glue;
 
-use proc_macro_ext::{SpanExt, StringLit};
+use proc_macro_ext::StringLit;
 
 #[derive(Debug)]
 crate struct StepKeyword(crate glue::StepKeyword);
