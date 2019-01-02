@@ -140,7 +140,7 @@ impl PrettyFormatter {
 
         for argument in arguments {
             // the value can be missing if the argument isn't there, for example #[step("(it )?has something")]
-            if let Some(arg_value) = argument.value() {
+            if let Some(_arg_value) = argument.value() {
                 let arg_start = argument.start();
                 let arg_end = argument.end();
 

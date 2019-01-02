@@ -5,7 +5,7 @@ use std::fmt;
 use gherkin::pickle::{PickleStep, PickleArgument};
 
 use api::CodeLocation;
-use glue::StepFn;
+use glue::{StaticStepDefinition, StepFn};
 use runtime::Scenario;
 use super::step_expression::{StepExpression, Argument};
 
@@ -27,6 +27,17 @@ impl fmt::Debug for StepDefinition {
             .field("step_fn", &"<step_fn>")
             .field("location", &self.location)
             .finish()
+    }
+}
+
+impl From<&&StaticStepDefinition> for StepDefinition {
+    fn from(static_step_definition: &&StaticStepDefinition) -> Self {
+        StepDefinition {
+            expression: StepExpression::from_regex(static_step_definition.expression),
+            parameter_infos: Vec::new(),
+            step_fn: static_step_definition.step_fn,
+            location: static_step_definition.location,
+        }
     }
 }
 
@@ -53,8 +64,11 @@ impl StepDefinition {
             match argument {
                 PickleArgument::String(pickle_string) =>
                     matched_arguments.push(Argument::DocString(pickle_string.content.clone())),
-                PickleArgument::Table(pickle_table) =>
-                    matched_arguments.push(Argument::DataTable),
+                PickleArgument::Table(_pickle_table) =>
+                    {
+                        unimplemented!();
+//                        matched_arguments.push(Argument::DataTable)
+                    },
                 _ => eprintln!("Ignoring unknown step argument: {:?}", argument),
             }
 

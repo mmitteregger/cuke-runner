@@ -37,6 +37,11 @@ impl From<String> for FromScenarioError {
     }
 }
 
+impl<'a> FromScenario<'a> for &'a mut Scenario {
+    fn from_scenario(scenario: &'a mut Scenario) -> Result<&'a mut Scenario> {
+        Ok(scenario)
+    }
+}
 
 impl<'a> FromScenario<'a> for &'a str {
     fn from_scenario(_scenario: &'a mut Scenario) -> Result<&'a str> {

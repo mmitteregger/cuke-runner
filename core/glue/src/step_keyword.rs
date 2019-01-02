@@ -35,7 +35,7 @@ impl FromStr for StepKeyword {
             "when" => Ok(When),
             "then" => Ok(Then),
             "*" => Ok(Star),
-            _ => panic!("bad step keyword: {}", s),
+            _ => Err(()),
         }
     }
 }

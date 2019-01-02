@@ -6,6 +6,9 @@ use glue;
 use proc_macro_ext::StringLit;
 
 #[derive(Debug)]
+crate struct HookType(crate glue::HookType);
+
+#[derive(Debug)]
 crate struct StepKeyword(crate glue::StepKeyword);
 
 #[derive(Debug)]
@@ -17,6 +20,49 @@ crate struct Optional<T>(crate Option<T>);
 impl FromMeta for StringLit {
     fn from_meta(meta: MetaItem) -> Result<Self> {
         Ok(StringLit::new(String::from_meta(meta)?, meta.value_span()))
+    }
+}
+
+const VALID_HOOK_TYPES_STR: &str = "`BeforeScenario`, `BeforeStep`, `AfterStep`, `AfterScenario`";
+
+const VALID_HOOK_TYPES: &[glue::HookType] = &[
+    glue::HookType::BeforeScenario,
+    glue::HookType::BeforeStep,
+    glue::HookType::AfterStep,
+    glue::HookType::AfterScenario,
+];
+
+impl FromMeta for HookType {
+    fn from_meta(meta: MetaItem) -> Result<Self> {
+        let span = meta.value_span();
+        let help_text = format!("hook type must be one of: {}", VALID_HOOK_TYPES_STR);
+
+        if let MetaItem::Ident(ident) = meta {
+            let hook_type = ident.to_string().parse()
+                .map_err(|_| span.error("invalid hook type").help(&*help_text))?;
+
+            if !VALID_HOOK_TYPES.contains(&hook_type) {
+                return Err(span.error("invalid hook type for hook handlers").help(&*help_text));
+            }
+
+            return Ok(HookType(hook_type));
+        }
+
+        Err(span.error(format!("expected identifier, found {}", meta.description()))
+                .help(&*help_text))
+    }
+}
+
+impl ToTokens for HookType {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        let keyword_tokens = match self.0 {
+            glue::HookType::BeforeScenario => quote!(::cuke_runner::glue::HookType::BeforeScenario),
+            glue::HookType::BeforeStep => quote!(::cuke_runner::glue::HookType::BeforeStep),
+            glue::HookType::AfterStep => quote!(::cuke_runner::glue::HookType::AfterStep),
+            glue::HookType::AfterScenario => quote!(::cuke_runner::glue::HookType::AfterScenario),
+        };
+
+        tokens.extend(keyword_tokens);
     }
 }
 

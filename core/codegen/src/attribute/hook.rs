@@ -1,35 +1,44 @@
 use proc_macro::{Span, TokenStream};
 
 use devise::{ext::TypeExt, FromMeta, Result, Spanned, SpanWrapped, syn};
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Ident, TokenStream as TokenStream2};
 
-use {PARAM_PREFIX, STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
-use glue_codegen::{StepKeyword, Regex};
+use {
+    PARAM_PREFIX,
+    BEFORE_SCENARIO_HOOK_FN_PREFIX,
+    BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
+    BEFORE_STEP_HOOK_FN_PREFIX,
+    BEFORE_STEP_HOOK_STRUCT_PREFIX,
+    AFTER_STEP_HOOK_FN_PREFIX,
+    AFTER_STEP_HOOK_STRUCT_PREFIX,
+    AFTER_SCENARIO_HOOK_FN_PREFIX,
+    AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
+};
+use glue_codegen::HookType;
 use proc_macro_ext::{Diagnostics, StringLit};
 use syn_ext::{IdentExt, syn_to_diag};
 
 use self::syn::{Attribute, parse::Parser};
 
-/// The raw, parsed `#[step]` attribute.
+/// The raw, parsed `#[hook]` attribute.
 #[derive(Debug, FromMeta)]
-struct StepAttribute {
+struct HookAttribute {
     #[meta(naked)]
-    keyword: SpanWrapped<StepKeyword>,
-    expression: SpanWrapped<Regex>,
+    hook_type: SpanWrapped<HookType>,
+    order: Option<isize>,
 }
 
-/// The raw, parsed `#[step]` (e.g, `given`, `when`, `then`) attribute.
+/// The raw, parsed `#[hook]` (e.g, `before_scenario`, `before_step`, ...) attribute.
 #[derive(Debug, FromMeta)]
-struct KeywordStepAttribute {
-    #[meta(naked)]
-    expression: SpanWrapped<Regex>,
+struct HookTypeHookAttribute {
+    order: Option<isize>,
 }
 
-/// This structure represents the parsed `step` attribute and associated items.
+/// This structure represents the parsed `hook` attribute and associated items.
 #[derive(Debug)]
-struct Step {
-    /// The status associated with the code in the `#[step(code)]` attribute.
-    attribute: StepAttribute,
+struct Hook {
+    /// The status associated with the code in the `#[hook(code)]` attribute.
+    attribute: HookAttribute,
     /// The function that was decorated with the `step` attribute.
     function: syn::ItemFn,
     /// The parsed inputs to the user's function. The first ident is the ident
@@ -38,7 +47,7 @@ struct Step {
     inputs: Vec<(syn::Ident, syn::Ident, syn::Type)>,
 }
 
-fn parse_step(attr: StepAttribute, function: syn::ItemFn) -> Result<Step> {
+fn parse_hook(attr: HookAttribute, function: syn::ItemFn) -> Result<Hook> {
     // Gather diagnostics as we proceed.
     let mut diags = Diagnostics::new();
 
@@ -70,15 +79,7 @@ fn parse_step(attr: StepAttribute, function: syn::ItemFn) -> Result<Step> {
         inputs.push((ident.clone(), cuke_runner_ident, ty.with_stripped_lifetimes()));
     }
 
-    diags.head_err_or(Step { attribute: attr, function, inputs })
-}
-
-fn step_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
-    quote_spanned! { span =>
-        #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = unimplemented!("step_data_expr");
-    }
+    diags.head_err_or(Hook { attribute: attr, function, inputs })
 }
 
 fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
@@ -94,9 +95,35 @@ fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
     }
 }
 
-fn codegen_step(step: Step) -> Result<TokenStream> {
+fn generate_fn_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
+    use glue::HookType::*;
+
+    let hook_fn_prefix = match hook_type.0 {
+        BeforeScenario => BEFORE_SCENARIO_HOOK_FN_PREFIX,
+        BeforeStep => BEFORE_STEP_HOOK_FN_PREFIX,
+        AfterStep => AFTER_STEP_HOOK_FN_PREFIX,
+        AfterScenario => AFTER_SCENARIO_HOOK_FN_PREFIX,
+    };
+
+    user_handler_fn_name.prepend(hook_fn_prefix)
+}
+
+fn generate_struct_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
+    use glue::HookType::*;
+
+    let hook_struct_prefix = match hook_type.0 {
+        BeforeScenario => BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
+        BeforeStep => BEFORE_STEP_HOOK_STRUCT_PREFIX,
+        AfterStep => AFTER_STEP_HOOK_STRUCT_PREFIX,
+        AfterScenario => AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
+    };
+
+    user_handler_fn_name.prepend(hook_struct_prefix)
+}
+
+fn codegen_hook(hook: Hook) -> Result<TokenStream> {
     // Gather everything we need.
-    let (vis, user_handler_fn) = (&step.function.vis, &step.function);
+    let (vis, user_handler_fn) = (&hook.function.vis, &hook.function);
     let user_handler_fn_name = &user_handler_fn.ident;
     let user_handler_fn_span = &user_handler_fn.ident.span().unstable();
     let user_handler_fn_path = {
@@ -106,29 +133,23 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
             Err(_) => source_file_path,
         }
     };
+    let hook_type = hook.attribute.hook_type;
     let user_handler_fn_file_path = user_handler_fn_path.to_string_lossy().to_owned();
     let user_handler_fn_line_number = user_handler_fn_span.start().line;
-    let generated_fn_name = user_handler_fn_name.prepend(STEP_FN_PREFIX);
-    let generated_struct_name = user_handler_fn_name.prepend(STEP_STRUCT_PREFIX);
-    let parameter_names = step.inputs.iter().map(|(_, cuke_runner_ident, _)| cuke_runner_ident);
-    let keyword = step.attribute.keyword;
-    let expression = step.attribute.expression;
+    let generated_fn_name = generate_fn_name(user_handler_fn_name, &hook_type.value);
+    let generated_struct_name = generate_struct_name(user_handler_fn_name, &hook_type.value);
+    let parameter_names = hook.inputs.iter().map(|(_, cuke_runner_ident, _)| cuke_runner_ident);
+    let order = hook.attribute.order.unwrap_or(0);
 
-    let mut data_statements = Vec::with_capacity(step.inputs.len());
-    // The first capture group is the entire regex which should not be considered
-    let scenario_argument_count = expression.value.0.captures_len() - 1;
-    for (index, (_ident, cuke_runner_ident, ty)) in step.inputs.iter().enumerate() {
-        if index < scenario_argument_count {
-            data_statements.push(step_data_expr(cuke_runner_ident, &ty));
-        } else {
-            data_statements.push(scenario_data_expr(cuke_runner_ident, &ty));
-        }
-    }
+    let mut data_statements = Vec::with_capacity(hook.inputs.len());
+    for (_ident, cuke_runner_ident, ty) in hook.inputs.iter() {
+        data_statements.push(scenario_data_expr(cuke_runner_ident, &ty));
+    };
 
     Ok(quote! {
         #user_handler_fn
 
-        /// Cuke runner code generated wrapping step function.
+        /// Cuke runner code generated wrapping hook function.
         #vis fn #generated_fn_name(
             __scenario: &mut ::cuke_runner::glue::Scenario,
         ) -> ::std::result::Result<(), ::cuke_runner::glue::ExecutionError> {
@@ -143,14 +164,13 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
             };
         }
 
-        /// Cuke runner code generated static step info.
+        /// Cuke runner code generated static hook info.
         #[allow(non_upper_case_globals)]
-        #vis static #generated_struct_name: ::cuke_runner::glue::StaticStepDefinition =
-            ::cuke_runner::glue::StaticStepDefinition {
+        #vis static #generated_struct_name: ::cuke_runner::glue::StaticHookDefinition =
+            ::cuke_runner::glue::StaticHookDefinition {
                 name: stringify!(#user_handler_fn_name),
-                keyword: #keyword,
-                expression: #expression,
-                step_fn: #generated_fn_name,
+                order: #order,
+                hook_fn: #generated_fn_name,
                 location: ::cuke_runner::glue::CodeLocation {
                     file_path: #user_handler_fn_file_path,
                     line_number: #user_handler_fn_line_number,
@@ -159,60 +179,60 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
     }.into())
 }
 
-fn complete_step(args: TokenStream2, input: TokenStream) -> Result<TokenStream> {
+fn complete_hook(args: TokenStream2, input: TokenStream) -> Result<TokenStream> {
     let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)
-        .map_err(|diag| diag.help("`#[step]` can only be used on functions"))?;
+        .map_err(|diag| diag.help("`#[hook]` can only be used on functions"))?;
 
-    let full_attr = quote!(#[step(#args)]);
+    let full_attr = quote!(#[hook(#args)]);
     let attrs = Attribute::parse_outer.parse2(full_attr).map_err(syn_to_diag)?;
-    let attribute = match StepAttribute::from_attrs("step", &attrs) {
+    let attribute = match HookAttribute::from_attrs("hook", &attrs) {
         Some(result) => result?,
         None => return Err(Span::call_site().error("internal error: bad attribute"))
     };
 
-    codegen_step(parse_step(attribute, function)?)
+    codegen_hook(parse_hook(attribute, function)?)
 }
 
-fn incomplete_step(
-    keyword: ::glue::StepKeyword,
+fn incomplete_hook(
+    hook_type: ::glue::HookType,
     args: TokenStream2,
     input: TokenStream
 ) -> Result<TokenStream> {
-    let keyword_str = keyword.to_string().to_lowercase();
+    let hook_type_str = hook_type.to_string().to_lowercase();
     // FIXME(proc_macro): there should be a way to get this `Span`.
-    let keyword_span = StringLit::new(format!("#[{}]", keyword), Span::call_site())
-        .subspan(2..2 + keyword_str.len())
+    let hook_type_span = StringLit::new(format!("#[{}]", hook_type), Span::call_site())
+        .subspan(2..2 + hook_type_str.len())
         .unwrap_or(Span::call_site());
-    let keyword_ident = syn::Ident::new(&keyword_str, keyword_span.into());
+    let hook_type_ident = syn::Ident::new(&hook_type_str, hook_type_span.into());
 
     let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)
-        .map_err(|d| d.help(format!("#[{}] can only be used on functions", keyword_str)))?;
+        .map_err(|d| d.help(format!("#[{}] can only be used on functions", hook_type_str)))?;
 
-    let full_attr = quote!(#[#keyword_ident(#args)]);
+    let full_attr = quote!(#[#hook_type_ident(#args)]);
     let attrs = Attribute::parse_outer.parse2(full_attr).map_err(syn_to_diag)?;
-    let keyword_attribute = match KeywordStepAttribute::from_attrs(&keyword_str, &attrs) {
+    let hook_type_attribute = match HookTypeHookAttribute::from_attrs(&hook_type_str, &attrs) {
         Some(result) => result?,
         None => return Err(Span::call_site().error("internal error: bad attribute"))
     };
 
-    let attribute = StepAttribute {
-        keyword: SpanWrapped {
-            full_span: keyword_span, span: keyword_span, value: StepKeyword(keyword)
+    let attribute = HookAttribute {
+        hook_type: SpanWrapped {
+            full_span: hook_type_span, span: hook_type_span, value: HookType(hook_type)
         },
-        expression: keyword_attribute.expression,
+        order: hook_type_attribute.order,
     };
 
-    codegen_step(parse_step(attribute, function)?)
+    codegen_hook(parse_hook(attribute, function)?)
 }
 
-pub fn step_attribute<K: Into<Option<::glue::StepKeyword>>>(
-    keyword: K,
+pub fn hook_attribute<T: Into<Option<::glue::HookType>>>(
+    hook_type: T,
     args: TokenStream,
     input: TokenStream
 ) -> TokenStream {
-    let result = match keyword.into() {
-        Some(keyword) => incomplete_step(keyword, args.into(), input),
-        None => complete_step(args.into(), input)
+    let result = match hook_type.into() {
+        Some(hook_type) => incomplete_hook(hook_type, args.into(), input),
+        None => complete_hook(args.into(), input)
     };
 
     result.unwrap_or_else(|diag| { diag.emit(); TokenStream::new() })

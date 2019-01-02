@@ -90,19 +90,19 @@ pub fn run(test_case: Rc<TestCase>, event_bus: &EventBus) {
     let language = &test_case.pickle_event.pickle.language;
 
     for before_hook in &test_case.before_hooks {
-        let hook_result = before_hook.run(event_bus, language, &mut scenario, test_case.dry_run);
+        let hook_result = before_hook.run(event_bus, &mut scenario, test_case.dry_run);
         skip_next_step = skip_next_step || !hook_result.status.eq(&TestResultStatus::Passed);
         scenario.add_test_result(hook_result);
     }
 
     for step in &test_case.test_steps {
-        let step_result = step.run(event_bus, language, &mut scenario, skip_next_step);
+        let step_result = step.run(event_bus, &mut scenario, skip_next_step);
         skip_next_step = skip_next_step || !step_result.status.eq(&TestResultStatus::Passed);
         scenario.add_test_result(step_result);
     }
 
     for after_hook in &test_case.after_hooks {
-        let hook_result = after_hook.run(event_bus, language, &mut scenario, test_case.dry_run);
+        let hook_result = after_hook.run(event_bus, &mut scenario, test_case.dry_run);
         scenario.add_test_result(hook_result);
     }
 
