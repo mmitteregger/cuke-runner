@@ -5,12 +5,10 @@ use gherkin::pickle::PickleStep;
 
 use glue::StaticStepDefinition;
 use runtime::{
-    Scenario,
     AmbiguousPickleStepDefinitionMatch, HookDefinition, PickleStepDefinitionMatch,
     StepDefinition, StepDefinitionMatch, UndefinedPickleStepDefinitionMatch,
 };
 use runtime::step_expression::StepExpression;
-use api::SourceCodeLocation;
 
 #[derive(Debug)]
 pub struct Glue {
@@ -31,10 +29,7 @@ impl From<&'static [&'static StaticStepDefinition]> for Glue {
                 expression: StepExpression::from_regex(step_definition.expression),
                 parameter_infos: Vec::new(),
                 step_fn: step_definition.step_fn,
-                location: SourceCodeLocation {
-                    file_path: String::new(),
-                    line_number: 0,
-                },
+                location: step_definition.location,
             };
 
             step_definitions_by_pattern.insert(step_definition.expression, definition);
@@ -101,12 +96,14 @@ impl Glue {
         if matches.is_empty() {
             return Box::new(UndefinedPickleStepDefinitionMatch {
                 step,
+                arguments: Vec::new(),
             });
         }
         if matches.len() > 1 {
             return Box::new(AmbiguousPickleStepDefinitionMatch {
                 feature_path: feature_path.clone(),
                 step,
+                arguments: Vec::new(),
             });
         }
 

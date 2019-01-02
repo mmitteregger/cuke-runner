@@ -1,38 +1,41 @@
 use api;
 use runtime::{step_expression, Argument};
 
-pub struct DefinitionArgument<'a> {
-    expression_argument: &'a Argument,
+pub struct DefinitionArgument {
+    expression_argument: Argument,
 }
 
-impl<'a> DefinitionArgument<'a> {
-    pub fn new(expression_argument: &'a Argument) -> DefinitionArgument<'a> {
+impl DefinitionArgument {
+    pub fn new(expression_argument: Argument) -> DefinitionArgument {
         DefinitionArgument { expression_argument }
     }
 
-    pub fn create_arguments<A: api::Argument + Sized>(arg_matches: &Vec<step_expression::Argument>) -> &Vec<A> {
-        unimplemented!();
-//        arg_matches.iter()
-//            .filter_map(|arg_match| {
-//                arg_match.as_any().downcast_ref::<ExpressionArgument>()
-//            })
-//            .map(DefinitionArgument::new)
-//            .map(Box::new)
-//            .map(|definition_argument| definition_argument as Box<api::Argument>)
-//            .collect::<Vec<_>>()
+    pub fn create_arguments(arg_matches: &Vec<step_expression::Argument>) -> Vec<Box<api::Argument>> {
+        arg_matches.iter()
+            .filter(|arg_match| {
+                match arg_match {
+                    Argument::Expression(..) => true,
+                    _ => false,
+                }
+            })
+            .map(Clone::clone)
+            .map(DefinitionArgument::new)
+            .map(Box::new)
+            .map(|definition_argument| definition_argument as Box<api::Argument>)
+            .collect::<Vec<_>>()
     }
 }
 
-impl<'a> api::Argument for DefinitionArgument<'a> {
-    fn get_value(&self) -> String {
+impl api::Argument for DefinitionArgument {
+    fn value(&self) -> Option<String> {
         unimplemented!()
     }
 
-    fn get_start(&self) -> u32 {
+    fn start(&self) -> usize {
         unimplemented!()
     }
 
-    fn get_end(&self) -> u32 {
+    fn end(&self) -> usize {
         unimplemented!()
     }
 }

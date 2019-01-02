@@ -95,10 +95,19 @@ fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
 }
 
 fn codegen_step(step: Step) -> Result<TokenStream> {
-
     // Gather everything we need.
     let (vis, user_handler_fn) = (&step.function.vis, &step.function);
     let user_handler_fn_name = &user_handler_fn.ident;
+    let user_handler_fn_span = &user_handler_fn.ident.span().unstable();
+    let user_handler_fn_path = {
+        let source_file_path = user_handler_fn_span.source_file().path();
+        match source_file_path.canonicalize() {
+            Ok(canonicalized_path) => canonicalized_path,
+            Err(_) => source_file_path,
+        }
+    };
+    let user_handler_fn_file_path = user_handler_fn_path.to_string_lossy().to_owned();
+    let user_handler_fn_line_number = user_handler_fn_span.start().line;
     let generated_fn_name = user_handler_fn_name.prepend(STEP_FN_PREFIX);
     let generated_struct_name = user_handler_fn_name.prepend(STEP_STRUCT_PREFIX);
     let parameter_names = step.inputs.iter().map(|(_, rocket_ident, _)| rocket_ident);
@@ -142,6 +151,10 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
                 keyword: #keyword,
                 expression: #expression,
                 step_fn: #generated_fn_name,
+                location: ::cuke_runner::glue::CodeLocation {
+                    file_path: #user_handler_fn_file_path,
+                    line_number: #user_handler_fn_line_number,
+                },
             };
     }.into())
 }

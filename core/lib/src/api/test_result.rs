@@ -1,4 +1,7 @@
 use std::time::Duration;
+use std::fmt;
+
+use failure::{Fail, AsFail};
 
 use error::Error;
 
@@ -24,6 +27,34 @@ impl TestResultStatus {
     fn has_ok_when_not_strict_status(&self) -> bool {
         self.eq(&TestResultStatus::Undefined) || self.eq(&TestResultStatus::Pending)
     }
+
+    pub fn ansi_color_code(&self) -> u8 {
+        use self::TestResultStatus::*;
+
+        match *self {
+            Passed => 32 /* green */,
+            Skipped => 36 /* cyan */,
+            Pending => 33 /* yellow */,
+            Undefined => 33 /* yellow */,
+            Ambiguous => 31 /* red */,
+            Failed => 31 /* red */,
+        }
+    }
+}
+
+impl fmt::Display for TestResultStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::TestResultStatus::*;
+
+        match *self {
+            Passed => write!(f, "Passed"),
+            Skipped => write!(f, "Skipped"),
+            Pending => write!(f, "Pending"),
+            Undefined => write!(f, "Undefined"),
+            Ambiguous => write!(f, "Ambiguous"),
+            Failed => write!(f, "Failed"),
+        }
+    }
 }
 
 /// The result of a step or scenario.
@@ -44,8 +75,26 @@ impl TestResult {
     }
 
     pub fn get_error_message(&self) -> Option<String> {
-        unimplemented!("get_error_message() should include a backtrace");
-//        self.error.as_ref().map(|error| error.to_string())
+        self.error.as_ref().map(|error| {
+            let mut error_message = String::new();
+
+            let fail = error.as_fail();
+            error_message.push_str(&format!("{}", fail));
+
+            if let Some(backtrace) = error.backtrace() {
+                error_message.push_str(&format!("\n{}", backtrace));
+            }
+
+            for cause in fail.iter_causes() {
+                error_message.push_str(&format!("\ncaused by: {}", cause));
+
+                if let Some(backtrace) = cause.backtrace() {
+                    error_message.push_str(&format!("\n{}", backtrace));
+                }
+            }
+
+            error_message
+        })
     }
 
     pub fn get_error(&self) -> Option<&Error> {

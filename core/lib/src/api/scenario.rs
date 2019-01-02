@@ -21,7 +21,7 @@ pub trait Scenario {
     fn embed(&self, data: &[u8], mime_type: String);
 
     /// Outputs some text into the report.
-    fn write(&self, text: String);
+    fn write(&self, text: &str);
 
     /// The name of the Scenario.
     fn get_name(&self) -> &String;

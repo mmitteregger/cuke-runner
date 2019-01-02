@@ -3,9 +3,9 @@ use std::time::{SystemTime, Duration};
 use gherkin::pickle::{PickleStep, PickleArgument};
 
 use error::{Result, Error};
-use api::{self, event::Event, HookType, SourceCodeLocation, TestResult, TestResultStatus};
+use api::{self, event::Event, HookType, CodeLocation, TestResult, TestResultStatus};
 use runner::EventBus;
-use runtime::{StepDefinitionMatch, HookDefinitionMatch, Scenario};
+use runtime::{StepDefinitionMatch, HookDefinitionMatch, Scenario, DefinitionArgument};
 
 #[derive(Debug)]
 pub struct HookTestStep {
@@ -34,7 +34,7 @@ impl api::HookTestStep for HookTestStep {
 }
 
 impl api::TestStep for HookTestStep {
-    fn get_location(&self) -> &SourceCodeLocation {
+    fn get_code_location(&self) -> Option<&CodeLocation> {
         self.definition_match.get_location()
     }
 }
@@ -94,9 +94,8 @@ impl api::PickleStepTestStep for PickleStepTestStep {
         &self.step_definition_match.get_step()
     }
 
-    fn get_definition_argument<A: api::Argument + Sized>(&self) -> &Vec<A> {
-        unimplemented!();
-//        DefinitionArgument::create_arguments(self.step_definition_match.get_arguments())
+    fn get_definition_argument(&self) -> Vec<Box<api::Argument>> {
+        DefinitionArgument::create_arguments(self.step_definition_match.get_arguments())
     }
 
     fn get_step_argument(&self) -> &Vec<PickleArgument> {
@@ -119,7 +118,7 @@ impl api::PickleStepTestStep for PickleStepTestStep {
 }
 
 impl api::TestStep for PickleStepTestStep {
-    fn get_location(&self) -> &SourceCodeLocation {
+    fn get_code_location(&self) -> Option<&CodeLocation> {
         self.step_definition_match.get_location()
     }
 }

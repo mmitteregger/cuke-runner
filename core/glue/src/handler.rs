@@ -2,6 +2,12 @@ use std::fmt;
 
 use {Scenario, FromScenarioError};
 
+/// The type of a generated hook handler (wraps a user defined hook function).
+pub type HookFn = fn() -> ::std::result::Result<(), ExecutionError>;
+
+/// The type of a step handler (wraps a user defined step function).
+pub type StepFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;
+
 #[derive(Fail, Debug)]
 pub enum ExecutionError {
     /// An error that occurred while converting scenario data to a step function parameter.
@@ -40,9 +46,3 @@ impl fmt::Display for ExecutionError {
         }
     }
 }
-
-/// The type of a generated hook handler (wraps a user defined hook function).
-pub type HookFn = fn() -> ::std::result::Result<(), ExecutionError>;
-
-/// The type of a step handler (wraps a user defined step function).
-pub type StepFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;

@@ -1,15 +1,18 @@
 use std::fmt::Debug;
 
 use gherkin::pickle::{PickleStep, PickleArgument};
+use downcast::Downcast;
 
-use api::{self, SourceCodeLocation};
+use api::{self, CodeLocation};
 
 /// A test step can either represent the execution of a hook or a pickle step.
 /// Each step is tied to some glue code.
-pub trait TestStep: Debug + Send + Sync {
+pub trait TestStep: Debug + Downcast + Send + Sync {
     /// Representation of the source code location of the glue.
-    fn get_location(&self) -> &SourceCodeLocation;
+    fn get_code_location(&self) -> Option<&CodeLocation>;
 }
+
+impl_downcast!(TestStep);
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum HookType {
@@ -38,7 +41,7 @@ pub trait PickleStepTestStep: TestStep {
     ///
     /// For example the step definition `#[given(r"(\d+) pickles")]`
     /// when matched with `Given 15 pickles` will receive as argument `15`.
-    fn get_definition_argument<A: api::Argument + Sized>(&self) -> &Vec<A>;
+    fn get_definition_argument(&self) -> Vec<Box<api::Argument>>;
 
     /// Returns arguments provided to the Gherkin step.
     /// E.g: a data table or doc string.

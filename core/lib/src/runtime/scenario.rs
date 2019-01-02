@@ -79,7 +79,7 @@ impl<'a, 'b, 'c> api::Scenario for Scenario<'a, 'b, 'c> {
         });
     }
 
-    fn write(&self, text: String) {
+    fn write(&self, text: &str) {
         self.event_bus.send(Event::Write {
             time: SystemTime::now(),
             text,

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use {StepKeyword, StepFn};
+use {StepKeyword, StepFn, CodeLocation};
 
 /// Generated info for a step definition (a `#[step(...)]` annotated function).
 pub struct StaticStepDefinition {
@@ -12,6 +12,8 @@ pub struct StaticStepDefinition {
     pub expression: &'static str,
     /// The generated step handler function responsible for calling the step definition function.
     pub step_fn: StepFn,
+    /// The generated step handler function responsible for calling the step definition function.
+    pub location: CodeLocation,
 }
 
 impl fmt::Debug for StaticStepDefinition {
@@ -21,6 +23,7 @@ impl fmt::Debug for StaticStepDefinition {
             .field("keyword", &self.keyword)
             .field("expression", &self.expression)
             .field("step_fn", &"<step_fn>")
+            .field("location", &self.location)
             .finish()
     }
 }
