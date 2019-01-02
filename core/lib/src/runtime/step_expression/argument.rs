@@ -1,9 +1,6 @@
-use std::any::Any;
-use std::fmt::Debug;
-
 use self::Argument::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Argument {
     Expression(String),
     DocString(String),

@@ -2,9 +2,9 @@
 use std::any::{TypeId, Any};
 use std::fmt;
 
-use gherkin::pickle::{PickleStep, PickleString, PickleTable, PickleRow, PickleCell, PickleArgument};
+use gherkin::pickle::{PickleStep, PickleArgument};
 
-use api::SourceCodeLocation;
+use api::CodeLocation;
 use glue::StepFn;
 use runtime::Scenario;
 use super::step_expression::{StepExpression, Argument};
@@ -15,7 +15,7 @@ pub struct StepDefinition {
     pub parameter_infos: Vec<TypeId>,
 //    pub timeout: Duration,
     pub step_fn: StepFn,
-    pub location: SourceCodeLocation,
+    pub location: CodeLocation,
 }
 
 impl fmt::Debug for StepDefinition {
@@ -65,7 +65,7 @@ impl StepDefinition {
     /// The source line where the step definition is defined.
     ///
     /// Example: foo/bar/Zap.brainfuck:42
-    pub fn get_location(&self) -> &SourceCodeLocation {
+    pub fn get_location(&self) -> &CodeLocation {
         &self.location
     }
 

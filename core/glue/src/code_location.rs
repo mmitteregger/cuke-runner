@@ -1,12 +1,12 @@
 use std::fmt;
 
-#[derive(Debug, Clone)]
-pub struct SourceCodeLocation {
-    pub file_path: String,
-    pub line_number: u32,
+#[derive(Debug, Copy, Clone)]
+pub struct CodeLocation {
+    pub file_path: &'static str,
+    pub line_number: usize,
 }
 
-impl fmt::Display for SourceCodeLocation {
+impl fmt::Display for CodeLocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}:{}", self.file_path, self.line_number)
     }

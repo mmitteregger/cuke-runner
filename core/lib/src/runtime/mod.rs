@@ -1,7 +1,5 @@
 use {Config, ExecutionMode};
-use api::event::EventListener;
 use parser;
-use rayon::prelude::*;
 use runner::{EventBus, Runner};
 pub use self::definition_argument::*;
 use self::event_listener::*;
@@ -20,7 +18,7 @@ mod step_definition;
 mod hook_definition;
 mod step_expression;
 mod tag_predicate;
-mod test_case;
+pub mod test_case;
 mod scenario;
 mod step_definition_match;
 mod definition_argument;
@@ -29,10 +27,12 @@ mod event_listener;
 
 pub fn run(glue: Glue, config: Config) -> i32 {
     let mut exit_status_listener = ExitStatusListener::new();
+    let mut pretty_formatter = PrettyFormatter::new();
     let mut test_summary_listener = TestSummaryListener::new();
 
     let mut event_bus = EventBus::new();
     event_bus.register_listener(&mut exit_status_listener);
+    event_bus.register_listener(&mut pretty_formatter);
     event_bus.register_listener(&mut test_summary_listener);
 
     let runner = Runner::new(glue, config.dry_run);
@@ -48,7 +48,7 @@ pub fn run(glue: Glue, config: Config) -> i32 {
 }
 
 fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
-    let pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
+    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
 
     for pickle_event in pickle_events {
         runner.run_pickle(pickle_event, &event_bus);
@@ -56,7 +56,7 @@ fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
 }
 
 fn run_parallel_features(runner: Runner, event_bus: EventBus, config: &Config) {
-    let pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
+    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
     let mut pickle_events_per_feature = HashMap::new();
 
     for pickle_event in pickle_events {
@@ -73,7 +73,7 @@ fn run_parallel_features(runner: Runner, event_bus: EventBus, config: &Config) {
 }
 
 fn run_parallel_scenarios(runner: Runner, event_bus: EventBus, config: &Config) {
-    let pickle_events = parser::parse_pickle_events(&config.features_dir).unwrap();
+    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
 
     unimplemented!("run_parallel_scenarios");
 //    pickle_events.into_par_iter()

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use gherkin::pickle::PickleStep;
 
 use error::{Result, Error};
-use api::SourceCodeLocation;
+use api::CodeLocation;
 use runtime::{Argument, HookDefinition, StepDefinition};
 use runtime::Scenario;
 
@@ -15,15 +15,18 @@ pub trait StepDefinitionMatch: Debug + Send + Sync {
 
     fn dry_run_step(&self, language: &str, scenario: &mut Scenario) -> Result<()>;
 
-    fn get_location(&self) -> &SourceCodeLocation;
+    fn get_location(&self) -> Option<&CodeLocation>;
 
     fn get_pattern(&self) -> Option<&String>;
+
+    fn get_arguments(&self) -> &Vec<Argument>;
 }
 
 
 #[derive(Debug)]
 pub struct HookDefinitionMatch {
     pub hook_definition: HookDefinition,
+    pub arguments: Vec<Argument>,
 }
 
 impl StepDefinitionMatch for HookDefinitionMatch {
@@ -39,21 +42,25 @@ impl StepDefinitionMatch for HookDefinitionMatch {
         Ok(())
     }
 
-    fn get_location(&self) -> &SourceCodeLocation {
-        self.hook_definition.get_location()
+    fn get_location(&self) -> Option<&CodeLocation> {
+        Some(&self.hook_definition.get_location())
     }
 
     fn get_pattern(&self) -> Option<&String> {
         None
     }
+
+    fn get_arguments(&self) -> &Vec<Argument> {
+        &self.arguments
+    }
 }
 
 #[derive(Debug)]
 pub struct PickleStepDefinitionMatch {
-    pub arguments: Vec<Argument>,
     pub step_definition: StepDefinition,
     pub feature_path: String,
     pub step: Arc<PickleStep>,
+    pub arguments: Vec<Argument>,
 }
 
 impl PickleStepDefinitionMatch {
@@ -65,7 +72,7 @@ impl PickleStepDefinitionMatch {
         &self.arguments
     }
 
-    pub fn get_location(&self) -> &SourceCodeLocation {
+    pub fn get_location(&self) -> &CodeLocation {
         self.step_definition.get_location()
     }
 }
@@ -84,12 +91,16 @@ impl StepDefinitionMatch for PickleStepDefinitionMatch {
         Ok(())
     }
 
-    fn get_location(&self) -> &SourceCodeLocation {
-        self.step_definition.get_location()
+    fn get_location(&self) -> Option<&CodeLocation> {
+        Some(&self.step_definition.get_location())
     }
 
     fn get_pattern(&self) -> Option<&String> {
         Some(self.step_definition.get_pattern())
+    }
+
+    fn get_arguments(&self) -> &Vec<Argument> {
+        &self.arguments
     }
 }
 
@@ -97,6 +108,7 @@ impl StepDefinitionMatch for PickleStepDefinitionMatch {
 pub struct AmbiguousPickleStepDefinitionMatch {
     pub feature_path: String,
     pub step: Arc<PickleStep>,
+    pub arguments: Vec<Argument>,
 }
 
 impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
@@ -112,18 +124,23 @@ impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
         self.run_step(language, scenario)
     }
 
-    fn get_location(&self) -> &SourceCodeLocation {
-        unimplemented!();
+    fn get_location(&self) -> Option<&CodeLocation> {
+        None
     }
 
     fn get_pattern(&self) -> Option<&String> {
         None
+    }
+
+    fn get_arguments(&self) -> &Vec<Argument> {
+        &self.arguments
     }
 }
 
 #[derive(Debug)]
 pub struct UndefinedPickleStepDefinitionMatch {
     pub step: Arc<PickleStep>,
+    pub arguments: Vec<Argument>,
 }
 
 impl StepDefinitionMatch for UndefinedPickleStepDefinitionMatch {
@@ -139,11 +156,15 @@ impl StepDefinitionMatch for UndefinedPickleStepDefinitionMatch {
         self.run_step(language, scenario)
     }
 
-    fn get_location(&self) -> &SourceCodeLocation {
-        unimplemented!();
+    fn get_location(&self) -> Option<&CodeLocation> {
+        None
     }
 
     fn get_pattern(&self) -> Option<&String> {
         None
+    }
+
+    fn get_arguments(&self) -> &Vec<Argument> {
+        &self.arguments
     }
 }

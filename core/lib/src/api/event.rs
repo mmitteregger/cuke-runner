@@ -1,7 +1,9 @@
 use std::fmt::Debug;
 use std::time::SystemTime;
+use std::rc::Rc;
 
 use gherkin::pickle::PickleLocation;
+use gherkin::ast::Feature;
 
 use api::TestStep;
 use api::TestResult;
@@ -19,6 +21,9 @@ pub enum Event<'a> {
     /// Sent for each feature file that was successfully parsed.
     TestSourceRead {
         time: SystemTime,
+        uri: &'a str,
+        source: &'a str,
+        feature: &'a Rc<Feature>,
     },
     /// Sent for each step that could not be matched to a step definition.
     SnippetsSuggested {
@@ -30,6 +35,7 @@ pub enum Event<'a> {
     /// Sent before starting the execution of a test case.
     TestCaseStarted {
         time: SystemTime,
+        test_case: &'a Rc<TestCase>,
     },
     /// Sent after the execution of a test case.
     TestStepStarted {
@@ -45,7 +51,7 @@ pub enum Event<'a> {
     /// Sent when a hook wants to add some text to a report.
     Write {
         time: SystemTime,
-        text: String,
+        text: &'a str,
     },
     /// Sent after the execution of a test step.
     TestStepFinished {
@@ -56,8 +62,8 @@ pub enum Event<'a> {
     /// Sent after the execution of a test step.
     TestCaseFinished {
         time: SystemTime,
-        test_case: &'a TestCase,
-        result: TestResult,
+        test_case: &'a Rc<TestCase>,
+        result: &'a TestResult,
     },
     /// Sent after all executions of test steps are finished.
     ///

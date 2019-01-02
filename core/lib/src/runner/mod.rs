@@ -4,12 +4,14 @@ pub use self::test_step::{HookTestStep, PickleStepTestStep};
 mod event_bus;
 mod test_step;
 
+use std::rc::Rc;
+
 use gherkin::event::PickleEvent;
 use gherkin::pickle::PickleTag;
 
 use runtime::{Glue, HookDefinition};
 use api::HookType;
-use runtime::{TestCase, HookDefinitionMatch};
+use runtime::{self, TestCase, HookDefinitionMatch};
 
 pub struct Runner {
     glue: Glue,
@@ -26,10 +28,10 @@ impl Runner {
 
     pub fn run_pickle(&self, pickle_event: PickleEvent, event_bus: &EventBus) {
         let test_case = self.create_test_case_for_pickle_event(pickle_event);
-        test_case.run(event_bus);
+        runtime::test_case::run(test_case, event_bus);
     }
 
-    fn create_test_case_for_pickle_event(&self, mut pickle_event: PickleEvent) -> TestCase {
+    fn create_test_case_for_pickle_event(&self, mut pickle_event: PickleEvent) -> Rc<TestCase> {
         let (
             before_hooks,
             after_hooks,
@@ -49,13 +51,14 @@ impl Runner {
             )
         };
 
-        TestCase {
+        let test_case = TestCase {
             test_steps,
             before_hooks,
             after_hooks,
             pickle_event,
             dry_run: self.dry_run,
-        }
+        };
+        Rc::new(test_case)
     }
 
     fn create_before_scenario_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
@@ -76,7 +79,10 @@ impl Runner {
         for hook_definition in hook_definitions {
             if hook_definition.matches(tags) {
                 let test_step = HookTestStep {
-                    definition_match: HookDefinitionMatch { hook_definition: hook_definition.clone() },
+                    definition_match: HookDefinitionMatch {
+                        hook_definition: hook_definition.clone(),
+                        arguments: Vec::new(),
+                    },
                     hook_type,
                 };
                 hooks.push(test_step);

@@ -77,12 +77,12 @@ impl From<glue::ExecutionError> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::Io(ref err) => err.fmt(f),
-            Error::Config(ref err) => err.fmt(f),
-            Error::WalkDir(ref err) => err.fmt(f),
-            Error::Gherkin(ref err) => err.fmt(f),
-            Error::FromScenario(ref err) => err.fmt(f),
-            Error::Execution(ref err) => err.fmt(f),
+            Error::Io(ref err) => write!(f, "{}", err),
+            Error::Config(ref err) => write!(f, "{}", err),
+            Error::WalkDir(ref err) => write!(f, "{}", err),
+            Error::Gherkin(ref err) => write!(f, "{}", err),
+            Error::FromScenario(ref err) => write!(f, "{}", err),
+            Error::Execution(ref err) => write!(f, "{}", err),
             Error::AmbiguousStepDefinitions => write!(f, "AmbiguousStepDefinitions"),
             Error::UndefinedStepDefinition => write!(f, "UndefinedStepDefinition"),
             Error::Pending => write!(f, "TODO: implement me"),

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use gherkin::pickle::PickleTag;
 
-use api::SourceCodeLocation;
+use api::CodeLocation;
 use error::Result;
 use glue::HookFn;
 use runtime::Scenario;
@@ -14,11 +14,11 @@ pub struct HookDefinition {
     order: u32,
     timeout: Option<Duration>,
     hook_fn: HookFn,
-    location: SourceCodeLocation,
+    location: CodeLocation,
 }
 
 impl HookDefinition {
-    pub fn get_location(&self) -> &SourceCodeLocation {
+    pub fn get_location(&self) -> &CodeLocation {
         &self.location
     }
 
