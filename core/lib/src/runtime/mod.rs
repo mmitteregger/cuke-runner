@@ -55,7 +55,7 @@ fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
     }
 }
 
-fn run_parallel_features(runner: Runner, event_bus: EventBus, config: &Config) {
+fn run_parallel_features(_runner: Runner, event_bus: EventBus, config: &Config) {
     let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
     let mut pickle_events_per_feature = HashMap::new();
 
@@ -72,8 +72,8 @@ fn run_parallel_features(runner: Runner, event_bus: EventBus, config: &Config) {
 //    }
 }
 
-fn run_parallel_scenarios(runner: Runner, event_bus: EventBus, config: &Config) {
-    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
+fn run_parallel_scenarios(_runner: Runner, event_bus: EventBus, config: &Config) {
+    let _pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
 
     unimplemented!("run_parallel_scenarios");
 //    pickle_events.into_par_iter()

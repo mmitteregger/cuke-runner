@@ -22,14 +22,14 @@ impl ::std::ops::DerefMut for Calc {
 
 impl<'a> FromScenario<'a> for &'a mut Calc {
     fn from_scenario(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
-        scenario.get_by_type::<Calc>()
+        scenario.get_user_data::<Calc>()
             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
     }
 }
 
-// #[before_scenario]
-pub fn init() {
-//    State::init(|| RpnCalculator::new());
+#[before_scenario]
+pub fn init(scenario: &mut Scenario) {
+    scenario.set_user_data(Calc(RpnCalculator::new()));
 }
 
 // // Other hooks and attributes that should be supported:

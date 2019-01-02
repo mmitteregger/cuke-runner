@@ -19,20 +19,28 @@ extern crate syntax_pos;
 
 use proc_macro2::Span;
 use proc_macro::TokenStream;
-use std::env;
-use syn::Path;
 
-use glue::StepKeyword;
+use glue::{HookType, StepKeyword};
 
 #[macro_use]
 mod proc_macro_ext;
 mod attribute;
-mod step_definitions;
+mod bang;
 mod glue_codegen;
 mod syn_ext;
 
+crate static BEFORE_SCENARIO_HOOK_STRUCT_PREFIX: &str = "static_cuke_runner_before_scenario_hook_info_for_";
+crate static BEFORE_SCENARIO_HOOK_FN_PREFIX: &str = "cuke_runner_before_scenario_hook_fn_";
+crate static BEFORE_STEP_HOOK_STRUCT_PREFIX: &str = "static_cuke_runner_before_scenario_hook_info_for_";
+crate static BEFORE_STEP_HOOK_FN_PREFIX: &str = "cuke_runner_before_scenario_hook_fn_";
+crate static AFTER_STEP_HOOK_STRUCT_PREFIX: &str = "static_cuke_runner_before_scenario_hook_info_for_";
+crate static AFTER_STEP_HOOK_FN_PREFIX: &str = "cuke_runner_before_scenario_hook_fn_";
+crate static AFTER_SCENARIO_HOOK_STRUCT_PREFIX: &str = "static_cuke_runner_before_scenario_hook_info_for_";
+crate static AFTER_SCENARIO_HOOK_FN_PREFIX: &str = "cuke_runner_before_scenario_hook_fn_";
+
 crate static STEP_STRUCT_PREFIX: &str = "static_cuke_runner_step_info_for_";
 crate static STEP_FN_PREFIX: &str = "cuke_runner_step_fn_";
+
 crate static PARAM_PREFIX: &str = "__cuke_runner_param_";
 
 macro_rules! emit {
@@ -49,11 +57,26 @@ macro_rules! emit {
     })
 }
 
-macro_rules! step_attribute {
-    ($name:ident => $method:expr) => (
+macro_rules! hook_attribute {
+    ($name:ident => $hook_type:expr) => (
         #[proc_macro_attribute]
         pub fn $name(args: TokenStream, input: TokenStream) -> TokenStream {
-            emit!(attribute::step::step_attribute($method, args, input))
+            emit!(attribute::hook::hook_attribute($hook_type, args, input))
+        }
+    )
+}
+
+hook_attribute!(hook => None);
+hook_attribute!(before_scenario => HookType::BeforeScenario);
+hook_attribute!(before_step => HookType::BeforeStep);
+hook_attribute!(after_step => HookType::AfterStep);
+hook_attribute!(after_scenario => HookType::AfterScenario);
+
+macro_rules! step_attribute {
+    ($name:ident => $keyword:expr) => (
+        #[proc_macro_attribute]
+        pub fn $name(args: TokenStream, input: TokenStream) -> TokenStream {
+            emit!(attribute::step::step_attribute($keyword, args, input))
         }
     )
 }
@@ -65,31 +88,23 @@ step_attribute!(then => StepKeyword::Then);
 
 
 #[proc_macro]
-pub fn step_definitions(_input: TokenStream) -> TokenStream {
-    let create_root_path = env::current_dir()
-        .expect("current directory for crate root path");
-    let crate_relative_path = env::args()
-        .find(|arg| arg.ends_with(".rs"))
-        .expect("could not find compiling rust file in current argument list");
-    let mut current_file_path = create_root_path.join(crate_relative_path);
+pub fn generate_glue(input: TokenStream) -> TokenStream {
+    emit!(bang::generate_glue_macro(input))
+}
 
-    debug!("current_file_path: {}", current_file_path.display());
-    let step_definition_paths = step_definitions::parse(&mut current_file_path);
-    debug!("step_definition_paths: {:?}", step_definition_paths);
-
-    let step_definition_path_tokens = step_definition_paths.into_iter()
-        .map(|step_definition_path| {
-            syn::parse_str::<Path>(&step_definition_path).expect("parse step definition paths")
-        })
-        .collect::<Vec<_>>();
-
+#[proc_macro]
+pub fn glue(_input: TokenStream) -> TokenStream {
+    // TODO: Use input instead of hardcoded glue module
     let call_site_span = Span::call_site();
-    let step_definition_tokens = quote_spanned! {call_site_span=>
-        pub static STEP_DEFINITIONS: &[&::cuke_runner::glue::StaticStepDefinition] = &[
-            #(&#step_definition_path_tokens,
-            )*
-        ];
+    let glue = quote_spanned! {call_site_span=>
+        Glue::from(::cuke_runner::glue::StaticGlueDefinitions {
+            before_scenario_hooks: glue::BEFORE_SCENARIO_HOOK_DEFINITIONS,
+            before_step_hooks: glue::BEFORE_STEP_HOOK_DEFINITIONS,
+            steps: glue::STEP_DEFINITIONS,
+            after_step_hooks: glue::AFTER_STEP_HOOK_DEFINITIONS,
+            after_scenario_hooks: glue::AFTER_SCENARIO_HOOK_DEFINITIONS,
+        })
     };
 
-    TokenStream::from(step_definition_tokens)
+    TokenStream::from(glue)
 }

@@ -17,13 +17,12 @@ impl HookTestStep {
     pub fn run(
         &self,
         event_bus: &EventBus,
-        language: &str,
         scenario: &mut Scenario,
         skip: bool,
     ) -> TestResult
     {
         let test_step = self as &api::TestStep;
-        run_test_step(test_step, &self.definition_match, event_bus, language, scenario, skip)
+        run_test_step(test_step, &self.definition_match, event_bus, scenario, skip)
     }
 }
 
@@ -51,7 +50,6 @@ impl PickleStepTestStep {
     pub fn run(
         &self,
         event_bus: &EventBus,
-        language: &str,
         scenario: &mut Scenario,
         skip: bool,
     ) -> TestResult
@@ -64,18 +62,18 @@ impl PickleStepTestStep {
         );
 
         for before_step_hook_step in &self.before_step_hook_steps {
-            let hook_result = before_step_hook_step.run(event_bus, language, scenario, skip);
+            let hook_result = before_step_hook_step.run(event_bus, scenario, skip);
             skip_self = skip_self || !hook_result.status.eq(&TestResultStatus::Passed);
             results.push(hook_result);
         }
 
         let test_step = self as &api::TestStep;
         let self_result = run_test_step(test_step, &*self.step_definition_match,
-                event_bus, language, scenario, skip_self);
+                event_bus, scenario, skip_self);
         results.push(self_result);
 
         for after_step_hook_step in &self.after_step_hook_steps {
-            let hook_result = after_step_hook_step.run(event_bus, language, scenario, skip);
+            let hook_result = after_step_hook_step.run(event_bus, scenario, skip);
             results.push(hook_result);
         }
 
@@ -127,7 +125,6 @@ fn run_test_step(
     test_step: &api::TestStep,
     definition_match: &StepDefinitionMatch,
     event_bus: &EventBus,
-    language: &str,
     scenario: &mut Scenario,
     skip: bool,
 ) -> TestResult
@@ -138,7 +135,7 @@ fn run_test_step(
         test_step,
     });
 
-    let step_result = execute_step(definition_match, language, scenario, skip);
+    let step_result = execute_step(definition_match, scenario, skip);
     let (status, error) = match step_result {
         Ok(test_result_type) => (test_result_type, None),
         Err(error) => (map_error_to_status(&error), Some(error)),
@@ -160,16 +157,15 @@ fn run_test_step(
 
 fn execute_step(
     definition_match: &StepDefinitionMatch,
-    language: &str,
     scenario: &mut Scenario,
     skip: bool
 ) -> Result<TestResultStatus>
 {
     let test_result_type = if skip {
-        definition_match.dry_run_step(language, scenario)?;
+        definition_match.dry_run_step(scenario)?;
         TestResultStatus::Skipped
     } else {
-        definition_match.run_step(language, scenario)?;
+        definition_match.run_step(scenario)?;
         TestResultStatus::Passed
     };
 

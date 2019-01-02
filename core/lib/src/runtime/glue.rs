@@ -3,69 +3,51 @@ use std::sync::Arc;
 
 use gherkin::pickle::PickleStep;
 
-use glue::StaticStepDefinition;
+use glue::StaticGlueDefinitions;
 use runtime::{
     AmbiguousPickleStepDefinitionMatch, HookDefinition, PickleStepDefinitionMatch,
     StepDefinition, StepDefinitionMatch, UndefinedPickleStepDefinitionMatch,
 };
-use runtime::step_expression::StepExpression;
 
 #[derive(Debug)]
 pub struct Glue {
-    step_definitions_by_pattern: HashMap<&'static str, StepDefinition>,
     before_scenario_hooks: Vec<HookDefinition>,
     before_step_hooks: Vec<HookDefinition>,
+    step_definitions_by_pattern: HashMap<&'static str, StepDefinition>,
     after_step_hooks: Vec<HookDefinition>,
     after_scenario_hooks: Vec<HookDefinition>,
 }
 
-impl From<&'static [&'static StaticStepDefinition]> for Glue {
-    fn from(step_definitions: &'static [&'static StaticStepDefinition]) -> Glue {
-        let mut step_definitions_by_pattern =
-            HashMap::with_capacity(step_definitions.len());
-
-        for step_definition in step_definitions {
-            let definition = StepDefinition {
-                expression: StepExpression::from_regex(step_definition.expression),
-                parameter_infos: Vec::new(),
-                step_fn: step_definition.step_fn,
-                location: step_definition.location,
-            };
-
-            step_definitions_by_pattern.insert(step_definition.expression, definition);
-        }
+impl From<StaticGlueDefinitions> for Glue {
+    fn from(static_glue_definitions: StaticGlueDefinitions) -> Glue {
+        let before_scenario_hooks = static_glue_definitions.before_scenario_hooks.into_iter()
+            .map(HookDefinition::from)
+            .collect();
+        let before_step_hooks = static_glue_definitions.before_step_hooks.into_iter()
+            .map(HookDefinition::from)
+            .collect();
+        let step_definitions_by_pattern = static_glue_definitions.steps.into_iter()
+            .map(|static_step_definition|
+                (static_step_definition.expression, StepDefinition::from(static_step_definition)))
+            .collect();
+        let after_step_hooks = static_glue_definitions.after_step_hooks.into_iter()
+            .map(HookDefinition::from)
+            .collect();
+        let after_scenario_hooks = static_glue_definitions.after_scenario_hooks.into_iter()
+            .map(HookDefinition::from)
+            .collect();
 
         Glue {
+            before_scenario_hooks,
+            before_step_hooks,
             step_definitions_by_pattern,
-            before_scenario_hooks: Vec::new(),
-            before_step_hooks: Vec::new(),
-            after_step_hooks: Vec::new(),
-            after_scenario_hooks: Vec::new(),
+            after_step_hooks,
+            after_scenario_hooks,
         }
     }
 }
 
 impl Glue {
-    pub fn new() -> Glue {
-        Glue {
-            step_definitions_by_pattern: HashMap::new(),
-            before_scenario_hooks: Vec::new(),
-            before_step_hooks: Vec::new(),
-            after_step_hooks: Vec::new(),
-            after_scenario_hooks: Vec::new(),
-        }
-    }
-
-    pub fn from_static_step_definitions(_static_step_definitions: &[&StaticStepDefinition]) -> Glue {
-        Glue {
-            step_definitions_by_pattern: HashMap::new(),
-            before_scenario_hooks: Vec::new(),
-            before_step_hooks: Vec::new(),
-            after_step_hooks: Vec::new(),
-            after_scenario_hooks: Vec::new(),
-        }
-    }
-
     pub fn get_step_definitions_by_pattern(&self) -> &HashMap<&'static str, StepDefinition> {
         &self.step_definitions_by_pattern
     }
