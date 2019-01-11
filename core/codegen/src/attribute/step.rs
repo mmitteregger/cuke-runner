@@ -77,10 +77,10 @@ fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
     let span = ident.span().unstable().join(ty.span()).unwrap().into();
     quote_spanned! { span =>
         #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::FromScenario::from_scenario(__scenario) {
+        let #ident: #ty = match ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario) {
             Ok(scenario_data) => scenario_data,
             Err(error) => {
-                return Err(::cuke_runner::glue::ExecutionError::from(error))
+                return Err(::cuke_runner::glue::error::ExecutionError::from(error))
             },
         };
     }
@@ -94,7 +94,24 @@ fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize
             if type_path.path.segments.len() == 1 && type_path.path.segments[0].ident == "str" {
                 return quote_spanned! { span =>
                     #[allow(non_snake_case, unreachable_patterns)]
-                    let #ident: #ty = __step_arguments[#step_argument_index].get_value();
+                    let #ident: #ty = {
+                        use ::cuke_runner::glue::step::argument::StepArgument::*;
+
+                        let str_value = match __step_arguments[#step_argument_index] {
+                            Expression(ref expression) => Some(expression.value()),
+                            DocString(ref doc_string) => Some(doc_string.value()),
+                            DataTable(ref _data_table) => None,
+                        };
+
+                        match str_value {
+                            Some(value) => value,
+                            None => return Err(::cuke_runner::glue::error::ExecutionError::from(
+                                ::cuke_runner::glue::step::argument::FromStepArgumentError::new(
+                                    format!("cannot get str value from DataTable")
+                                )
+                            )),
+                        }
+                    };
                 };
             }
         }
@@ -102,10 +119,12 @@ fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize
 
     quote_spanned! { span =>
         #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::FromStepArgument::from_step_argument(&__step_arguments[#step_argument_index]) {
+        let #ident: #ty = match ::cuke_runner::glue::step::argument::FromStepArgument::from_step_argument(
+                &__step_arguments[#step_argument_index]
+        ) {
             Ok(step_argument) => step_argument,
             Err(error) => {
-                return Err(::cuke_runner::glue::ExecutionError::from(error))
+                return Err(::cuke_runner::glue::error::ExecutionError::from(error))
             },
         };
     }
@@ -148,9 +167,9 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
 
         /// Cuke runner code generated wrapping step function.
         #vis fn #generated_fn_name(
-            __scenario: &mut ::cuke_runner::glue::Scenario,
-            __step_arguments: &[::cuke_runner::glue::StepArgument],
-        ) -> ::std::result::Result<(), ::cuke_runner::glue::ExecutionError> {
+            __scenario: &mut ::cuke_runner::glue::scenario::Scenario,
+            __step_arguments: &[::cuke_runner::glue::step::argument::StepArgument],
+        ) -> ::std::result::Result<(), ::cuke_runner::glue::error::ExecutionError> {
 
             #(#data_statements)*
 
@@ -158,14 +177,14 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
             let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(|| #user_handler_fn_name(#(#parameter_names),*)));
             match result {
                 Ok(user_handler_fn_result) => return Ok(()),
-                Err(err) => return Err(::cuke_runner::glue::panic_error(err)),
+                Err(err) => return Err(::cuke_runner::glue::error::panic_error(err)),
             };
         }
 
         /// Cuke runner code generated static step info.
         #[allow(non_upper_case_globals)]
-        #vis static #generated_struct_name: ::cuke_runner::glue::StaticStepDefinition =
-            ::cuke_runner::glue::StaticStepDefinition {
+        #vis static #generated_struct_name: ::cuke_runner::glue::step::StaticStepDef =
+            ::cuke_runner::glue::step::StaticStepDef {
                 name: stringify!(#user_handler_fn_name),
                 keyword: #keyword,
                 expression: #expression,
@@ -193,7 +212,7 @@ fn complete_step(args: TokenStream2, input: TokenStream) -> Result<TokenStream> 
 }
 
 fn incomplete_step(
-    keyword: ::glue::StepKeyword,
+    keyword: ::glue::step::StepKeyword,
     args: TokenStream2,
     input: TokenStream
 ) -> Result<TokenStream> {
@@ -224,7 +243,7 @@ fn incomplete_step(
     codegen_step(parse_step(attribute, function)?)
 }
 
-pub fn step_attribute<K: Into<Option<::glue::StepKeyword>>>(
+pub fn step_attribute<K: Into<Option<::glue::step::StepKeyword>>>(
     keyword: K,
     args: TokenStream,
     input: TokenStream

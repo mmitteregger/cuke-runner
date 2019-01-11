@@ -4,7 +4,7 @@ use gherkin::pickle::PickleTag;
 
 use api::CodeLocation;
 use error::Result;
-use glue::{StaticHookDefinition, HookFn};
+use glue::hook::{StaticHookDef, HookFn};
 use runtime::Scenario;
 use super::TagPredicate;
 
@@ -29,13 +29,13 @@ impl fmt::Debug for HookDefinition {
     }
 }
 
-impl From<&&StaticHookDefinition> for HookDefinition {
-    fn from(static_hook_definition: &&StaticHookDefinition) -> Self {
+impl From<&&StaticHookDef> for HookDefinition {
+    fn from(static_hook_def: &&StaticHookDef) -> Self {
         HookDefinition {
             tag_predicate: TagPredicate::new(Vec::new()),
             order: 0,
-            hook_fn: static_hook_definition.hook_fn,
-            location: static_hook_definition.location,
+            hook_fn: static_hook_def.hook_fn,
+            location: static_hook_def.location,
         }
     }
 }
@@ -54,7 +54,7 @@ impl HookDefinition {
     }
 
     pub fn matches(&self, tags: &Vec<PickleTag>) -> bool {
-        self.tag_predicate.apply_tags(tags)
+        self.tag_predicate.test(tags)
     }
 
     pub fn get_order(&self) -> u32 {

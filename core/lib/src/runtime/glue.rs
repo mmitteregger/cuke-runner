@@ -18,24 +18,43 @@ pub struct Glue {
     after_scenario_hooks: Vec<HookDefinition>,
 }
 
-impl From<StaticGlueDefinitions> for Glue {
-    fn from(static_glue_definitions: StaticGlueDefinitions) -> Glue {
-        let before_scenario_hooks = static_glue_definitions.before_scenario_hooks.into_iter()
+impl From<&[StaticGlueDefinitions]> for Glue {
+    fn from(static_glue_definitions: &[StaticGlueDefinitions]) -> Glue {
+        let before_scenario_hooks = static_glue_definitions.into_iter()
+            .flat_map(|glue| glue.before_scenario_hooks.into_iter())
             .map(HookDefinition::from)
             .collect();
-        let before_step_hooks = static_glue_definitions.before_step_hooks.into_iter()
+        let before_step_hooks = static_glue_definitions.into_iter()
+            .flat_map(|glue| glue.before_step_hooks.into_iter())
             .map(HookDefinition::from)
             .collect();
-        let step_definitions_by_pattern = static_glue_definitions.steps.into_iter()
+        let after_step_hooks = static_glue_definitions.into_iter()
+            .flat_map(|glue| glue.after_step_hooks.into_iter())
+            .map(HookDefinition::from)
+            .collect();
+        let after_scenario_hooks = static_glue_definitions.into_iter()
+            .flat_map(|glue| glue.after_scenario_hooks.into_iter())
+            .map(HookDefinition::from)
+            .collect();
+
+        let step_definitions_capacity = static_glue_definitions.into_iter()
+            .flat_map(|glue| glue.steps.into_iter())
+            .count();
+        let mut step_definitions_by_pattern = HashMap::with_capacity(step_definitions_capacity);
+        static_glue_definitions.into_iter()
+            .flat_map(|glue| glue.steps.into_iter())
             .map(|static_step_definition|
                 (static_step_definition.expression, StepDefinition::from(static_step_definition)))
-            .collect();
-        let after_step_hooks = static_glue_definitions.after_step_hooks.into_iter()
-            .map(HookDefinition::from)
-            .collect();
-        let after_scenario_hooks = static_glue_definitions.after_scenario_hooks.into_iter()
-            .map(HookDefinition::from)
-            .collect();
+            .for_each(|(expression, step_definition)| {
+                let new_location = step_definition.location;
+
+                if let Some(prev) = step_definitions_by_pattern.insert(expression, step_definition) {
+                    let prev_location = prev.location;
+                    panic!("duplicate step definition \"{}\":
+   first: {}
+  second: {}", prev.expression.regex.as_str(), prev_location, new_location)
+                }
+            });
 
         Glue {
             before_scenario_hooks,

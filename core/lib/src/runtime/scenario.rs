@@ -18,7 +18,7 @@ pub struct Scenario<'a, 'b, 'c: 'b> {
     id: String,
     lines: Vec<u32>,
     event_bus: &'b EventBus<'c>,
-    pub glue_scenario: glue::Scenario,
+    pub(crate) glue_scenario: glue::scenario::Scenario,
 }
 
 impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
@@ -43,7 +43,7 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
             id,
             lines,
             event_bus,
-            glue_scenario: glue::Scenario::new(),
+            glue_scenario: glue::scenario::Scenario::new(),
         }
     }
 

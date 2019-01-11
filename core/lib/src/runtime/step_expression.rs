@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use glue::{StepArgument, ExpressionArgument};
+use glue::step::argument::{StepArgument, Expression};
 
 #[derive(Debug, Clone)]
 pub struct StepExpression {
@@ -15,14 +15,12 @@ impl StepExpression {
     }
 
     pub fn matched_arguments(&self, text: &str) -> Option<Vec<StepArgument>> {
-        let mut matches = self.regex.find_iter(text);
-
-        let mut caps = self.regex.captures(text)?;
+        let caps = self.regex.captures(text)?;
 
         let matched_arguments = caps.iter()
             .skip(1) // The first match always corresponds to the overall match of the regex.
             .filter_map(|opt_mat| {
-                opt_mat.map(|mat| StepArgument::Expression(ExpressionArgument::from(mat)))
+                opt_mat.map(|mat| StepArgument::Expression(Expression::from(mat)))
             })
             .collect::<Vec<StepArgument>>();
 

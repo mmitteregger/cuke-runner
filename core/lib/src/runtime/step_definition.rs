@@ -5,8 +5,8 @@ use std::fmt;
 use gherkin::pickle::{PickleArgument, PickleStep};
 
 use api::CodeLocation;
-use glue::{StaticStepDefinition, StepFn};
-use glue::{StepArgument, DocStringArgument, DataTableArgument};
+use glue::step::{StaticStepDef, StepFn};
+use glue::step::argument::{StepArgument, DocString, DataTable};
 use runtime::Scenario;
 
 use super::step_expression::StepExpression;
@@ -32,13 +32,13 @@ impl fmt::Debug for StepDefinition {
     }
 }
 
-impl From<&&StaticStepDefinition> for StepDefinition {
-    fn from(static_step_definition: &&StaticStepDefinition) -> Self {
+impl From<&&StaticStepDef> for StepDefinition {
+    fn from(static_step_def: &&StaticStepDef) -> Self {
         StepDefinition {
-            expression: StepExpression::from_regex(static_step_definition.expression),
+            expression: StepExpression::from_regex(static_step_def.expression),
             parameter_infos: Vec::new(),
-            step_fn: static_step_definition.step_fn,
-            location: static_step_definition.location,
+            step_fn: static_step_def.step_fn,
+            location: static_step_def.location,
         }
     }
 }
@@ -65,9 +65,9 @@ impl StepDefinition {
 
             match argument {
                 PickleArgument::String(pickle_string) =>
-                    matched_arguments.push(StepArgument::DocString(DocStringArgument::from(pickle_string))),
+                    matched_arguments.push(StepArgument::DocString(DocString::from(pickle_string))),
                 PickleArgument::Table(pickle_table) =>
-                    matched_arguments.push(StepArgument::DataTable(DataTableArgument::from(pickle_table))),
+                    matched_arguments.push(StepArgument::DataTable(DataTable::from(pickle_table))),
                 _ => eprintln!("Ignoring unknown step argument: {:?}", argument),
             }
 
@@ -89,7 +89,7 @@ impl StepDefinition {
 
     /// Invokes the step definition.
     pub fn execute(&self, scenario: &mut Scenario, args: &[StepArgument])
-        -> ::std::result::Result<(), ::glue::ExecutionError>
+        -> ::std::result::Result<(), ::glue::error::ExecutionError>
     {
         let result = (self.step_fn)(&mut scenario.glue_scenario, args);
         result

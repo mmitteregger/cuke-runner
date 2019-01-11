@@ -86,17 +86,17 @@ fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
     let span = ident.span().unstable().join(ty.span()).unwrap().into();
     quote_spanned! { span =>
         #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::FromScenario::from_scenario(__scenario) {
+        let #ident: #ty = match ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario) {
             Ok(scenario_data) => scenario_data,
             Err(error) => {
-                return Err(::cuke_runner::glue::ExecutionError::from(error))
+                return Err(::cuke_runner::glue::error::ExecutionError::from(error))
             },
         };
     }
 }
 
 fn generate_fn_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
-    use glue::HookType::*;
+    use glue::hook::HookType::*;
 
     let hook_fn_prefix = match hook_type.0 {
         BeforeScenario => BEFORE_SCENARIO_HOOK_FN_PREFIX,
@@ -109,7 +109,7 @@ fn generate_fn_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident
 }
 
 fn generate_struct_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
-    use glue::HookType::*;
+    use glue::hook::HookType::*;
 
     let hook_struct_prefix = match hook_type.0 {
         BeforeScenario => BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
@@ -151,8 +151,8 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
 
         /// Cuke runner code generated wrapping hook function.
         #vis fn #generated_fn_name(
-            __scenario: &mut ::cuke_runner::glue::Scenario,
-        ) -> ::std::result::Result<(), ::cuke_runner::glue::ExecutionError> {
+            __scenario: &mut ::cuke_runner::glue::scenario::Scenario,
+        ) -> ::std::result::Result<(), ::cuke_runner::glue::error::ExecutionError> {
 
             #(#data_statements)*
 
@@ -160,14 +160,14 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
             let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(|| #user_handler_fn_name(#(#parameter_names),*)));
             match result {
                 Ok(user_handler_fn_result) => return Ok(()),
-                Err(err) => return Err(::cuke_runner::glue::panic_error(err)),
+                Err(err) => return Err(::cuke_runner::glue::error::panic_error(err)),
             };
         }
 
         /// Cuke runner code generated static hook info.
         #[allow(non_upper_case_globals)]
-        #vis static #generated_struct_name: ::cuke_runner::glue::StaticHookDefinition =
-            ::cuke_runner::glue::StaticHookDefinition {
+        #vis static #generated_struct_name: ::cuke_runner::glue::hook::StaticHookDef =
+            ::cuke_runner::glue::hook::StaticHookDef {
                 name: stringify!(#user_handler_fn_name),
                 order: #order,
                 hook_fn: #generated_fn_name,
@@ -194,7 +194,7 @@ fn complete_hook(args: TokenStream2, input: TokenStream) -> Result<TokenStream> 
 }
 
 fn incomplete_hook(
-    hook_type: ::glue::HookType,
+    hook_type: ::glue::hook::HookType,
     args: TokenStream2,
     input: TokenStream
 ) -> Result<TokenStream> {
@@ -225,7 +225,7 @@ fn incomplete_hook(
     codegen_hook(parse_hook(attribute, function)?)
 }
 
-pub fn hook_attribute<T: Into<Option<::glue::HookType>>>(
+pub fn hook_attribute<T: Into<Option<::glue::hook::HookType>>>(
     hook_type: T,
     args: TokenStream,
     input: TokenStream
