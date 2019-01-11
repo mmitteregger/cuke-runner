@@ -37,23 +37,23 @@ crate fn generate_glue_macro(_input: TokenStream) -> Result<TokenStream> {
 
     let call_site_span = Span::call_site();
     let static_glue_definition_tokens = quote_spanned! {call_site_span=>
-        pub static BEFORE_SCENARIO_HOOK_DEFINITIONS: &[&::cuke_runner::glue::StaticHookDefinition] = &[
+        pub static BEFORE_SCENARIO_HOOK_DEFINITIONS: &[&::cuke_runner::glue::hook::StaticHookDef] = &[
             #(&#before_scenario_hook_definition_path_tokens,
             )*
         ];
-        pub static BEFORE_STEP_HOOK_DEFINITIONS: &[&::cuke_runner::glue::StaticHookDefinition] = &[
+        pub static BEFORE_STEP_HOOK_DEFINITIONS: &[&::cuke_runner::glue::hook::StaticHookDef] = &[
             #(&#before_step_hook_definition_path_tokens,
             )*
         ];
-        pub static STEP_DEFINITIONS: &[&::cuke_runner::glue::StaticStepDefinition] = &[
+        pub static STEP_DEFINITIONS: &[&::cuke_runner::glue::step::StaticStepDef] = &[
             #(&#step_definition_path_tokens,
             )*
         ];
-        pub static AFTER_STEP_HOOK_DEFINITIONS: &[&::cuke_runner::glue::StaticHookDefinition] = &[
+        pub static AFTER_STEP_HOOK_DEFINITIONS: &[&::cuke_runner::glue::hook::StaticHookDef] = &[
             #(&#after_step_hook_definition_path_tokens,
             )*
         ];
-        pub static AFTER_SCENARIO_HOOK_DEFINITIONS: &[&::cuke_runner::glue::StaticHookDefinition] = &[
+        pub static AFTER_SCENARIO_HOOK_DEFINITIONS: &[&::cuke_runner::glue::hook::StaticHookDef] = &[
             #(&#after_scenario_hook_definition_path_tokens,
             )*
         ];

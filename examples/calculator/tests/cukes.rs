@@ -6,11 +6,11 @@ extern crate cuke_runner;
 
 use cuke_runner::{Config, ExecutionMode, Glue};
 
-mod glue;
+mod steps;
 
 #[test]
 fn test_cucumber_features() {
-    let glue = glue![glue];
+    let glue = glue![steps];
 
     let config = Config {
         features_dir: [env!("CARGO_MANIFEST_DIR"), "tests", "features"].iter().collect(),

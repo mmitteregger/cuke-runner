@@ -23,9 +23,9 @@ pub enum Error {
     /// An error that occurred while parsing a feature file.
     Gherkin(#[cause] gherkin::Error),
     /// An error that occurred while converting scenario data to a step function parameter.
-    FromScenario(#[cause] glue::FromScenarioError),
+    FromScenario(#[cause] glue::scenario::FromScenarioError),
     /// An error that occurred while executing a step or hook function.
-    Execution(#[cause] ::glue::ExecutionError),
+    Execution(#[cause] ::glue::error::ExecutionError),
     AmbiguousStepDefinitions,
     UndefinedStepDefinition,
     Pending,
@@ -62,14 +62,14 @@ impl From<gherkin::Error> for Error {
     }
 }
 
-impl From<glue::FromScenarioError> for Error {
-    fn from(err: glue::FromScenarioError) -> Error {
+impl From<glue::scenario::FromScenarioError> for Error {
+    fn from(err: glue::scenario::FromScenarioError) -> Error {
         Error::FromScenario(err)
     }
 }
 
-impl From<glue::ExecutionError> for Error {
-    fn from(err: glue::ExecutionError) -> Error {
+impl From<glue::error::ExecutionError> for Error {
+    fn from(err: glue::error::ExecutionError) -> Error {
         Error::Execution(err)
     }
 }

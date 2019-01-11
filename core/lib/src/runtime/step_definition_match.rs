@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use gherkin::pickle::PickleStep;
-use glue::StepArgument;
+use glue::step::argument::StepArgument;
 
 use error::{Result, Error};
 use api::CodeLocation;

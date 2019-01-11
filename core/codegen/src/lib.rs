@@ -17,10 +17,10 @@ extern crate log;
 extern crate devise;
 extern crate syntax_pos;
 
-use proc_macro2::Span;
 use proc_macro::TokenStream;
 
-use glue::{HookType, StepKeyword};
+use glue::hook::HookType;
+use glue::step::StepKeyword;
 
 #[macro_use]
 mod proc_macro_ext;
@@ -93,18 +93,6 @@ pub fn generate_glue(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn glue(_input: TokenStream) -> TokenStream {
-    // TODO: Use input instead of hardcoded glue module
-    let call_site_span = Span::call_site();
-    let glue = quote_spanned! {call_site_span=>
-        Glue::from(::cuke_runner::glue::StaticGlueDefinitions {
-            before_scenario_hooks: glue::BEFORE_SCENARIO_HOOK_DEFINITIONS,
-            before_step_hooks: glue::BEFORE_STEP_HOOK_DEFINITIONS,
-            steps: glue::STEP_DEFINITIONS,
-            after_step_hooks: glue::AFTER_STEP_HOOK_DEFINITIONS,
-            after_scenario_hooks: glue::AFTER_SCENARIO_HOOK_DEFINITIONS,
-        })
-    };
-
-    TokenStream::from(glue)
+pub fn glue(input: TokenStream) -> TokenStream {
+    emit!(bang::glue_macro(input))
 }

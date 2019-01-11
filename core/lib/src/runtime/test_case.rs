@@ -87,7 +87,6 @@ pub fn run(test_case: Rc<TestCase>, event_bus: &EventBus) {
 
     let mut skip_next_step = test_case.dry_run;
     let mut scenario = runtime::Scenario::new(&test_case.pickle_event, event_bus);
-    let language = &test_case.pickle_event.pickle.language;
 
     for before_hook in &test_case.before_hooks {
         let hook_result = before_hook.run(event_bus, &mut scenario, test_case.dry_run);

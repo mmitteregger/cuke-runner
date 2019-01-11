@@ -1,12 +1,7 @@
 use std::fmt;
 
-use {Scenario, FromScenarioError, StepArgument, FromStepArgumentError};
-
-/// The type of a generated hook handler (wraps a user defined hook function).
-pub type HookFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;
-
-/// The type of a step handler (wraps a user defined step function).
-pub type StepFn = fn(&mut Scenario, &[StepArgument]) -> ::std::result::Result<(), ExecutionError>;
+use crate::scenario::FromScenarioError;
+use crate::step::argument::FromStepArgumentError;
 
 #[derive(Fail, Debug)]
 pub enum ExecutionError {

@@ -1,4 +1,3 @@
-use gherkin::event::PickleEvent;
 use gherkin::pickle::PickleTag;
 
 #[derive(Debug, Clone)]
@@ -17,11 +16,7 @@ impl TagPredicate {
         }
     }
 
-    pub fn apply_event(&self, pickle_event: &PickleEvent) -> bool {
-        self.apply_tags(&pickle_event.pickle.tags)
-    }
-
-    pub fn apply_tags(&self, pickle_tags: &Vec<PickleTag>) -> bool {
+    pub fn test(&self, pickle_tags: &Vec<PickleTag>) -> bool {
         // TODO: apply tag expression
         true
     }

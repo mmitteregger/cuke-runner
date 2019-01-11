@@ -1,4 +1,5 @@
-use cuke_runner::glue::{Scenario, FromScenario, FromScenarioError, DataTable, FromDataTableRow};
+use cuke_runner::glue::scenario::{Scenario, FromScenario, FromScenarioError};
+use cuke_runner::glue::step::argument::{DataTable, FromDataTableRow, FromStepArgumentResult};
 
 use calculator::RpnCalculator;
 
@@ -67,7 +68,7 @@ pub fn assert_result(calc: &mut Calc, expected: f64) {
 
 #[given("the previous entries:")]
 pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
-    let entries: Vec<Entry> = data_table.to_vec();
+    let entries: Vec<Entry> = data_table.to_vec().unwrap();
 
     for entry in entries {
         calc.push(entry.first);
@@ -76,18 +77,18 @@ pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
     }
 }
 
-struct Entry {
-    first: String,
-    second: String,
-    operation: String,
+struct Entry<'a> {
+    first: &'a str,
+    second: &'a str,
+    operation: &'a str,
 }
 
-impl FromDataTableRow for Entry {
-    fn from_data_table_row(row: &[String]) -> Self {
-        Entry {
-            first: row[0].clone(),
-            second: row[1].clone(),
-            operation: row[2].clone(),
-        }
+impl<'a> FromDataTableRow<'a> for Entry<'a> {
+    fn from_data_table_row<S: AsRef<str>>(row: &'a [S]) -> FromStepArgumentResult<Self> {
+        Ok(Entry {
+            first: row[0].as_ref(),
+            second: row[1].as_ref(),
+            operation: row[2].as_ref(),
+        })
     }
 }

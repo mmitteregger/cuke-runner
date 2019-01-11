@@ -4,32 +4,29 @@ extern crate failure;
 #[macro_use]
 extern crate failure_derive;
 
-mod hook_type;
-mod step_keyword;
-mod step_argument;
-mod scenario;
-mod from_scenario;
-mod from_step_argument;
-mod code_location;
-mod step_definition;
-mod hook_definition;
-mod handler;
+pub mod error;
+pub mod scenario;
+pub mod step;
+pub mod hook;
 
-pub use hook_type::*;
-pub use step_keyword::*;
-pub use step_argument::*;
-pub use scenario::*;
-pub use from_scenario::*;
-pub use from_step_argument::*;
-pub use code_location::*;
-pub use step_definition::*;
-pub use hook_definition::*;
-pub use handler::*;
+use std::fmt;
+
+#[derive(Debug, Copy, Clone)]
+pub struct CodeLocation {
+    pub file_path: &'static str,
+    pub line_number: usize,
+}
+
+impl fmt::Display for CodeLocation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}:{}", self.file_path, self.line_number)
+    }
+}
 
 pub struct StaticGlueDefinitions {
-    pub before_scenario_hooks: &'static [&'static StaticHookDefinition],
-    pub before_step_hooks: &'static [&'static StaticHookDefinition],
-    pub steps: &'static [&'static StaticStepDefinition],
-    pub after_step_hooks: &'static [&'static StaticHookDefinition],
-    pub after_scenario_hooks: &'static [&'static StaticHookDefinition],
+    pub before_scenario_hooks: &'static [&'static hook::StaticHookDef],
+    pub before_step_hooks: &'static [&'static hook::StaticHookDef],
+    pub steps: &'static [&'static step::StaticStepDef],
+    pub after_step_hooks: &'static [&'static hook::StaticHookDef],
+    pub after_scenario_hooks: &'static [&'static hook::StaticHookDef],
 }

@@ -6,10 +6,10 @@ use glue;
 use proc_macro_ext::StringLit;
 
 #[derive(Debug)]
-crate struct HookType(crate glue::HookType);
+crate struct HookType(crate glue::hook::HookType);
 
 #[derive(Debug)]
-crate struct StepKeyword(crate glue::StepKeyword);
+crate struct StepKeyword(crate glue::step::StepKeyword);
 
 #[derive(Debug)]
 crate struct Regex(crate regex::Regex);
@@ -25,11 +25,11 @@ impl FromMeta for StringLit {
 
 const VALID_HOOK_TYPES_STR: &str = "`BeforeScenario`, `BeforeStep`, `AfterStep`, `AfterScenario`";
 
-const VALID_HOOK_TYPES: &[glue::HookType] = &[
-    glue::HookType::BeforeScenario,
-    glue::HookType::BeforeStep,
-    glue::HookType::AfterStep,
-    glue::HookType::AfterScenario,
+const VALID_HOOK_TYPES: &[glue::hook::HookType] = &[
+    glue::hook::HookType::BeforeScenario,
+    glue::hook::HookType::BeforeStep,
+    glue::hook::HookType::AfterStep,
+    glue::hook::HookType::AfterScenario,
 ];
 
 impl FromMeta for HookType {
@@ -55,11 +55,13 @@ impl FromMeta for HookType {
 
 impl ToTokens for HookType {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
+        use glue::hook::HookType::*;
+
         let keyword_tokens = match self.0 {
-            glue::HookType::BeforeScenario => quote!(::cuke_runner::glue::HookType::BeforeScenario),
-            glue::HookType::BeforeStep => quote!(::cuke_runner::glue::HookType::BeforeStep),
-            glue::HookType::AfterStep => quote!(::cuke_runner::glue::HookType::AfterStep),
-            glue::HookType::AfterScenario => quote!(::cuke_runner::glue::HookType::AfterScenario),
+            BeforeScenario => quote!(::cuke_runner::glue::HookType::BeforeScenario),
+            BeforeStep => quote!(::cuke_runner::glue::HookType::BeforeStep),
+            AfterStep => quote!(::cuke_runner::glue::HookType::AfterStep),
+            AfterScenario => quote!(::cuke_runner::glue::HookType::AfterScenario),
         };
 
         tokens.extend(keyword_tokens);
@@ -68,11 +70,11 @@ impl ToTokens for HookType {
 
 const VALID_STEPS_STR: &str = "`Given`, `When`, `Then`";
 
-const VALID_STEPS: &[glue::StepKeyword] = &[
-    glue::StepKeyword::Given,
-    glue::StepKeyword::When,
-    glue::StepKeyword::Then,
-    glue::StepKeyword::Star,
+const VALID_STEPS: &[glue::step::StepKeyword] = &[
+    glue::step::StepKeyword::Given,
+    glue::step::StepKeyword::When,
+    glue::step::StepKeyword::Then,
+    glue::step::StepKeyword::Star,
 ];
 
 impl FromMeta for StepKeyword {
@@ -98,11 +100,13 @@ impl FromMeta for StepKeyword {
 
 impl ToTokens for StepKeyword {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
+        use glue::step::StepKeyword::*;
+
         let keyword_tokens = match self.0 {
-            glue::StepKeyword::Star => quote!(::cuke_runner::glue::StepKeyword::Star),
-            glue::StepKeyword::Given => quote!(::cuke_runner::glue::StepKeyword::Given),
-            glue::StepKeyword::When => quote!(::cuke_runner::glue::StepKeyword::When),
-            glue::StepKeyword::Then => quote!(::cuke_runner::glue::StepKeyword::Then),
+            Star => quote!(::cuke_runner::glue::step::StepKeyword::Star),
+            Given => quote!(::cuke_runner::glue::step::StepKeyword::Given),
+            When => quote!(::cuke_runner::glue::step::StepKeyword::When),
+            Then => quote!(::cuke_runner::glue::step::StepKeyword::Then),
         };
 
         tokens.extend(keyword_tokens);
