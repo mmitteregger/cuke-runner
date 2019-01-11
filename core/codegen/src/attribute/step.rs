@@ -73,20 +73,37 @@ fn parse_step(attr: StepAttribute, function: syn::ItemFn) -> Result<Step> {
     diags.head_err_or(Step { attribute: attr, function, inputs })
 }
 
-fn step_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
-    quote_spanned! { span =>
-        #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = unimplemented!("step_data_expr");
-    }
-}
-
 fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
     let span = ident.span().unstable().join(ty.span()).unwrap().into();
     quote_spanned! { span =>
         #[allow(non_snake_case, unreachable_patterns)]
         let #ident: #ty = match ::cuke_runner::glue::FromScenario::from_scenario(__scenario) {
             Ok(scenario_data) => scenario_data,
+            Err(error) => {
+                return Err(::cuke_runner::glue::ExecutionError::from(error))
+            },
+        };
+    }
+}
+
+fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize) -> TokenStream2 {
+    let span = ident.span().unstable().join(ty.span()).unwrap().into();
+
+    if let syn::Type::Reference(ref type_reference) = ty {
+        if let syn::Type::Path(ref type_path) = *type_reference.elem {
+            if type_path.path.segments.len() == 1 && type_path.path.segments[0].ident == "str" {
+                return quote_spanned! { span =>
+                    #[allow(non_snake_case, unreachable_patterns)]
+                    let #ident: #ty = __step_arguments[#step_argument_index].get_value();
+                };
+            }
+        }
+    }
+
+    quote_spanned! { span =>
+        #[allow(non_snake_case, unreachable_patterns)]
+        let #ident: #ty = match ::cuke_runner::glue::FromStepArgument::from_step_argument(&__step_arguments[#step_argument_index]) {
+            Ok(step_argument) => step_argument,
             Err(error) => {
                 return Err(::cuke_runner::glue::ExecutionError::from(error))
             },
@@ -115,13 +132,14 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
     let expression = step.attribute.expression;
 
     let mut data_statements = Vec::with_capacity(step.inputs.len());
-    // The first capture group is the entire regex which should not be considered
-    let scenario_argument_count = expression.value.0.captures_len() - 1;
+    let mut first = true;
     for (index, (_ident, cuke_runner_ident, ty)) in step.inputs.iter().enumerate() {
-        if index < scenario_argument_count {
-            data_statements.push(step_data_expr(cuke_runner_ident, &ty));
-        } else {
+        if first {
             data_statements.push(scenario_data_expr(cuke_runner_ident, &ty));
+            first = false;
+        } else {
+            let step_argument_index = index - 1;
+            data_statements.push(step_data_expr(cuke_runner_ident, &ty, step_argument_index));
         }
     }
 
@@ -131,6 +149,7 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
         /// Cuke runner code generated wrapping step function.
         #vis fn #generated_fn_name(
             __scenario: &mut ::cuke_runner::glue::Scenario,
+            __step_arguments: &[::cuke_runner::glue::StepArgument],
         ) -> ::std::result::Result<(), ::cuke_runner::glue::ExecutionError> {
 
             #(#data_statements)*

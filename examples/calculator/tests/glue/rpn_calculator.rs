@@ -1,5 +1,4 @@
-//use cuke_runner::State;
-use cuke_runner::glue::{Scenario, FromScenario, FromScenarioError};
+use cuke_runner::glue::{Scenario, FromScenario, FromScenarioError, DataTable, FromDataTableRow};
 
 use calculator::RpnCalculator;
 
@@ -49,53 +48,46 @@ pub fn reset_calculator(calc: &mut Calc) {
     calc.reset();
 }
 
-// Another option:
-//#[given("a calculator I just turned on")]
-//pub fn reset_calculator_2() {
-//    let mut calc = State::<RpnCalculator>::get();
-//    calc.reset();
-//}
-
 #[when("I add (\\d+) and (\\d+)")]
-pub fn add(arg1: &str, arg2: &str, calc: &mut Calc) {
+pub fn add(calc: &mut Calc, arg1: &str, arg2: &str) {
     calc.push(arg1);
     calc.push(arg2);
     calc.push("+");
 }
 
 #[given("I press (.+)")]
-pub fn press(what: String, calc: &mut Calc) {
+pub fn press(calc: &mut Calc, what: &str) {
     calc.push(what)
 }
 
 #[then("the result is (.*)")]
-pub fn assert_result(expected: f64, calc: &mut Calc) {
+pub fn assert_result(calc: &mut Calc, expected: f64) {
     assert_eq!(calc.value(), expected);
 }
 
-//
-//After((Scenario scenario) -> {
-//    // result.write("HELLLLOO");
-//});
-//
-//
-//Given("the previous entries:", (DataTable dataTable) -> {
-//    List<Entry> entries = dataTable.asList(Entry.class);
-//    for (Entry entry : entries) {
-//        calc.push(entry.first);
-//        calc.push(entry.second);
-//        calc.push(entry.operation);
-//    }
-//});
-//
-//static final class Entry {
-//    private final Integer first;
-//    private final Integer second;
-//    private final String operation;
-//
-//    Entry(Integer first, Integer second, String operation) {
-//        this.first = first;
-//        this.second = second;
-//        this.operation = operation;
-//    }
-//}
+#[given("the previous entries:")]
+pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
+    let entries: Vec<Entry> = data_table.to_vec();
+
+    for entry in entries {
+        calc.push(entry.first);
+        calc.push(entry.second);
+        calc.push(entry.operation);
+    }
+}
+
+struct Entry {
+    first: String,
+    second: String,
+    operation: String,
+}
+
+impl FromDataTableRow for Entry {
+    fn from_data_table_row(row: &[String]) -> Self {
+        Entry {
+            first: row[0].clone(),
+            second: row[1].clone(),
+            operation: row[2].clone(),
+        }
+    }
+}

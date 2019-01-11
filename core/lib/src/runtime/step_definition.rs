@@ -1,13 +1,15 @@
 //use std::time::Duration;
-use std::any::{TypeId, Any};
+use std::any::TypeId;
 use std::fmt;
 
-use gherkin::pickle::{PickleStep, PickleArgument};
+use gherkin::pickle::{PickleArgument, PickleStep};
 
 use api::CodeLocation;
 use glue::{StaticStepDefinition, StepFn};
+use glue::{StepArgument, DocStringArgument, DataTableArgument};
 use runtime::Scenario;
-use super::step_expression::{StepExpression, Argument};
+
+use super::step_expression::StepExpression;
 
 #[derive(Clone)]
 pub struct StepDefinition {
@@ -47,7 +49,7 @@ impl StepDefinition {
     /// Returns `None` if the step definition doesn't match at all.
     /// Returns an empty `Vec` if it matches with 0 arguments
     /// and bigger sizes if it matches several.
-    pub fn matched_arguments(&self, step: &PickleStep) -> Option<Vec<Argument>> {
+    pub fn matched_arguments(&self, step: &PickleStep) -> Option<Vec<StepArgument>> {
         let mut matched_arguments = match self.expression.matched_arguments(&step.text) {
             Some(arguments) => arguments,
             None => return None,
@@ -63,12 +65,9 @@ impl StepDefinition {
 
             match argument {
                 PickleArgument::String(pickle_string) =>
-                    matched_arguments.push(Argument::DocString(pickle_string.content.clone())),
-                PickleArgument::Table(_pickle_table) =>
-                    {
-                        unimplemented!();
-//                        matched_arguments.push(Argument::DataTable)
-                    },
+                    matched_arguments.push(StepArgument::DocString(DocStringArgument::from(pickle_string))),
+                PickleArgument::Table(pickle_table) =>
+                    matched_arguments.push(StepArgument::DataTable(DataTableArgument::from(pickle_table))),
                 _ => eprintln!("Ignoring unknown step argument: {:?}", argument),
             }
 
@@ -89,8 +88,10 @@ impl StepDefinition {
     }
 
     /// Invokes the step definition.
-    pub fn execute(&self, scenario: &mut Scenario, args: Vec<Box<Any>>) -> ::std::result::Result<(), ::glue::ExecutionError> {
-        let result = (self.step_fn)(&mut scenario.glue_scenario);
+    pub fn execute(&self, scenario: &mut Scenario, args: &[StepArgument])
+        -> ::std::result::Result<(), ::glue::ExecutionError>
+    {
+        let result = (self.step_fn)(&mut scenario.glue_scenario, args);
         result
 
     }

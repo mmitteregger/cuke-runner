@@ -1,17 +1,18 @@
 use std::fmt;
 
-use {Scenario, FromScenarioError};
+use {Scenario, FromScenarioError, StepArgument, FromStepArgumentError};
 
 /// The type of a generated hook handler (wraps a user defined hook function).
 pub type HookFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;
 
 /// The type of a step handler (wraps a user defined step function).
-pub type StepFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;
+pub type StepFn = fn(&mut Scenario, &[StepArgument]) -> ::std::result::Result<(), ExecutionError>;
 
 #[derive(Fail, Debug)]
 pub enum ExecutionError {
     /// An error that occurred while converting scenario data to a step function parameter.
     FromScenario(#[cause] FromScenarioError),
+    FromStepArgument(#[cause] FromStepArgumentError),
     Panic(#[cause] PanicError),
     Other(#[cause] ::failure::Error),
 }
@@ -37,10 +38,17 @@ impl From<FromScenarioError> for ExecutionError {
     }
 }
 
+impl From<FromStepArgumentError> for ExecutionError {
+    fn from(err: FromStepArgumentError) -> ExecutionError {
+        ExecutionError::FromStepArgument(err)
+    }
+}
+
 impl fmt::Display for ExecutionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             ExecutionError::FromScenario(ref err) => fmt::Display::fmt(err, f),
+            ExecutionError::FromStepArgument(ref err) => fmt::Display::fmt(err, f),
             ExecutionError::Panic(ref err) => fmt::Display::fmt(err, f),
             ExecutionError::Other(ref err) => fmt::Display::fmt(err, f),
         }
