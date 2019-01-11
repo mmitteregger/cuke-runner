@@ -1,6 +1,6 @@
 const OPS: &[char] = &['-', '+', '*', '/'];
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RpnCalculator {
     stack: Vec<f64>,
 }
@@ -48,6 +48,6 @@ impl RpnCalculator {
     }
 
     pub fn value(&self) -> f64 {
-        self.stack.last().unwrap().clone()
+        *self.stack.last().unwrap()
     }
 }

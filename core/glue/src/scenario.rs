@@ -2,7 +2,7 @@ use std::fmt;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Scenario {
     user_data: HashMap<TypeId, Box<Any>>,
 }

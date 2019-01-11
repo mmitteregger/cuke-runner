@@ -20,29 +20,29 @@ pub struct Glue {
 
 impl From<&[StaticGlueDefinitions]> for Glue {
     fn from(static_glue_definitions: &[StaticGlueDefinitions]) -> Glue {
-        let before_scenario_hooks = static_glue_definitions.into_iter()
-            .flat_map(|glue| glue.before_scenario_hooks.into_iter())
+        let before_scenario_hooks = static_glue_definitions.iter()
+            .flat_map(|glue| glue.before_scenario_hooks.iter())
             .map(HookDefinition::from)
             .collect();
-        let before_step_hooks = static_glue_definitions.into_iter()
-            .flat_map(|glue| glue.before_step_hooks.into_iter())
+        let before_step_hooks = static_glue_definitions.iter()
+            .flat_map(|glue| glue.before_step_hooks.iter())
             .map(HookDefinition::from)
             .collect();
-        let after_step_hooks = static_glue_definitions.into_iter()
-            .flat_map(|glue| glue.after_step_hooks.into_iter())
+        let after_step_hooks = static_glue_definitions.iter()
+            .flat_map(|glue| glue.after_step_hooks.iter())
             .map(HookDefinition::from)
             .collect();
-        let after_scenario_hooks = static_glue_definitions.into_iter()
-            .flat_map(|glue| glue.after_scenario_hooks.into_iter())
+        let after_scenario_hooks = static_glue_definitions.iter()
+            .flat_map(|glue| glue.after_scenario_hooks.iter())
             .map(HookDefinition::from)
             .collect();
 
-        let step_definitions_capacity = static_glue_definitions.into_iter()
-            .flat_map(|glue| glue.steps.into_iter())
+        let step_definitions_capacity = static_glue_definitions.iter()
+            .flat_map(|glue| glue.steps.iter())
             .count();
         let mut step_definitions_by_pattern = HashMap::with_capacity(step_definitions_capacity);
-        static_glue_definitions.into_iter()
-            .flat_map(|glue| glue.steps.into_iter())
+        static_glue_definitions.iter()
+            .flat_map(|glue| glue.steps.iter())
             .map(|static_step_definition|
                 (static_step_definition.expression, StepDefinition::from(static_step_definition)))
             .for_each(|(expression, step_definition)| {
@@ -87,7 +87,7 @@ impl Glue {
         &self.after_scenario_hooks
     }
 
-    pub fn step_definition_match(&self, feature_path: &String, step: PickleStep)
+    pub fn step_definition_match(&self, feature_path: &str, step: PickleStep)
         -> Box<StepDefinitionMatch> {
 
         let step = Arc::new(step);
@@ -102,7 +102,7 @@ impl Glue {
         }
         if matches.len() > 1 {
             return Box::new(AmbiguousPickleStepDefinitionMatch {
-                feature_path: feature_path.clone(),
+                feature_path: feature_path.to_owned(),
                 step,
                 arguments: Vec::new(),
             });
@@ -112,7 +112,7 @@ impl Glue {
         Box::new(step_definition_match)
     }
 
-    pub fn step_definition_matches(&self, feature_path: &String, step: Arc<PickleStep>)
+    pub fn step_definition_matches(&self, feature_path: &str, step: Arc<PickleStep>)
         -> Vec<PickleStepDefinitionMatch> {
 
         let mut matches = Vec::new();
@@ -124,7 +124,7 @@ impl Glue {
                 matches.push(PickleStepDefinitionMatch {
                     arguments,
                     step_definition: step_definition.clone(),
-                    feature_path: feature_path.clone(),
+                    feature_path: feature_path.to_owned(),
                     step: step.clone(),
                 });
             }

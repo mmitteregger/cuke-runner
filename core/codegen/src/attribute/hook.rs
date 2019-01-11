@@ -202,7 +202,7 @@ fn incomplete_hook(
     // FIXME(proc_macro): there should be a way to get this `Span`.
     let hook_type_span = StringLit::new(format!("#[{}]", hook_type), Span::call_site())
         .subspan(2..2 + hook_type_str.len())
-        .unwrap_or(Span::call_site());
+        .unwrap_or_else(Span::call_site);
     let hook_type_ident = syn::Ident::new(&hook_type_str, hook_type_span.into());
 
     let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)

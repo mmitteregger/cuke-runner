@@ -116,7 +116,7 @@ impl ToTokens for StepKeyword {
 impl FromMeta for Regex {
     fn from_meta(meta: MetaItem) -> Result<Self> {
         let string = StringLit::from_meta(meta)?;
-        let span = string.subspan(1..(string.len() + 1))
+        let span = string.subspan(1..=string.len())
             .expect("regex");
 
         let result = regex::Regex::new(&string);

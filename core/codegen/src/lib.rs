@@ -46,11 +46,13 @@ crate static PARAM_PREFIX: &str = "__cuke_runner_param_";
 macro_rules! emit {
     ($tokens:expr) => ({
         let tokens = $tokens;
-        if ::std::env::var_os("CUKE_CODEGEN_DEBUG").is_some() {
-            ::proc_macro::Span::call_site()
-                .note("emitting cuke runner code generation debug output")
-                .note(tokens.to_string())
-                .emit()
+        if let Ok(debug) = ::std::env::var("CUKE_CODEGEN_DEBUG") {
+            if &debug == "true" {
+                ::proc_macro::Span::call_site()
+                    .note("emitting cuke runner code generation debug output")
+                    .note(tokens.to_string())
+                    .emit()
+            }
         }
 
         tokens

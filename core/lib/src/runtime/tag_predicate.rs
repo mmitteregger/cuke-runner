@@ -16,7 +16,7 @@ impl TagPredicate {
         }
     }
 
-    pub fn test(&self, pickle_tags: &Vec<PickleTag>) -> bool {
+    pub fn test(&self, pickle_tags: &[PickleTag]) -> bool {
         // TODO: apply tag expression
         true
     }

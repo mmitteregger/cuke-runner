@@ -220,7 +220,7 @@ fn incomplete_step(
     // FIXME(proc_macro): there should be a way to get this `Span`.
     let keyword_span = StringLit::new(format!("#[{}]", keyword), Span::call_site())
         .subspan(2..2 + keyword_str.len())
-        .unwrap_or(Span::call_site());
+        .unwrap_or_else(Span::call_site);
     let keyword_ident = syn::Ident::new(&keyword_str, keyword_span.into());
 
     let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)

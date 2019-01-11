@@ -66,7 +66,7 @@ impl<'a, T: FromStr> FromStepArgument<'a> for T where <T as std::str::FromStr>::
                 .map_err(|err| FromStepArgumentError::new(format!("{:?}", err))),
             None => {
                 Err(FromStepArgumentError::new(
-                    format!("cannot parse DataTable, use DataTable itself as argument type")
+                    "cannot parse DataTable, use DataTable itself as argument type".to_owned()
                 ))
             },
         }

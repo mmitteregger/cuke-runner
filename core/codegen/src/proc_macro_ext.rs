@@ -1,7 +1,7 @@
-use std::ops::{Bound, RangeBounds, Deref};
+use proc_macro::{Diagnostic, Literal, Span};
+use std::ops::{Bound, Deref, RangeBounds};
 
-use proc_macro::{Span, Diagnostic, Literal};
-use syntax_pos::{Span as InnerSpan, Pos, BytePos};
+use syntax_pos::{BytePos, Pos, Span as InnerSpan};
 
 pub type PResult<T> = ::std::result::Result<T, Diagnostic>;
 
@@ -29,9 +29,10 @@ impl Diagnostics {
     }
 
     pub fn head_err_or<T>(self, ok: T) -> PResult<T> {
-        match self.0.is_empty() {
-            true => Ok(ok),
-            false => Err(self.emit_head())
+        if self.0.is_empty() {
+            Ok(ok)
+        } else {
+            Err(self.emit_head())
         }
     }
 }

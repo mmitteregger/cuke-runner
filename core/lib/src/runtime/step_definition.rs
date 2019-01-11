@@ -91,9 +91,7 @@ impl StepDefinition {
     pub fn execute(&self, scenario: &mut Scenario, args: &[StepArgument])
         -> ::std::result::Result<(), ::glue::error::ExecutionError>
     {
-        let result = (self.step_fn)(&mut scenario.glue_scenario, args);
-        result
-
+        (self.step_fn)(&mut scenario.glue_scenario, args)
     }
 
     /// The step definition pattern for error reporting only.

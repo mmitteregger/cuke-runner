@@ -48,10 +48,10 @@ pub enum StepKeyword {
 
 impl StepKeyword {
     #[inline]
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         use self::StepKeyword::*;
 
-        match *self {
+        match self {
             Given => "Given",
             When => "When",
             Then => "Then",

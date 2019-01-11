@@ -1,10 +1,10 @@
-use std::time::Instant;
 use std::io::Write;
+use std::time::Instant;
 
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use api::TestResultStatus;
 use api::event::{Event, EventListener};
+use api::TestResultStatus;
 
 #[derive(Debug)]
 pub struct TestSummaryListener {
@@ -33,7 +33,7 @@ pub struct StatusSummary {
 }
 
 impl StatusSummary {
-    fn add_status(&mut self, status: &TestResultStatus) {
+    fn add_status(&mut self, status: TestResultStatus) {
         self.total += 1;
 
         match status {
@@ -49,11 +49,8 @@ impl StatusSummary {
 
 impl EventListener for TestSummaryListener {
     fn on_event(&mut self, event: &Event) {
-        match *event {
-            Event::TestCaseFinished { ref result, ..} => {
-                self.status_summary.add_status(&result.status)
-            },
-            _ => {},
+        if let Event::TestCaseFinished { ref result, .. } = *event {
+            self.status_summary.add_status(result.status)
         }
     }
 }
@@ -90,8 +87,8 @@ fn write_conditional_colored<C: Fn() -> bool>(stdout: &mut StandardStream,
     if condition_result {
         stdout.set_color(ColorSpec::new().set_fg(Some(color))).unwrap();
     }
-    stdout.write(text.as_bytes()).unwrap();
-    stdout.write(b"\n").unwrap();
+    stdout.write_all(text.as_bytes()).unwrap();
+    stdout.write_all(b"\n").unwrap();
     if condition_result {
         stdout.set_color(ColorSpec::new().set_fg(None)).unwrap();
     }
