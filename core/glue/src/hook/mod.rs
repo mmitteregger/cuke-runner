@@ -42,10 +42,10 @@ pub enum HookType {
 
 impl HookType {
     #[inline]
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         use self::HookType::*;
 
-        match *self {
+        match self {
             BeforeScenario => "BeforeScenario",
             BeforeStep => "BeforeStep",
             AfterStep => "AfterStep",

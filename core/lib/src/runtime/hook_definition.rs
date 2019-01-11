@@ -53,7 +53,7 @@ impl HookDefinition {
         }
     }
 
-    pub fn matches(&self, tags: &Vec<PickleTag>) -> bool {
+    pub fn matches(&self, tags: &[PickleTag]) -> bool {
         self.tag_predicate.test(tags)
     }
 

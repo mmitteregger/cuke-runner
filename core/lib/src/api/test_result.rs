@@ -16,22 +16,22 @@ pub enum TestResultStatus {
 }
 
 impl TestResultStatus {
-    pub fn is_ok(&self, strict: bool) -> bool {
+    pub fn is_ok(self, strict: bool) -> bool {
         self.has_always_ok_status() || (!strict && self.has_ok_when_not_strict_status())
     }
 
-    fn has_always_ok_status(&self) -> bool {
+    fn has_always_ok_status(self) -> bool {
         self.eq(&TestResultStatus::Passed) || self.eq(&TestResultStatus::Skipped)
     }
 
-    fn has_ok_when_not_strict_status(&self) -> bool {
+    fn has_ok_when_not_strict_status(self) -> bool {
         self.eq(&TestResultStatus::Undefined) || self.eq(&TestResultStatus::Pending)
     }
 
-    pub fn ansi_color_code(&self) -> u8 {
+    pub fn ansi_color_code(self) -> u8 {
         use self::TestResultStatus::*;
 
-        match *self {
+        match self {
             Passed => 32 /* green */,
             Skipped => 36 /* cyan */,
             Pending => 33 /* yellow */,

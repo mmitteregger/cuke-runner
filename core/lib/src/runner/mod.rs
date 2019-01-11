@@ -61,17 +61,17 @@ impl Runner {
         Rc::new(test_case)
     }
 
-    fn create_before_scenario_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
+    fn create_before_scenario_hooks(&self, tags: &[PickleTag]) -> Vec<HookTestStep> {
         let hook_definitions = &self.glue.get_before_scenario_hooks();
         self.create_hooks(tags, hook_definitions, HookType::BeforeScenario)
     }
 
-    fn create_after_scenario_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
+    fn create_after_scenario_hooks(&self, tags: &[PickleTag]) -> Vec<HookTestStep> {
         let hook_definitions = &self.glue.get_after_scenario_hooks();
         self.create_hooks(tags, hook_definitions, HookType::AfterScenario)
     }
 
-    fn create_hooks(&self, tags: &Vec<PickleTag>, hook_definitions: &Vec<HookDefinition>,
+    fn create_hooks(&self, tags: &[PickleTag], hook_definitions: &[HookDefinition],
         hook_type: HookType) -> Vec<HookTestStep>
     {
         let mut hooks = Vec::with_capacity(hook_definitions.len());
@@ -114,12 +114,12 @@ impl Runner {
         test_steps
     }
 
-    fn get_before_step_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
+    fn get_before_step_hooks(&self, tags: &[PickleTag]) -> Vec<HookTestStep> {
         let hook_definitions = &self.glue.get_before_step_hooks();
         self.create_hooks(tags, hook_definitions, HookType::BeforeStep)
     }
 
-    fn get_after_step_hooks(&self, tags: &Vec<PickleTag>) -> Vec<HookTestStep> {
+    fn get_after_step_hooks(&self, tags: &[PickleTag]) -> Vec<HookTestStep> {
         let hook_definitions = &self.glue.get_after_step_hooks();
         self.create_hooks(tags, hook_definitions, HookType::AfterStep)
     }

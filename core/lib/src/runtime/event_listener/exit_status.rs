@@ -1,5 +1,5 @@
-use api::TestResultStatus;
 use api::event::{Event, EventListener};
+use api::TestResultStatus;
 
 #[derive(Debug, Default)]
 pub struct ExitStatusListener {
@@ -21,11 +21,8 @@ impl ExitStatusListener {
 
 impl EventListener for ExitStatusListener {
     fn on_event(&mut self, event: &Event) {
-        match *event {
-            Event::TestCaseFinished { ref result, ..} => {
-                self.test_result_statuses.push(result.status);
-            },
-            _ => {},
+        if let Event::TestCaseFinished { ref result, .. } = *event {
+            self.test_result_statuses.push(result.status);
         }
     }
 }

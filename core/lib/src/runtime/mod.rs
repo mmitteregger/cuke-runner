@@ -43,8 +43,7 @@ pub fn run(glue: Glue, config: Config) -> i32 {
         ExecutionMode::ParallelScenarios => run_parallel_scenarios(runner, event_bus, &config),
     }
 
-    let exit_status = exit_status_listener.get_exit_status(config.strict);
-    exit_status
+    exit_status_listener.get_exit_status(config.strict)
 }
 
 fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
@@ -61,7 +60,7 @@ fn run_parallel_features(_runner: Runner, event_bus: EventBus, config: &Config) 
 
     for pickle_event in pickle_events {
         pickle_events_per_feature.entry(pickle_event.uri.clone())
-            .or_insert(Vec::new())
+            .or_insert_with(Vec::new)
             .push(pickle_event);
     }
 

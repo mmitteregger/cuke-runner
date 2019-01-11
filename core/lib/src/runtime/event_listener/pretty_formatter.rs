@@ -2,16 +2,16 @@
 // It is hacked together to print something useful,
 // but there are lots of unnecessary clones and loops that should be avoided!
 
-use std::collections::HashMap;
-use std::rc::Rc;
 use std::cmp;
+use std::collections::HashMap;
 use std::ops::Deref;
+use std::rc::Rc;
 
 use gherkin::ast::*;
 use gherkin::pickle::*;
 
+use api::{Argument, CodeLocation, TestCase, TestResult, TestStep};
 use api::event::{Event, EventListener};
-use api::{TestCase, TestStep, TestResult, Argument, CodeLocation};
 use runner::PickleStepTestStep;
 
 const SCENARIO_INDENT: &str = "  ";
@@ -169,7 +169,7 @@ impl PrettyFormatter {
 
     fn print_error(&self, result: &TestResult) {
         if let Some(error_message) = &result.get_error_message() {
-            let error_line_indention = "\n".to_owned() + &ERROR_INDENT;
+            let error_line_indention = "\n".to_owned() + ERROR_INDENT;
             let mut message = error_message.replace('\n', &error_line_indention);
             message.insert_str(0, &ERROR_INDENT);
             println!("\x1B[{}m{}\x1B[0m\n", result.status.ansi_color_code(), message)
@@ -343,10 +343,8 @@ impl PrettyFormatter {
                         }
                     }
                 }
-            } else {
-                if scenario_definition.get_location().line == line {
-                    return scenario_definition;
-                }
+            } else if scenario_definition.get_location().line == line {
+                return scenario_definition;
             }
         }
 
@@ -368,7 +366,7 @@ impl PrettyFormatter {
     }
 
     fn calculate_location_indentation(&mut self, definition_text: &str,
-        test_steps: &Vec<Box<&TestStep>>, use_background_steps: bool) {
+        test_steps: &[Box<&TestStep>], use_background_steps: bool) {
 
         let mut max_text_length = SCENARIO_INDENT.chars().count() + definition_text.chars().count();
         for step in test_steps {
