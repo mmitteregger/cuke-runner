@@ -2,10 +2,11 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use gherkin::pickle::PickleStep;
+use glue::StepArgument;
 
 use error::{Result, Error};
 use api::CodeLocation;
-use runtime::{Argument, HookDefinition, StepDefinition};
+use runtime::{HookDefinition, StepDefinition};
 use runtime::Scenario;
 
 pub trait StepDefinitionMatch: Debug + Send + Sync {
@@ -19,14 +20,14 @@ pub trait StepDefinitionMatch: Debug + Send + Sync {
 
     fn get_pattern(&self) -> Option<&String>;
 
-    fn get_arguments(&self) -> &Vec<Argument>;
+    fn get_arguments(&self) -> &[StepArgument];
 }
 
 
 #[derive(Debug)]
 pub struct HookDefinitionMatch {
     pub hook_definition: HookDefinition,
-    pub arguments: Vec<Argument>,
+    pub arguments: Vec<StepArgument>,
 }
 
 impl StepDefinitionMatch for HookDefinitionMatch {
@@ -38,7 +39,7 @@ impl StepDefinitionMatch for HookDefinitionMatch {
         self.hook_definition.execute(scenario)
     }
 
-    fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    fn dry_run_step(&self, _scenario: &mut Scenario) -> Result<()> {
         Ok(())
     }
 
@@ -50,7 +51,7 @@ impl StepDefinitionMatch for HookDefinitionMatch {
         None
     }
 
-    fn get_arguments(&self) -> &Vec<Argument> {
+    fn get_arguments(&self) -> &[StepArgument] {
         &self.arguments
     }
 }
@@ -60,7 +61,7 @@ pub struct PickleStepDefinitionMatch {
     pub step_definition: StepDefinition,
     pub feature_path: String,
     pub step: Arc<PickleStep>,
-    pub arguments: Vec<Argument>,
+    pub arguments: Vec<StepArgument>,
 }
 
 impl PickleStepDefinitionMatch {
@@ -68,7 +69,7 @@ impl PickleStepDefinitionMatch {
         self.step_definition.get_pattern()
     }
 
-    pub fn get_arguments(&self) -> &Vec<Argument> {
+    pub fn get_arguments(&self) -> &[StepArgument] {
         &self.arguments
     }
 
@@ -83,11 +84,11 @@ impl StepDefinitionMatch for PickleStepDefinitionMatch {
     }
 
     fn run_step(&self, scenario: &mut Scenario) -> Result<()> {
-        self.step_definition.execute(scenario, Vec::new())?;
+        self.step_definition.execute(scenario, &self.arguments)?;
         Ok(())
     }
 
-    fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    fn dry_run_step(&self, _scenario: &mut Scenario) -> Result<()> {
         Ok(())
     }
 
@@ -99,7 +100,7 @@ impl StepDefinitionMatch for PickleStepDefinitionMatch {
         Some(self.step_definition.get_pattern())
     }
 
-    fn get_arguments(&self) -> &Vec<Argument> {
+    fn get_arguments(&self) -> &[StepArgument] {
         &self.arguments
     }
 }
@@ -108,7 +109,7 @@ impl StepDefinitionMatch for PickleStepDefinitionMatch {
 pub struct AmbiguousPickleStepDefinitionMatch {
     pub feature_path: String,
     pub step: Arc<PickleStep>,
-    pub arguments: Vec<Argument>,
+    pub arguments: Vec<StepArgument>,
 }
 
 impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
@@ -116,8 +117,8 @@ impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
         &self.step
     }
 
-    fn run_step(&self, scenario: &mut Scenario) -> Result<()> {
-        unimplemented!();
+    fn run_step(&self, _scenario: &mut Scenario) -> Result<()> {
+        unimplemented!("AmbiguousPickleStepDefinitionMatch::run_step");
     }
 
     fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
@@ -132,7 +133,7 @@ impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
         None
     }
 
-    fn get_arguments(&self) -> &Vec<Argument> {
+    fn get_arguments(&self) -> &[StepArgument] {
         &self.arguments
     }
 }
@@ -140,7 +141,7 @@ impl StepDefinitionMatch for AmbiguousPickleStepDefinitionMatch {
 #[derive(Debug)]
 pub struct UndefinedPickleStepDefinitionMatch {
     pub step: Arc<PickleStep>,
-    pub arguments: Vec<Argument>,
+    pub arguments: Vec<StepArgument>,
 }
 
 impl StepDefinitionMatch for UndefinedPickleStepDefinitionMatch {
@@ -164,7 +165,7 @@ impl StepDefinitionMatch for UndefinedPickleStepDefinitionMatch {
         None
     }
 
-    fn get_arguments(&self) -> &Vec<Argument> {
+    fn get_arguments(&self) -> &[StepArgument] {
         &self.arguments
     }
 }

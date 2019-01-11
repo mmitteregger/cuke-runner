@@ -1,21 +1,22 @@
+use glue::{StepArgument, ExpressionArgument};
+
 use api;
-use runtime::{step_expression, Argument};
 
 pub struct DefinitionArgument {
-    expression_argument: Argument,
+    expression_argument: ExpressionArgument,
 }
 
 impl DefinitionArgument {
-    pub fn new(expression_argument: Argument) -> DefinitionArgument {
+    pub fn new(expression_argument: ExpressionArgument) -> DefinitionArgument {
         DefinitionArgument { expression_argument }
     }
 
-    pub fn create_arguments(arg_matches: &Vec<step_expression::Argument>) -> Vec<Box<api::Argument>> {
+    pub fn create_arguments(arg_matches: &[StepArgument]) -> Vec<Box<api::Argument>> {
         arg_matches.iter()
-            .filter(|arg_match| {
+            .filter_map(|arg_match| {
                 match arg_match {
-                    Argument::Expression(..) => true,
-                    _ => false,
+                    StepArgument::Expression(expression_argument) => Some(expression_argument),
+                    _ => None,
                 }
             })
             .map(Clone::clone)
@@ -27,15 +28,15 @@ impl DefinitionArgument {
 }
 
 impl api::Argument for DefinitionArgument {
-    fn value(&self) -> Option<String> {
-        unimplemented!()
+    fn value(&self) -> Option<&str> {
+        Some(self.expression_argument.value())
     }
 
     fn start(&self) -> usize {
-        unimplemented!()
+        self.expression_argument.start()
     }
 
     fn end(&self) -> usize {
-        unimplemented!()
+        self.expression_argument.end()
     }
 }
