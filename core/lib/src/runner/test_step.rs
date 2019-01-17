@@ -1,55 +1,58 @@
 use std::time::{SystemTime, Duration};
 
-use gherkin::pickle::{PickleStep, PickleArgument};
+use gherkin::pickle::PickleStep;
 
 use error::{Result, Error};
-use api::{self, event::Event, HookType, CodeLocation, TestResult, TestResultStatus};
+use api::{self, event::Event, FeatureFile, HookType, CodeLocation, TestCase, TestResult, TestResultStatus};
+use glue::step::argument::StepArgument;
 use runner::EventBus;
-use runtime::{StepDefinitionMatch, HookDefinitionMatch, Scenario, DefinitionArgument};
+use runtime::{StepDefinitionMatch, Scenario};
 
 #[derive(Debug)]
-pub struct HookTestStep {
-    pub definition_match: HookDefinitionMatch,
+pub struct HookTestStep<'s> {
+    pub definition_match: StepDefinitionMatch<'s>,
     pub hook_type: HookType,
 }
 
-impl HookTestStep {
+impl<'s> HookTestStep<'s> {
     pub fn run(
         &self,
         event_bus: &EventBus,
+        feature_file: &FeatureFile,
+        test_case: &TestCase,
         scenario: &mut Scenario,
         skip: bool,
     ) -> TestResult
     {
-        let test_step = self as &api::TestStep;
-        run_test_step(test_step, &self.definition_match, event_bus, scenario, skip)
+        let test_step = &api::TestStep::Hook(self as &api::HookTestStep);
+        run_test_step(feature_file, test_case, test_step, &self.definition_match, event_bus, scenario, skip)
     }
 }
 
-impl api::HookTestStep for HookTestStep {
+impl<'s> api::HookTestStep<'s> for HookTestStep<'s> {
+    fn get_code_location(&self) -> Option<&CodeLocation> {
+        self.definition_match.get_location()
+    }
+
     fn get_hook_type(&self) -> HookType {
         self.hook_type
     }
 }
 
-impl api::TestStep for HookTestStep {
-    fn get_code_location(&self) -> Option<&CodeLocation> {
-        self.definition_match.get_location()
-    }
-}
-
 #[derive(Debug)]
-pub struct PickleStepTestStep {
+pub struct PickleStepTestStep<'s> {
     pub uri: String,
-    pub before_step_hook_steps: Vec<HookTestStep>,
-    pub after_step_hook_steps: Vec<HookTestStep>,
-    pub step_definition_match: Box<StepDefinitionMatch>,
+    pub before_step_hook_steps: Vec<HookTestStep<'s>>,
+    pub after_step_hook_steps: Vec<HookTestStep<'s>>,
+    pub step_definition_match: StepDefinitionMatch<'s>,
 }
 
-impl PickleStepTestStep {
+impl<'s> PickleStepTestStep<'s> {
     pub fn run(
         &self,
         event_bus: &EventBus,
+        feature_file: &FeatureFile,
+        test_case: &TestCase,
         scenario: &mut Scenario,
         skip: bool,
     ) -> TestResult
@@ -62,18 +65,18 @@ impl PickleStepTestStep {
         );
 
         for before_step_hook_step in &self.before_step_hook_steps {
-            let hook_result = before_step_hook_step.run(event_bus, scenario, skip);
+            let hook_result = before_step_hook_step.run(event_bus, feature_file, test_case, scenario, skip);
             skip_self = skip_self || !hook_result.status.eq(&TestResultStatus::Passed);
             results.push(hook_result);
         }
 
-        let test_step = self as &api::TestStep;
-        let self_result = run_test_step(test_step, &*self.step_definition_match,
+        let test_step = &api::TestStep::Pickle(self as &api::PickleStepTestStep);
+        let self_result = run_test_step(feature_file, test_case, test_step, &self.step_definition_match,
                 event_bus, scenario, skip_self);
         results.push(self_result);
 
         for after_step_hook_step in &self.after_step_hook_steps {
-            let hook_result = after_step_hook_step.run(event_bus, scenario, skip);
+            let hook_result = after_step_hook_step.run(event_bus, feature_file, test_case, scenario, skip);
             results.push(hook_result);
         }
 
@@ -83,7 +86,11 @@ impl PickleStepTestStep {
     }
 }
 
-impl api::PickleStepTestStep for PickleStepTestStep {
+impl<'s> api::PickleStepTestStep<'s> for PickleStepTestStep<'s> {
+    fn get_code_location(&self) -> Option<&CodeLocation> {
+        self.step_definition_match.get_location()
+    }
+
     fn get_pattern(&self) -> Option<&String> {
         self.step_definition_match.get_pattern()
     }
@@ -92,12 +99,8 @@ impl api::PickleStepTestStep for PickleStepTestStep {
         &self.step_definition_match.get_step()
     }
 
-    fn get_definition_argument(&self) -> Vec<Box<api::Argument>> {
-        DefinitionArgument::create_arguments(self.step_definition_match.get_arguments())
-    }
-
-    fn get_step_argument(&self) -> &Vec<PickleArgument> {
-        &self.step_definition_match.get_step().arguments
+    fn get_arguments(&self) -> &[StepArgument] {
+        &self.step_definition_match.get_arguments()
     }
 
     fn get_step_line(&self) -> u32 {
@@ -115,13 +118,9 @@ impl api::PickleStepTestStep for PickleStepTestStep {
     }
 }
 
-impl api::TestStep for PickleStepTestStep {
-    fn get_code_location(&self) -> Option<&CodeLocation> {
-        self.step_definition_match.get_location()
-    }
-}
-
 fn run_test_step(
+    feature_file: &FeatureFile,
+    test_case: &api::TestCase,
     test_step: &api::TestStep,
     definition_match: &StepDefinitionMatch,
     event_bus: &EventBus,
@@ -132,6 +131,8 @@ fn run_test_step(
     let start_time = SystemTime::now();
     event_bus.send(Event::TestStepStarted {
         time: start_time,
+        feature_file,
+        test_case,
         test_step,
     });
 
@@ -149,6 +150,8 @@ fn run_test_step(
     let result = map_status_to_result(status, error, duration);
     event_bus.send(Event::TestStepFinished {
         time: stop_time,
+        feature_file,
+        test_case,
         test_step,
         result: &result,
     });

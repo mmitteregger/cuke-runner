@@ -9,8 +9,6 @@ Cucumber for Rust with a focus on ease-of-use.
 
 pub extern crate cuke_runner_glue as glue;
 
-#[macro_use]
-extern crate downcast_rs as downcast;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;

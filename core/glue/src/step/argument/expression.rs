@@ -1,12 +1,14 @@
+/// The lifetime parameter `'s` refers to the lifetime of the step.
+/// It cannot escape the step function.
 #[derive(Debug, Clone)]
-pub struct Expression {
-    value: String,
+pub struct Expression<'s> {
+    value: &'s str,
     start: usize,
     end: usize,
 }
 
-impl Expression {
-    pub fn value(&self) -> &str {
+impl<'s> Expression<'s> {
+    pub fn value(&'s self) -> &'s str {
         &self.value
     }
     pub fn start(&self) -> usize {
@@ -17,10 +19,10 @@ impl Expression {
     }
 }
 
-impl<'t> From<regex::Match<'t>> for Expression {
+impl<'s, 't: 's> From<regex::Match<'t>> for Expression<'s> {
     fn from(mat: regex::Match<'t>) -> Self {
         Expression {
-            value: mat.as_str().to_owned(),
+            value: mat.as_str(),
             start: mat.start(),
             end: mat.end(),
         }

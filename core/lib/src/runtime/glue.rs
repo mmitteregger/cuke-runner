@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use gherkin::pickle::PickleStep;
 
@@ -87,33 +86,8 @@ impl Glue {
         &self.after_scenario_hooks
     }
 
-    pub fn step_definition_match(&self, feature_path: &str, step: PickleStep)
-        -> Box<StepDefinitionMatch> {
-
-        let step = Arc::new(step);
-
-        let mut matches = self.step_definition_matches(feature_path, step.clone());
-
-        if matches.is_empty() {
-            return Box::new(UndefinedPickleStepDefinitionMatch {
-                step,
-                arguments: Vec::new(),
-            });
-        }
-        if matches.len() > 1 {
-            return Box::new(AmbiguousPickleStepDefinitionMatch {
-                feature_path: feature_path.to_owned(),
-                step,
-                arguments: Vec::new(),
-            });
-        }
-
-        let step_definition_match = matches.pop().unwrap();
-        Box::new(step_definition_match)
-    }
-
-    pub fn step_definition_matches(&self, feature_path: &str, step: Arc<PickleStep>)
-        -> Vec<PickleStepDefinitionMatch> {
+    pub fn step_definition_match<'s, 'a: 's>(&'a self, feature_path: &str, step: &'s PickleStep)
+        -> StepDefinitionMatch<'s> {
 
         let mut matches = Vec::new();
 
@@ -125,11 +99,27 @@ impl Glue {
                     arguments,
                     step_definition: step_definition.clone(),
                     feature_path: feature_path.to_owned(),
-                    step: step.clone(),
+                    step,
                 });
             }
         }
 
-        matches
+        if matches.is_empty() {
+            return StepDefinitionMatch::Undefined(UndefinedPickleStepDefinitionMatch {
+                step,
+                arguments: Vec::new(),
+            });
+        }
+        if matches.len() > 1 {
+            return StepDefinitionMatch::Ambiguous(AmbiguousPickleStepDefinitionMatch {
+                feature_path: feature_path.to_owned(),
+                step,
+                arguments: Vec::new(),
+            });
+        }
+
+        let step_definition_match = matches.pop().unwrap();
+        StepDefinitionMatch::Pickle(step_definition_match)
     }
+
 }

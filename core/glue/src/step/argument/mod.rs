@@ -9,20 +9,25 @@ pub use self::data_table::{DataTable, FromDataTableRow};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
-pub enum StepArgument {
-    Expression(Expression),
-    DocString(DocString),
-    DataTable(DataTable),
+/// An argument from a scenario step that is passed to an step function.
+///
+/// The lifetime parameter `'s` refers to the lifetime of the step.
+/// It cannot escape the step function.
+#[derive(Debug)]
+pub enum StepArgument<'s> {
+    Expression(Expression<'s>),
+    DocString(DocString<'s>),
+    DataTable(DataTable<'s>),
 }
 
 pub type FromStepArgumentResult<T> = ::std::result::Result<T, FromStepArgumentError>;
 
 /// Converts a `StepArgument` to `Self`.
 ///
-/// The lifetime `'a` is the lifetime of the `StepArgument`
-pub trait FromStepArgument<'a>: Sized {
-    fn from_step_argument(step_argument: &'a StepArgument) -> FromStepArgumentResult<Self>;
+/// The lifetime parameter `'s` refers to the lifetime of the step.
+/// It cannot escape the step function.
+pub trait FromStepArgument<'s>: Sized {
+    fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<Self>;
 }
 
 /// The error holding information for a failed `FromStepArgument` conversion.
@@ -53,8 +58,8 @@ impl From<String> for FromStepArgumentError {
     }
 }
 
-impl<'a, T: FromStr> FromStepArgument<'a> for T where <T as std::str::FromStr>::Err: fmt::Debug {
-    fn from_step_argument(step_argument: &'a StepArgument) -> FromStepArgumentResult<T> {
+impl<'s, T: FromStr> FromStepArgument<'s> for T where <T as std::str::FromStr>::Err: fmt::Debug {
+    fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<T> {
         let str_value = match step_argument {
             StepArgument::Expression(expression) => Some(expression.value()),
             StepArgument::DocString(doc_string) => Some(doc_string.value()),
@@ -73,8 +78,8 @@ impl<'a, T: FromStr> FromStepArgument<'a> for T where <T as std::str::FromStr>::
     }
 }
 
-impl<'a> FromStepArgument<'a> for &'a DataTable {
-    fn from_step_argument(step_argument: &'a StepArgument) -> FromStepArgumentResult<&'a DataTable> {
+impl<'s> FromStepArgument<'s> for &'s DataTable<'s> {
+    fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<&'s DataTable<'s>> {
         match step_argument {
             StepArgument::DataTable(ref data_table) => Ok(&data_table),
             _ => Err(FromStepArgumentError {

@@ -1,42 +1,33 @@
 use gherkin::pickle::PickleTable;
 
+/// The lifetime parameter `'s` refers to the lifetime of the step.
+/// It cannot escape the step function.
 #[derive(Debug, Clone)]
-pub struct DataTable {
-    pub(crate) values: Vec<Vec<String>>,
+pub struct DataTable<'s> {
+    pickle_table: &'s PickleTable,
 }
 
-impl From<&PickleTable> for DataTable {
-    fn from(pickle_table: &PickleTable) -> Self {
-        let mut data_table = Vec::with_capacity(pickle_table.rows.len());
-
-        for row in &pickle_table.rows {
-            let mut data_table_cells = Vec::with_capacity(row.cells.len());
-
-            for cell in &row.cells {
-                data_table_cells.push(cell.value.clone());
-            }
-
-            data_table.push(data_table_cells)
-        }
-
+impl<'s> From<&'s PickleTable> for DataTable<'s> {
+    fn from(pickle_table: &'s PickleTable) -> Self {
         DataTable {
-            values: data_table,
+            pickle_table,
         }
     }
 }
 
-impl<'a> DataTable {
-    pub fn to_vec<T: FromDataTableRow<'a>>(&'a self) -> super::FromStepArgumentResult<Vec<T>> {
-        self.values.iter()
+impl<'s> DataTable<'s> {
+    pub fn to_vec<T: FromDataTableRow<'s>>(&'s self) -> super::FromStepArgumentResult<Vec<T>> {
+        self.pickle_table.rows.iter()
             .skip(1)
-            .map(|row| T::from_data_table_row(row))
+            .map(|row| T::from_data_table_row(&row.cells))
             .collect()
     }
 }
 
 /// Converts a row of the `DataTable` to `Self`.
 ///
-/// The lifetime `'a` is the same as the lifetime of the DataTable.
-pub trait FromDataTableRow<'a>: Sized {
-    fn from_data_table_row<S: AsRef<str>>(row: &'a [S]) -> super::FromStepArgumentResult<Self>;
+/// The lifetime parameter `'r` refers to the lifetime of the DataTable row,
+/// which is same as the DataTable itself. It cannot escape the step function.
+pub trait FromDataTableRow<'r>: Sized {
+    fn from_data_table_row<S: AsRef<str>>(row: &'r [S]) -> super::FromStepArgumentResult<Self>;
 }

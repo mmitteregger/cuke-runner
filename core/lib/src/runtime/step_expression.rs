@@ -14,7 +14,7 @@ impl StepExpression {
         }
     }
 
-    pub fn matched_arguments(&self, text: &str) -> Option<Vec<StepArgument>> {
+    pub fn matched_arguments<'s>(&'s self, text: &'s str) -> Option<Vec<StepArgument<'s>>> {
         let caps = self.regex.captures(text)?;
 
         let matched_arguments = caps.iter()

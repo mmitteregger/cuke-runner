@@ -1,10 +1,6 @@
 use std::fmt;
 use std::io;
-use std::result;
 use std::env;
-
-/// A type alias for `Result<T, config::Error>`.
-pub type Result<T> = result::Result<T, Error>;
 
 /// The specific type of an error.
 #[derive(Fail, Debug)]

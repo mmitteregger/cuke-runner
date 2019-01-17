@@ -1,20 +1,22 @@
 use gherkin::pickle::PickleString;
 
+/// The lifetime parameter `'s` refers to the lifetime of the step.
+/// It cannot escape the step function.
 #[derive(Debug, Clone)]
-pub struct DocString {
-    pub(crate) value: String,
+pub struct DocString<'s> {
+    pickle_string: &'s PickleString,
 }
 
-impl DocString {
+impl<'s> DocString<'s> {
     pub fn value(&self) -> &str {
-        &self.value
+        &self.pickle_string.content
     }
 }
 
-impl From<&PickleString> for DocString {
-    fn from(pickle_string: &PickleString) -> Self {
+impl<'s> From<&'s PickleString> for DocString<'s> {
+    fn from(pickle_string: &'s PickleString) -> Self {
         DocString {
-            value: pickle_string.content.clone(),
+            pickle_string,
         }
     }
 }

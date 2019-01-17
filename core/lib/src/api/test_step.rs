@@ -1,18 +1,17 @@
 use std::fmt::Debug;
 
-use gherkin::pickle::{PickleStep, PickleArgument};
-use downcast::Downcast;
+use gherkin::pickle::PickleStep;
 
-use api::{self, CodeLocation};
+use api::CodeLocation;
+use glue::step::argument::StepArgument;
 
 /// A test step can either represent the execution of a hook or a pickle step.
 /// Each step is tied to some glue code.
-pub trait TestStep: Debug + Downcast + Send + Sync {
-    /// Representation of the source code location of the glue.
-    fn get_code_location(&self) -> Option<&CodeLocation>;
+#[derive(Debug)]
+pub enum TestStep<'s> {
+    Hook(&'s HookTestStep<'s>),
+    Pickle(&'s PickleStepTestStep<'s>),
 }
-
-impl_downcast!(TestStep);
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum HookType {
@@ -23,13 +22,18 @@ pub enum HookType {
 }
 
 /// Hooks are invoked before and after each scenario and before and after each gherkin step in a scenario.
-pub trait HookTestStep: TestStep {
+pub trait HookTestStep<'s>: Debug + Send + Sync {
+    /// Representation of the source code location of the glue.
+    fn get_code_location(&self) -> Option<&CodeLocation>;
+
     /// The hook hook type (BeforeScenario, AfterScenario, ...).
     fn get_hook_type(&self) -> HookType;
 }
 
 /// A pickle test step matches a line in a Gherkin scenario or background.
-pub trait PickleStepTestStep: TestStep {
+pub trait PickleStepTestStep<'s>: Debug + Send + Sync {
+    /// Representation of the source code location of the glue.
+    fn get_code_location(&self) -> Option<&CodeLocation>;
 
     /// The pattern or expression used to match the glue code to the Gherkin step.
     fn get_pattern(&self) -> Option<&String>;
@@ -37,15 +41,8 @@ pub trait PickleStepTestStep: TestStep {
     /// The matched Gherkin step as a compiled Pickle.
     fn get_pickle_step(&self) -> &PickleStep;
 
-    /// Returns the arguments provided to the step definition.
-    ///
-    /// For example the step definition `#[given(r"(\d+) pickles")]`
-    /// when matched with `Given 15 pickles` will receive as argument `15`.
-    fn get_definition_argument(&self) -> Vec<Box<api::Argument>>;
-
     /// Returns arguments provided to the Gherkin step.
-    /// E.g: a data table or doc string.
-    fn get_step_argument(&self) -> &Vec<PickleArgument>;
+    fn get_arguments(&self) -> &[StepArgument];
 
     /// The line in the feature file defining this step.
     fn get_step_line(&self) -> u32;
