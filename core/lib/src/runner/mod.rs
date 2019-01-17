@@ -4,14 +4,12 @@ pub use self::test_step::{HookTestStep, PickleStepTestStep};
 mod event_bus;
 mod test_step;
 
-use std::rc::Rc;
-
 use gherkin::event::PickleEvent;
 use gherkin::pickle::PickleTag;
 
+use api::{HookType, FeatureFile};
 use runtime::{Glue, HookDefinition};
-use api::HookType;
-use runtime::{self, TestCase, HookDefinitionMatch};
+use runtime::{self, TestCase, StepDefinitionMatch, HookDefinitionMatch};
 
 pub struct Runner {
     glue: Glue,
@@ -26,12 +24,14 @@ impl Runner {
         }
     }
 
-    pub fn run_pickle(&self, pickle_event: PickleEvent, event_bus: &EventBus) {
-        let test_case = self.create_test_case_for_pickle_event(pickle_event);
+    pub fn run_pickle(&self, feature: &FeatureFile, pickle_event: PickleEvent, event_bus: &EventBus) {
+        let test_case = self.create_test_case_for_pickle_event(feature, &pickle_event);
         runtime::test_case::run(test_case, event_bus);
     }
 
-    fn create_test_case_for_pickle_event(&self, mut pickle_event: PickleEvent) -> Rc<TestCase> {
+    fn create_test_case_for_pickle_event<'c, 's: 'c>(&'s self,
+        feature_file: &'c FeatureFile, pickle_event: &'c PickleEvent) -> TestCase<'c>
+    {
         let (
             before_hooks,
             after_hooks,
@@ -47,18 +47,18 @@ impl Runner {
             (
                 self.create_before_scenario_hooks(tags),
                 self.create_after_scenario_hooks(tags),
-                self.create_test_steps(&mut pickle_event),
+                self.create_test_steps(pickle_event),
             )
         };
 
-        let test_case = TestCase {
+        TestCase {
+            feature_file,
+            pickle_event,
             test_steps,
             before_hooks,
             after_hooks,
-            pickle_event,
             dry_run: self.dry_run,
-        };
-        Rc::new(test_case)
+        }
     }
 
     fn create_before_scenario_hooks(&self, tags: &[PickleTag]) -> Vec<HookTestStep> {
@@ -79,10 +79,10 @@ impl Runner {
         for hook_definition in hook_definitions {
             if hook_definition.matches(tags) {
                 let test_step = HookTestStep {
-                    definition_match: HookDefinitionMatch {
+                    definition_match: StepDefinitionMatch::Hook(HookDefinitionMatch {
                         hook_definition: hook_definition.clone(),
                         arguments: Vec::new(),
-                    },
+                    }),
                     hook_type,
                 };
                 hooks.push(test_step);
@@ -92,13 +92,13 @@ impl Runner {
         hooks
     }
 
-    fn create_test_steps(&self, pickle_event: &mut PickleEvent) -> Vec<PickleStepTestStep> {
+    fn create_test_steps<'e, 's: 'e>(&'s self, pickle_event: &'e PickleEvent) -> Vec<PickleStepTestStep<'e>> {
         let mut test_steps = Vec::new();
 
         let feature_path = &pickle_event.uri;
         let tags = &pickle_event.pickle.tags;
 
-        for step in pickle_event.pickle.steps.drain(..) {
+        for step in &pickle_event.pickle.steps {
             let step_definition_match = self.glue.step_definition_match(feature_path, step);
             let before_step_hook_steps = self.get_before_step_hooks(tags);
             let after_step_hook_steps = self.get_after_step_hooks(tags);

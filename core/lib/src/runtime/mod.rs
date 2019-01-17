@@ -1,7 +1,6 @@
 use {Config, ExecutionMode};
 use parser;
 use runner::{EventBus, Runner};
-pub use self::definition_argument::*;
 use self::event_listener::*;
 pub use self::glue::*;
 pub use self::hook_definition::*;
@@ -11,7 +10,6 @@ pub use self::step_definition_match::*;
 pub use self::step_expression::*;
 pub use self::tag_predicate::*;
 pub use self::test_case::*;
-use std::collections::HashMap;
 
 mod glue;
 mod step_definition;
@@ -21,7 +19,6 @@ mod tag_predicate;
 pub mod test_case;
 mod scenario;
 mod step_definition_match;
-mod definition_argument;
 mod event_listener;
 
 
@@ -47,34 +44,36 @@ pub fn run(glue: Glue, config: Config) -> i32 {
 }
 
 fn run_sequential(runner: Runner, event_bus: EventBus, config: &Config) {
-    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
+    let feature_pickles_map = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
 
-    for pickle_event in pickle_events {
-        runner.run_pickle(pickle_event, &event_bus);
+    for (feature_file, pickle_events) in feature_pickles_map {
+        for pickle_event in pickle_events {
+            runner.run_pickle(&feature_file, pickle_event, &event_bus);
+        }
     }
 }
 
-fn run_parallel_features(_runner: Runner, event_bus: EventBus, config: &Config) {
-    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
-    let mut pickle_events_per_feature = HashMap::new();
-
-    for pickle_event in pickle_events {
-        pickle_events_per_feature.entry(pickle_event.uri.clone())
-            .or_insert_with(Vec::new)
-            .push(pickle_event);
-    }
-
+fn run_parallel_features(_runner: Runner, _event_bus: EventBus, _config: &Config) {
     unimplemented!("run_parallel_features");
+//    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
+//    let mut pickle_events_per_feature = HashMap::new();
+//
+//    for pickle_event in pickle_events {
+//        pickle_events_per_feature.entry(pickle_event.uri.clone())
+//            .or_insert_with(Vec::new)
+//            .push(pickle_event);
+//    }
+//
 //    for (feature_uri, pickle_events) in pickle_events_per_feature {
 //        pickle_events.into_par_iter()
 //            .for_each(|pickle_event| runner.run_pickle(pickle_event, &event_bus));
 //    }
 }
 
-fn run_parallel_scenarios(_runner: Runner, event_bus: EventBus, config: &Config) {
-    let _pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
-
+fn run_parallel_scenarios(_runner: Runner, _event_bus: EventBus, _config: &Config) {
     unimplemented!("run_parallel_scenarios");
-//    pickle_events.into_par_iter()
-//        .for_each(|pickle_event| runner.run_pickle(pickle_event, &event_bus));
+//    let _pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
+//
+////    pickle_events.into_par_iter()
+////        .for_each(|pickle_event| runner.run_pickle(pickle_event, &event_bus));
 }

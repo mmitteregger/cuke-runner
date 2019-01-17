@@ -49,7 +49,7 @@ impl StepDefinition {
     /// Returns `None` if the step definition doesn't match at all.
     /// Returns an empty `Vec` if it matches with 0 arguments
     /// and bigger sizes if it matches several.
-    pub fn matched_arguments(&self, step: &PickleStep) -> Option<Vec<StepArgument>> {
+    pub fn matched_arguments<'s>(&'s self, step: &'s PickleStep) -> Option<Vec<StepArgument<'s>>> {
         let mut matched_arguments = match self.expression.matched_arguments(&step.text) {
             Some(arguments) => arguments,
             None => return None,

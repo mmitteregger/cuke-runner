@@ -6,7 +6,7 @@ use super::TestStep;
 
 
 pub trait TestCase: Debug + Send + Sync {
-    fn get_test_steps(&self) -> Vec<Box<&TestStep>>;
+    fn get_test_steps(&self) -> Vec<TestStep>;
 
     fn get_name(&self) -> &String;
 

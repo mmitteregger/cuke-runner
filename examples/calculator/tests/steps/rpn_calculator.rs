@@ -77,14 +77,14 @@ pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
     }
 }
 
-struct Entry<'a> {
-    first: &'a str,
-    second: &'a str,
-    operation: &'a str,
+struct Entry<'r> {
+    first: &'r str,
+    second: &'r str,
+    operation: &'r str,
 }
 
-impl<'a> FromDataTableRow<'a> for Entry<'a> {
-    fn from_data_table_row<S: AsRef<str>>(row: &'a [S]) -> FromStepArgumentResult<Self> {
+impl<'r> FromDataTableRow<'r> for Entry<'r> {
+    fn from_data_table_row<S: AsRef<str>>(row: &'r [S]) -> FromStepArgumentResult<Self> {
         Ok(Entry {
             first: row[0].as_ref(),
             second: row[1].as_ref(),

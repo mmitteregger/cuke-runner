@@ -5,7 +5,7 @@ use gherkin::pickle::{PickleTag};
 
 use error::Error;
 use runner::EventBus;
-use api::{self, TestResult, TestResultStatus};
+use api::{TestResult, TestResultStatus};
 use api::event::Event;
 use glue;
 
@@ -61,17 +61,15 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
                 .unwrap_or(None)
         }
     }
-}
 
-impl<'a, 'b, 'c> api::Scenario for Scenario<'a, 'b, 'c> {
-    fn get_status(&self) -> TestResultStatus {
+    pub fn get_status(&self) -> TestResultStatus {
         self.test_results.iter()
             .map(TestResult::get_status)
             .max()
             .unwrap_or(TestResultStatus::Undefined)
     }
 
-    fn embed(&self, data: &[u8], mime_type: String) {
+    pub fn embed(&self, data: &[u8], mime_type: String) {
         self.event_bus.send(Event::Embed {
             time: SystemTime::now(),
             data,
@@ -79,26 +77,26 @@ impl<'a, 'b, 'c> api::Scenario for Scenario<'a, 'b, 'c> {
         });
     }
 
-    fn write(&self, text: &str) {
+    pub fn write(&self, text: &str) {
         self.event_bus.send(Event::Write {
             time: SystemTime::now(),
             text,
         });
     }
 
-    fn get_name(&self) -> &String {
+    pub fn get_name(&self) -> &String {
         self.name
     }
 
-    fn get_id(&self) -> &String {
+    pub fn get_id(&self) -> &String {
         &self.id
     }
 
-    fn get_uri(&self) -> &String {
+    pub fn get_uri(&self) -> &String {
         self.uri
     }
 
-    fn get_lines(&self) -> &Vec<u32> {
+    pub fn get_lines(&self) -> &Vec<u32> {
         &self.lines
     }
 }
