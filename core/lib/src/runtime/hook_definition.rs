@@ -4,9 +4,9 @@ use gherkin::pickle::PickleTag;
 
 use api::CodeLocation;
 use error::Result;
-use glue::hook::{StaticHookDef, HookFn};
+use glue::hook::{HookFn, StaticHookDef};
+use glue::hook::TagPredicate;
 use runtime::Scenario;
-use super::TagPredicate;
 
 #[derive(Clone)]
 pub struct HookDefinition {
@@ -31,8 +31,15 @@ impl fmt::Debug for HookDefinition {
 
 impl From<&&StaticHookDef> for HookDefinition {
     fn from(static_hook_def: &&StaticHookDef) -> Self {
+        let tag_predicate = TagPredicate::new(static_hook_def.tag_expression)
+            .unwrap_or_else(|err| {
+                panic!("tag expression \"{}\"is invalid: {}\n\
+                        It should have been checked by codegen already, this is a bug!",
+                    static_hook_def.tag_expression, err);
+            });
+
         HookDefinition {
-            tag_predicate: TagPredicate::new(Vec::new()),
+            tag_predicate,
             order: 0,
             hook_fn: static_hook_def.hook_fn,
             location: static_hook_def.location,

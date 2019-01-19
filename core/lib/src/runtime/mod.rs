@@ -8,14 +8,12 @@ pub use self::scenario::*;
 pub use self::step_definition::*;
 pub use self::step_definition_match::*;
 pub use self::step_expression::*;
-pub use self::tag_predicate::*;
 pub use self::test_case::*;
 
 mod glue;
 mod step_definition;
 mod hook_definition;
 mod step_expression;
-mod tag_predicate;
 pub mod test_case;
 mod scenario;
 mod step_definition_match;

@@ -14,6 +14,9 @@ crate struct StepKeyword(crate glue::step::StepKeyword);
 #[derive(Debug)]
 crate struct Regex(crate regex::Regex);
 
+#[derive(Debug)]
+crate struct TagExpression(crate String);
+
 #[derive(Clone, Debug)]
 crate struct Optional<T>(crate Option<T>);
 
@@ -117,7 +120,7 @@ impl FromMeta for Regex {
     fn from_meta(meta: MetaItem) -> Result<Self> {
         let string = StringLit::from_meta(meta)?;
         let span = string.subspan(1..=string.len())
-            .expect("regex");
+            .unwrap_or_else(|| string.1.span());
 
         let result = regex::Regex::new(&string);
         match result {
@@ -128,6 +131,27 @@ impl FromMeta for Regex {
 }
 
 impl ToTokens for Regex {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        let string = self.0.as_str();
+        tokens.extend(quote!(#string));
+    }
+}
+
+impl FromMeta for TagExpression {
+    fn from_meta(meta: MetaItem) -> Result<Self> {
+        let string = StringLit::from_meta(meta)?;
+        let span = string.subspan(1..=string.len())
+            .unwrap_or_else(|| string.1.span());
+
+        let result = glue::hook::tag_predicate::parser::parse(string.as_ref());
+        match result {
+            Ok(_expression) => Ok(TagExpression(string.to_owned())),
+            Err(err) => Err(span.error(format!("tag expression \"{}\" is invalid: {}", &*string, err))),
+        }
+    }
+}
+
+impl ToTokens for TagExpression {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
         let string = self.0.as_str();
         tokens.extend(quote!(#string));
