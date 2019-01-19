@@ -14,7 +14,7 @@ use {
     AFTER_SCENARIO_HOOK_FN_PREFIX,
     AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
 };
-use glue_codegen::HookType;
+use glue_codegen::{HookType, TagExpression};
 use proc_macro_ext::{Diagnostics, StringLit};
 use syn_ext::{IdentExt, syn_to_diag};
 
@@ -26,12 +26,14 @@ struct HookAttribute {
     #[meta(naked)]
     hook_type: SpanWrapped<HookType>,
     order: Option<isize>,
+    tag_expression: Option<TagExpression>,
 }
 
 /// The raw, parsed `#[hook]` (e.g, `before_scenario`, `before_step`, ...) attribute.
 #[derive(Debug, FromMeta)]
 struct HookTypeHookAttribute {
     order: Option<isize>,
+    tag_expression: Option<TagExpression>,
 }
 
 /// This structure represents the parsed `hook` attribute and associated items.
@@ -140,6 +142,9 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
     let generated_struct_name = generate_struct_name(user_handler_fn_name, &hook_type.value);
     let parameter_names = hook.inputs.iter().map(|(_, cuke_runner_ident, _)| cuke_runner_ident);
     let order = hook.attribute.order.unwrap_or(0);
+    let tag_expression = hook.attribute.tag_expression
+        .map(|t| t.0)
+        .unwrap_or_else(String::new);
 
     let mut data_statements = Vec::with_capacity(hook.inputs.len());
     for (_ident, cuke_runner_ident, ty) in hook.inputs.iter() {
@@ -170,6 +175,7 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
             ::cuke_runner::glue::hook::StaticHookDef {
                 name: stringify!(#user_handler_fn_name),
                 order: #order,
+                tag_expression: #tag_expression,
                 hook_fn: #generated_fn_name,
                 location: ::cuke_runner::glue::CodeLocation {
                     file_path: #user_handler_fn_file_path,
@@ -220,6 +226,7 @@ fn incomplete_hook(
             full_span: hook_type_span, span: hook_type_span, value: HookType(hook_type)
         },
         order: hook_type_attribute.order,
+        tag_expression: hook_type_attribute.tag_expression,
     };
 
     codegen_hook(parse_hook(attribute, function)?)

@@ -19,9 +19,9 @@ pub struct StaticStepDef {
     pub keyword: StepKeyword,
     /// The step definition expression to match a step in a cucumber scenario.
     pub expression: &'static str,
-    /// The generated step handler function responsible for calling the step definition function.
+    /// The generated step handler function that will call the user defined annotated function.
     pub step_fn: StepFn,
-    /// The generated step handler function responsible for calling the step definition function.
+    /// Location of the user defined annotated function.
     pub location: CodeLocation,
 }
 
