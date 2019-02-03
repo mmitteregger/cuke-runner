@@ -32,7 +32,7 @@ impl PrettyFormatter {
         PrettyFormatter {
             first_feature: true,
             print_feature_file_text: true,
-            print_scenario_definition_text: true,
+            print_scenario_definition_text: false,
             ..::std::default::Default::default()
         }
     }
@@ -72,27 +72,26 @@ impl PrettyFormatter {
         self.handle_start_of_feature(feature_file);
         self.handle_scenario_outline(feature_file, test_case);
 
-        if self.get_background(feature_file).is_some() {
-            self.print_background(feature_file, test_case);
-//            self.current_test_case = Some(test_case);
+        if let Some(background) = self.get_background(feature_file) {
+            self.print_background(background, feature_file, test_case);
             self.print_scenario_definition_text = true;
         } else {
             self.print_scenario_definition(feature_file, test_case);
         }
     }
 
-    fn print_background(&mut self, feature_file: &FeatureFile, test_case: &TestCase) {
-        if let Some(background) = self.get_background(feature_file) {
-            let definition_text = format!("{}: {}", background.keyword, background.name);
-            let background_line = background.location.line;
-            let description = background.description.clone();
-            self.calculate_location_indentation(feature_file, &definition_text, &test_case.get_test_steps(), true);
-            let location_padding = self.create_padding_to_location(SCENARIO_INDENT, &definition_text);
-            println!();
-            let location_text = self.format_feature_file_location(feature_file, background_line);
-            println!("{}", SCENARIO_INDENT.to_owned() + &definition_text + &location_padding + &location_text);
-            self.print_description(description.as_ref());
-        }
+    fn print_background(&mut self, background: &Background, feature_file: &FeatureFile,
+        test_case: &TestCase)
+    {
+        let definition_text = format!("{}: {}", background.keyword, background.name);
+        let background_line = background.location.line;
+        let description = background.description.clone();
+        self.calculate_location_indentation(feature_file, &definition_text, &test_case.get_test_steps(), true);
+        let location_padding = self.create_padding_to_location(SCENARIO_INDENT, &definition_text);
+        println!();
+        let location_text = self.format_feature_file_location(feature_file, background_line);
+        println!("{}", SCENARIO_INDENT.to_owned() + &definition_text + &location_padding + &location_text);
+        self.print_description(description.as_ref());
     }
 
     fn handle_test_step_started(&mut self, feature_file: &FeatureFile, test_case: &TestCase, test_step: &TestStep) {
