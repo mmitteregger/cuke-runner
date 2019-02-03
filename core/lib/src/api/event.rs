@@ -71,7 +71,6 @@ pub enum Event<'e, 's: 'e> {
     ///
     /// This is the last event that will be sent.
     TestRunFinished {
-        feature_file: &'e FeatureFile,
         time: SystemTime,
     },
     /// Hints that destructuring should not be exhaustive.
