@@ -2,7 +2,7 @@ use std::path::Path;
 use std::default::Default;
 
 pub use self::error::Error;
-use api::event::EventListener;
+use api::event::{EventListener, SyncEventListener};
 
 mod error;
 
@@ -14,23 +14,30 @@ pub struct Config<'c> {
     pub colored_output: bool,
     pub dry_run: bool,
     pub tags: Vec<String>,
-    pub execution_mode: ExecutionMode,
-    pub event_listeners: &'c mut [&'c mut dyn EventListener],
+    pub execution_mode: ExecutionMode<'c>,
 }
 
 /// Controls how the cucumber tests are executed.
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
-pub enum ExecutionMode {
+#[derive(Debug)]
+pub enum ExecutionMode<'c> {
     /// Execute all scenarios in parallel.
-    ParallelScenarios,
+    ParallelScenarios {
+        event_listeners: &'c [&'c dyn SyncEventListener],
+    },
     /// Execute all features in parallel, but not scenarios from the same feature.
-    ParallelFeatures,
+    ParallelFeatures {
+        event_listeners: &'c [&'c dyn SyncEventListener],
+    },
     /// Execute every scenario one after another (no parallelism).
-    Sequential,
+    Sequential {
+        event_listeners: &'c [&'c dyn EventListener],
+    },
 }
 
-impl Default for ExecutionMode {
-    fn default() -> ExecutionMode {
-        ExecutionMode::ParallelScenarios
+impl<'c> Default for ExecutionMode<'c> {
+    fn default() -> ExecutionMode<'c> {
+        ExecutionMode::ParallelScenarios {
+            event_listeners: &[],
+        }
     }
 }

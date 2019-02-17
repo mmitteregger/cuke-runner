@@ -96,10 +96,15 @@ pub enum Event<'e, 's: 'e> {
 }
 
 /// A trait to listen to cucumber execution events.
-pub trait EventListener: Debug {
-    fn on_event(&mut self, event: &Event);
+pub trait EventListener: Debug + Send {
+    fn on_event(&self, event: &Event);
 }
 
+/// A trait to listen to cucumber execution events
+/// that can be safely shared between multiple threads.
+pub trait SyncEventListener: EventListener + Sync {}
+
+impl<T: EventListener + Sync> SyncEventListener for T {}
 
 #[cfg(test)]
 mod tests {

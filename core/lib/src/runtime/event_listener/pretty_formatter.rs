@@ -1,5 +1,6 @@
 use std::cmp;
 use std::ops::Deref;
+use std::cell::RefCell;
 
 use gherkin::ast::{Feature, Background, ScenarioOutline, Examples, Tag};
 use gherkin::cuke;
@@ -15,6 +16,11 @@ const ERROR_INDENT: &str = "      ";
 
 #[derive(Debug, Default)]
 pub struct PrettyFormatter {
+    inner: RefCell<Inner>,
+}
+
+#[derive(Debug)]
+struct Inner {
     first_feature: bool,
     print_feature_file_text: bool,
     print_scenario_definition_text: bool,
@@ -23,19 +29,27 @@ pub struct PrettyFormatter {
     location_indentation: usize,
 }
 
-impl PrettyFormatter {
-    pub fn new() -> PrettyFormatter {
-        PrettyFormatter {
+impl Default for Inner {
+    fn default() -> Self {
+        Inner {
             first_feature: true,
             print_feature_file_text: true,
             print_scenario_definition_text: false,
-            ..::std::default::Default::default()
+            current_scenario_outline: None,
+            current_examples: None,
+            location_indentation: 0,
         }
     }
 }
 
+impl PrettyFormatter {
+    pub fn new() -> PrettyFormatter {
+        PrettyFormatter::default()
+    }
+}
+
 impl EventListener for PrettyFormatter {
-    fn on_event(&mut self, event: &Event) {
+    fn on_event(&self, event: &Event) {
         match *event {
             Event::TestCaseStarted {
                 uri,
@@ -44,29 +58,29 @@ impl EventListener for PrettyFormatter {
                 scenario_definition,
                 test_case,
                 ..
-            } => self.handle_test_case_started(uri, feature, background, scenario_definition, test_case),
+            } => self.inner.borrow_mut().handle_test_case_started(uri, feature, background, scenario_definition, test_case),
             Event::TestStepStarted {
                 uri,
                 scenario_definition,
                 test_case,
                 test_step,
                 ..
-            } => self.handle_test_step_started(uri, scenario_definition, test_case, test_step),
+            } => self.inner.borrow_mut().handle_test_step_started(uri, scenario_definition, test_case, test_step),
             Event::TestStepFinished {
                 test_step,
                 result,
                 ..
-            } => self.handle_test_step_finished(test_step, result),
+            } => self.inner.borrow_mut().handle_test_step_finished(test_step, result),
             Event::Write {
                 text,
                 ..
-            } => self.handle_write(text),
+            } => self.inner.borrow().handle_write(text),
             _ => {},
         }
     }
 }
 
-impl PrettyFormatter {
+impl Inner {
     fn handle_test_case_started(&mut self, uri: &str, feature: &Feature,
         background: Option<&Background>, scenario_definition: &cuke::ScenarioDefinition,
         test_case: &TestCase)

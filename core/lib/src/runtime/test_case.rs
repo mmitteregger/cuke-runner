@@ -4,7 +4,7 @@ use gherkin::cuke::{Cuke, Tag};
 
 use api::{self, TestResult, TestResultStatus};
 use api::event::Event;
-use runner::{EventBus, CukeStepTestStep, HookTestStep};
+use runner::{EventPublisher, CukeStepTestStep, HookTestStep};
 use runtime;
 
 #[derive(Debug)]
@@ -65,9 +65,9 @@ impl<'s> api::TestCase for TestCase<'s> {
     }
 }
 
-pub fn run(test_case: TestCase, event_bus: &EventBus) {
+pub fn run<EP: EventPublisher>(test_case: TestCase, event_publisher: &EP) {
     let start_time = SystemTime::now();
-    event_bus.send(Event::TestCaseStarted {
+    event_publisher.send(Event::TestCaseStarted {
         time: start_time,
         uri: test_case.uri,
         feature: test_case.cuke.feature,
@@ -77,22 +77,22 @@ pub fn run(test_case: TestCase, event_bus: &EventBus) {
     });
 
     let mut skip_next_step = test_case.dry_run;
-    let mut scenario = runtime::Scenario::new(test_case.uri, &test_case.cuke, event_bus);
+    let mut scenario = runtime::Scenario::new(test_case.uri, &test_case.cuke, event_publisher);
 
     for before_hook in &test_case.before_hooks {
-        let hook_result = before_hook.run(event_bus, &test_case, &mut scenario, test_case.dry_run);
+        let hook_result = before_hook.run(event_publisher, &test_case, &mut scenario, test_case.dry_run);
         skip_next_step = skip_next_step || !hook_result.status.eq(&TestResultStatus::Passed);
         scenario.add_test_result(hook_result);
     }
 
     for step in &test_case.test_steps {
-        let step_result = step.run(event_bus, &test_case, &mut scenario, skip_next_step);
+        let step_result = step.run(event_publisher, &test_case, &mut scenario, skip_next_step);
         skip_next_step = skip_next_step || !step_result.status.eq(&TestResultStatus::Passed);
         scenario.add_test_result(step_result);
     }
 
     for after_hook in &test_case.after_hooks {
-        let hook_result = after_hook.run(event_bus, &test_case, &mut scenario, test_case.dry_run);
+        let hook_result = after_hook.run(event_publisher, &test_case, &mut scenario, test_case.dry_run);
         scenario.add_test_result(hook_result);
     }
 
@@ -106,7 +106,7 @@ pub fn run(test_case: TestCase, event_bus: &EventBus) {
         duration: Some(duration),
         error: scenario.into_error(),
     };
-    event_bus.send(Event::TestCaseFinished {
+    event_publisher.send(Event::TestCaseFinished {
         time: stop_time,
         uri: test_case.uri,
         feature: test_case.cuke.feature,

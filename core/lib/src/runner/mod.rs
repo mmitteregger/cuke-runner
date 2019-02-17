@@ -1,7 +1,8 @@
-pub use self::event_bus::EventBus;
+pub use self::event::EventPublisher;
+pub(crate) use self::event::{EventBus, SyncEventBus};
 pub use self::test_step::{HookTestStep, CukeStepTestStep};
 
-mod event_bus;
+mod event;
 mod test_step;
 
 use gherkin::cuke::{Cuke, Tag};
@@ -23,9 +24,9 @@ impl Runner {
         }
     }
 
-    pub fn run(&self, uri: &str, cuke: Cuke, event_bus: &EventBus) {
+    pub fn run<EP: EventPublisher>(&self, uri: &str, cuke: Cuke, event_publisher: &EP) {
         let test_case = self.create_test_case(uri, &cuke);
-        runtime::test_case::run(test_case, event_bus);
+        runtime::test_case::run(test_case, event_publisher);
     }
 
     fn create_test_case<'c, 's: 'c>(&'s self, uri: &'c str, cuke: &'c Cuke) -> TestCase<'c> {

@@ -1,28 +1,15 @@
 use std::io::Write;
 use std::time::Instant;
+use std::sync::Mutex;
+use std::cell::RefCell;
 
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use api::event::{Event, EventListener};
 use api::TestResultStatus;
 
-#[derive(Debug)]
-pub struct TestSummaryListener {
-    status_summary: StatusSummary,
-    start_time: Instant,
-}
-
-impl TestSummaryListener {
-    pub fn new() -> TestSummaryListener {
-        TestSummaryListener {
-            status_summary: StatusSummary::default(),
-            start_time: Instant::now(),
-        }
-    }
-}
-
 #[derive(Debug, Default)]
-pub struct StatusSummary {
+struct StatusSummary {
     total: u32,
     passed: u32,
     skipped: u32,
@@ -47,36 +34,82 @@ impl StatusSummary {
     }
 }
 
+#[derive(Debug)]
+pub struct TestSummaryListener {
+    status_summary: RefCell<StatusSummary>,
+    start_time: Instant,
+}
+
+impl TestSummaryListener {
+    pub fn new() -> TestSummaryListener {
+        TestSummaryListener {
+            status_summary: Default::default(),
+            start_time: Instant::now(),
+        }
+    }
+
+    pub fn print_test_summary(&self) {
+        let summary = self.status_summary.borrow();
+        print_test_summary(&summary, self.start_time);
+    }
+}
+
 impl EventListener for TestSummaryListener {
-    fn on_event(&mut self, event: &Event) {
+    fn on_event(&self, event: &Event) {
         if let Event::TestCaseFinished { ref result, .. } = *event {
-            self.status_summary.add_status(result.status)
+            self.status_summary.borrow_mut().add_status(result.status)
         }
     }
 }
 
-impl Drop for TestSummaryListener {
-    fn drop(&mut self) {
-        let summary = &self.status_summary;
-        let time_elapsed = self.start_time.elapsed();
+#[derive(Debug)]
+pub struct SyncTestSummaryListener {
+    status_summary: Mutex<RefCell<StatusSummary>>,
+    start_time: Instant,
+}
 
-        let mut stdout = StandardStream::stdout(ColorChoice::Auto);
-
-        writeln!(&mut stdout, "Ran {} tests in {:?}", summary.total, time_elapsed).unwrap();
-        write_conditional_colored(&mut stdout, || summary.passed > 0, Color::Green,
-            format!("    Passed: {}", summary.passed));
-        write_conditional_colored(&mut stdout, || summary.skipped > 0, Color::Yellow,
-            format!("    Skipped: {}", summary.skipped));
-        write_conditional_colored(&mut stdout, || summary.pending > 0, Color::Yellow,
-            format!("    Pending: {}", summary.pending));
-        write_conditional_colored(&mut stdout, || summary.undefined > 0, Color::Red,
-            format!("    Undefined: {}", summary.undefined));
-        write_conditional_colored(&mut stdout, || summary.ambiguous > 0, Color::Red,
-            format!("    Ambiguous: {}", summary.ambiguous));
-        write_conditional_colored(&mut stdout, || summary.failed > 0, Color::Red,
-            format!("    Failed: {}", summary.failed));
-        writeln!(&mut stdout).unwrap();
+impl SyncTestSummaryListener {
+    pub fn new() -> SyncTestSummaryListener {
+        SyncTestSummaryListener {
+            status_summary: Default::default(),
+            start_time: Instant::now(),
+        }
     }
+
+    pub fn print_test_summary(&self) {
+        let status_summary_lock = self.status_summary.lock().unwrap();
+        let summary = status_summary_lock.borrow();
+        print_test_summary(&summary, self.start_time);
+    }
+}
+
+impl EventListener for SyncTestSummaryListener {
+    fn on_event(&self, event: &Event) {
+        if let Event::TestCaseFinished { ref result, .. } = *event {
+            self.status_summary.lock().unwrap().borrow_mut().add_status(result.status)
+        }
+    }
+}
+
+fn print_test_summary(summary: &StatusSummary, start_time: Instant) {
+    let time_elapsed = start_time.elapsed();
+
+    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+
+    writeln!(&mut stdout, "Ran {} tests in {:?}", summary.total, time_elapsed).unwrap();
+    write_conditional_colored(&mut stdout, || summary.passed > 0, Color::Green,
+        format!("    Passed: {}", summary.passed));
+    write_conditional_colored(&mut stdout, || summary.skipped > 0, Color::Yellow,
+        format!("    Skipped: {}", summary.skipped));
+    write_conditional_colored(&mut stdout, || summary.pending > 0, Color::Yellow,
+        format!("    Pending: {}", summary.pending));
+    write_conditional_colored(&mut stdout, || summary.undefined > 0, Color::Red,
+        format!("    Undefined: {}", summary.undefined));
+    write_conditional_colored(&mut stdout, || summary.ambiguous > 0, Color::Red,
+        format!("    Ambiguous: {}", summary.ambiguous));
+    write_conditional_colored(&mut stdout, || summary.failed > 0, Color::Red,
+        format!("    Failed: {}", summary.failed));
+    writeln!(&mut stdout).unwrap();
 }
 
 fn write_conditional_colored<C: Fn() -> bool>(stdout: &mut StandardStream,

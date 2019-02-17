@@ -5,7 +5,7 @@ use gherkin::cuke;
 use error::{Result, Error};
 use api::{self, event::Event, HookType, CodeLocation, TestResult, TestResultStatus};
 use glue::step::argument::StepArgument;
-use runner::EventBus;
+use runner::EventPublisher;
 use runtime::{TestCase, StepDefinitionMatch, Scenario};
 
 #[derive(Debug)]
@@ -15,16 +15,16 @@ pub struct HookTestStep<'s> {
 }
 
 impl<'s> HookTestStep<'s> {
-    pub fn run(
+    pub fn run<EP: EventPublisher>(
         &self,
-        event_bus: &EventBus,
+        event_publisher: &EP,
         test_case: &TestCase,
         scenario: &mut Scenario,
         skip: bool,
     ) -> TestResult
     {
         let test_step = &api::TestStep::Hook(self as &api::HookTestStep);
-        run_test_step(test_case, test_step, &self.definition_match, event_bus, scenario, skip)
+        run_test_step(test_case, test_step, &self.definition_match, event_publisher, scenario, skip)
     }
 }
 
@@ -48,9 +48,9 @@ pub struct CukeStepTestStep<'s> {
 }
 
 impl<'s> CukeStepTestStep<'s> {
-    pub fn run(
+    pub fn run<EP: EventPublisher>(
         &self,
-        event_bus: &EventBus,
+        event_publisher: &EP,
         test_case: &TestCase,
         scenario: &mut Scenario,
         skip: bool,
@@ -64,18 +64,18 @@ impl<'s> CukeStepTestStep<'s> {
         );
 
         for before_step_hook_step in &self.before_step_hook_steps {
-            let hook_result = before_step_hook_step.run(event_bus, test_case, scenario, skip);
+            let hook_result = before_step_hook_step.run(event_publisher, test_case, scenario, skip);
             skip_self = skip_self || !hook_result.status.eq(&TestResultStatus::Passed);
             results.push(hook_result);
         }
 
         let test_step = &api::TestStep::Cuke(self as &api::CukeStepTestStep);
         let self_result = run_test_step(test_case, test_step, &self.step_definition_match,
-                event_bus, scenario, skip_self);
+                event_publisher, scenario, skip_self);
         results.push(self_result);
 
         for after_step_hook_step in &self.after_step_hook_steps {
-            let hook_result = after_step_hook_step.run(event_bus, test_case, scenario, skip);
+            let hook_result = after_step_hook_step.run(event_publisher, test_case, scenario, skip);
             results.push(hook_result);
         }
 
@@ -125,17 +125,17 @@ impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
     }
 }
 
-fn run_test_step(
+fn run_test_step<EP: EventPublisher>(
     test_case: &TestCase,
     test_step: &api::TestStep,
     definition_match: &StepDefinitionMatch,
-    event_bus: &EventBus,
+    event_publisher: &EP,
     scenario: &mut Scenario,
     skip: bool,
 ) -> TestResult
 {
     let start_time = SystemTime::now();
-    event_bus.send(Event::TestStepStarted {
+    event_publisher.send(Event::TestStepStarted {
         time: start_time,
         uri: test_case.uri,
         feature: test_case.cuke.feature,
@@ -157,7 +157,7 @@ fn run_test_step(
         Err(system_time_error) => system_time_error.duration(),
     };
     let result = map_status_to_result(status, error, duration);
-    event_bus.send(Event::TestStepFinished {
+    event_publisher.send(Event::TestStepFinished {
         time: stop_time,
         uri: test_case.uri,
         feature: test_case.cuke.feature,

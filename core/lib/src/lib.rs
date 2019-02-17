@@ -21,6 +21,7 @@ extern crate termcolor;
 pub use config::{Config, ExecutionMode};
 pub use error::{Error, Result};
 pub use runtime::Glue;
+pub use runtime::event_listener;
 
 mod config;
 mod error;

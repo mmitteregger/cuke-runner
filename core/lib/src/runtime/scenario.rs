@@ -3,25 +3,25 @@ use std::time::SystemTime;
 use gherkin::cuke::{Cuke, Tag};
 
 use error::Error;
-use runner::EventBus;
+use runner::EventPublisher;
 use api::{TestResult, TestResultStatus};
 use api::event::Event;
 use glue;
 
 #[derive(Debug)]
-pub struct Scenario<'a, 'b, 'c: 'b> {
+pub struct Scenario<'a, 'b> {
     test_results: Vec<TestResult>,
     tags: &'a Vec<Tag<'a>>,
     uri: &'a str,
     name: &'a str,
     id: String,
     lines: Vec<u32>,
-    event_bus: &'b EventBus<'c>,
+    event_publisher: &'b EventPublisher,
     pub(crate) glue_scenario: glue::scenario::Scenario,
 }
 
-impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
-    pub fn new(uri: &'a str, cuke: &'a Cuke, event_bus: &'b EventBus<'c>) -> Scenario<'a, 'b, 'c> {
+impl<'a, 'b> Scenario<'a, 'b> {
+    pub fn new(uri: &'a str, cuke: &'a Cuke, event_publisher: &'b EventPublisher) -> Scenario<'a, 'b> {
         let test_results = Vec::new();
         let tags = &cuke.tags;
         let name = &cuke.name;
@@ -38,7 +38,7 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
             name,
             id,
             lines,
-            event_bus,
+            event_publisher,
             glue_scenario: glue::scenario::Scenario::new(),
         }
     }
@@ -66,7 +66,7 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
     }
 
     pub fn embed(&self, data: &[u8], mime_type: String) {
-        self.event_bus.send(Event::Embed {
+        self.event_publisher.send(Event::Embed {
             time: SystemTime::now(),
             data,
             mime_type,
@@ -74,7 +74,7 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
     }
 
     pub fn write(&self, text: &str) {
-        self.event_bus.send(Event::Write {
+        self.event_publisher.send(Event::Write {
             time: SystemTime::now(),
             text,
         });
