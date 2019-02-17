@@ -2,7 +2,7 @@
 use std::any::TypeId;
 use std::fmt;
 
-use gherkin::pickle::{PickleArgument, PickleStep};
+use gherkin::cuke;
 
 use api::CodeLocation;
 use glue::step::{StaticStepDef, StepFn};
@@ -49,29 +49,26 @@ impl StepDefinition {
     /// Returns `None` if the step definition doesn't match at all.
     /// Returns an empty `Vec` if it matches with 0 arguments
     /// and bigger sizes if it matches several.
-    pub fn matched_arguments<'s>(&'s self, step: &'s PickleStep) -> Option<Vec<StepArgument<'s>>> {
+    pub fn matched_arguments<'s>(&'s self, step: &'s cuke::Step) -> Option<Vec<StepArgument<'s>>> {
         let mut matched_arguments = match self.expression.matched_arguments(&step.text) {
             Some(arguments) => arguments,
             None => return None,
         };
 
-        if step.arguments.is_empty() {
-            Some(matched_arguments)
-        } else {
-            debug_assert!(step.arguments.len() == 1);
-            let argument = step.arguments.first().unwrap();
+        match &step.argument {
+            Some(argument) => {
+                matched_arguments.reserve_exact(1);
 
-            matched_arguments.reserve_exact(1);
+                match argument {
+                    cuke::Argument::String(ref string) =>
+                        matched_arguments.push(StepArgument::DocString(DocString::from(string))),
+                    cuke::Argument::Table(ref table) =>
+                        matched_arguments.push(StepArgument::DataTable(DataTable::from(table))),
+                }
 
-            match argument {
-                PickleArgument::String(pickle_string) =>
-                    matched_arguments.push(StepArgument::DocString(DocString::from(pickle_string))),
-                PickleArgument::Table(pickle_table) =>
-                    matched_arguments.push(StepArgument::DataTable(DataTable::from(pickle_table))),
-                _ => eprintln!("Ignoring unknown step argument: {:?}", argument),
-            }
-
-            Some(matched_arguments)
+                Some(matched_arguments)
+            },
+            None => Some(matched_arguments),
         }
     }
 

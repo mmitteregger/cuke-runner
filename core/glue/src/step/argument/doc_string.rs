@@ -1,22 +1,22 @@
-use gherkin::pickle::PickleString;
+use gherkin::cuke::String as CukeString;
 
 /// The lifetime parameter `'s` refers to the lifetime of the step.
 /// It cannot escape the step function.
 #[derive(Debug, Clone)]
 pub struct DocString<'s> {
-    pickle_string: &'s PickleString,
+    cuke_string: &'s CukeString<'s>,
 }
 
 impl<'s> DocString<'s> {
     pub fn value(&self) -> &str {
-        &self.pickle_string.content
+        &self.cuke_string.content
     }
 }
 
-impl<'s> From<&'s PickleString> for DocString<'s> {
-    fn from(pickle_string: &'s PickleString) -> Self {
+impl<'s> From<&'s CukeString<'s>> for DocString<'s> {
+    fn from(cuke_string: &'s CukeString<'s>) -> Self {
         DocString {
-            pickle_string,
+            cuke_string,
         }
     }
 }

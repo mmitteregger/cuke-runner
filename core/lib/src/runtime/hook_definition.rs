@@ -1,6 +1,6 @@
 use std::fmt;
 
-use gherkin::pickle::PickleTag;
+use gherkin::cuke::Tag;
 
 use api::CodeLocation;
 use error::Result;
@@ -60,7 +60,7 @@ impl HookDefinition {
         }
     }
 
-    pub fn matches(&self, tags: &[PickleTag]) -> bool {
+    pub fn matches(&self, tags: &[Tag]) -> bool {
         self.tag_predicate.test(tags)
     }
 

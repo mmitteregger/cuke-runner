@@ -1,4 +1,4 @@
-use gherkin::pickle::PickleStep;
+use gherkin::cuke;
 use glue::step::argument::StepArgument;
 
 use error::{Result, Error};
@@ -9,63 +9,63 @@ use runtime::Scenario;
 #[derive(Debug)]
 pub enum StepDefinitionMatch<'s> {
     Hook(HookDefinitionMatch<'s>),
-    Pickle(PickleStepDefinitionMatch<'s>),
-    Ambiguous(AmbiguousPickleStepDefinitionMatch<'s>),
-    Undefined(UndefinedPickleStepDefinitionMatch<'s>),
+    Cuke(CukeStepDefinitionMatch<'s>),
+    Ambiguous(AmbiguousCukeStepDefinitionMatch<'s>),
+    Undefined(UndefinedCukeStepDefinitionMatch<'s>),
 }
 
 impl<'s> StepDefinitionMatch<'s> {
-    pub fn get_step(&self) -> &PickleStep {
+    pub fn get_step(&self) -> &cuke::Step {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_step(),
-            StepDefinitionMatch::Pickle(pickle_step) => pickle_step.get_step(),
-            StepDefinitionMatch::Ambiguous(pickle_step) => pickle_step.get_step(),
-            StepDefinitionMatch::Undefined(pickle_step) => pickle_step.get_step(),
+            StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_step(),
+            StepDefinitionMatch::Ambiguous(cuke_step) => cuke_step.get_step(),
+            StepDefinitionMatch::Undefined(cuke_step) => cuke_step.get_step(),
         }
     }
 
     pub fn run_step(&self, scenario: &mut Scenario) -> Result<()> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.run_step(scenario),
-            StepDefinitionMatch::Pickle(pickle_step) => pickle_step.run_step(scenario),
-            StepDefinitionMatch::Ambiguous(pickle_step) => pickle_step.run_step(scenario),
-            StepDefinitionMatch::Undefined(pickle_step) => pickle_step.run_step(scenario),
+            StepDefinitionMatch::Cuke(cuke_step) => cuke_step.run_step(scenario),
+            StepDefinitionMatch::Ambiguous(cuke_step) => cuke_step.run_step(scenario),
+            StepDefinitionMatch::Undefined(cuke_step) => cuke_step.run_step(scenario),
         }
     }
 
     pub fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.dry_run_step(scenario),
-            StepDefinitionMatch::Pickle(pickle_step) => pickle_step.dry_run_step(scenario),
-            StepDefinitionMatch::Ambiguous(pickle_step) => pickle_step.dry_run_step(scenario),
-            StepDefinitionMatch::Undefined(pickle_step) => pickle_step.dry_run_step(scenario),
+            StepDefinitionMatch::Cuke(cuke_step) => cuke_step.dry_run_step(scenario),
+            StepDefinitionMatch::Ambiguous(cuke_step) => cuke_step.dry_run_step(scenario),
+            StepDefinitionMatch::Undefined(cuke_step) => cuke_step.dry_run_step(scenario),
         }
     }
 
     pub fn get_location(&self) -> Option<&CodeLocation> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_location(),
-            StepDefinitionMatch::Pickle(pickle_step) => pickle_step.get_location(),
-            StepDefinitionMatch::Ambiguous(pickle_step) => pickle_step.get_location(),
-            StepDefinitionMatch::Undefined(pickle_step) => pickle_step.get_location(),
+            StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_location(),
+            StepDefinitionMatch::Ambiguous(cuke_step) => cuke_step.get_location(),
+            StepDefinitionMatch::Undefined(cuke_step) => cuke_step.get_location(),
         }
     }
 
     pub fn get_pattern(&self) -> Option<&String> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_pattern(),
-            StepDefinitionMatch::Pickle(pickle_step) => pickle_step.get_pattern(),
-            StepDefinitionMatch::Ambiguous(pickle_step) => pickle_step.get_pattern(),
-            StepDefinitionMatch::Undefined(pickle_step) => pickle_step.get_pattern(),
+            StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_pattern(),
+            StepDefinitionMatch::Ambiguous(cuke_step) => cuke_step.get_pattern(),
+            StepDefinitionMatch::Undefined(cuke_step) => cuke_step.get_pattern(),
         }
     }
 
     pub fn get_arguments(&self) -> &[StepArgument] {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_arguments(),
-            StepDefinitionMatch::Pickle(pickle_step) => pickle_step.get_arguments(),
-            StepDefinitionMatch::Ambiguous(pickle_step) => pickle_step.get_arguments(),
-            StepDefinitionMatch::Undefined(pickle_step) => pickle_step.get_arguments(),
+            StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_arguments(),
+            StepDefinitionMatch::Ambiguous(cuke_step) => cuke_step.get_arguments(),
+            StepDefinitionMatch::Undefined(cuke_step) => cuke_step.get_arguments(),
         }
     }
 }
@@ -78,7 +78,7 @@ pub struct HookDefinitionMatch<'s> {
 }
 
 impl<'s> HookDefinitionMatch<'s> {
-    pub fn get_step(&self) -> &PickleStep {
+    pub fn get_step(&self) -> &cuke::Step {
         unimplemented!("HookDefinitionMatch::get_step(&self)");
     }
 
@@ -104,15 +104,15 @@ impl<'s> HookDefinitionMatch<'s> {
 }
 
 #[derive(Debug)]
-pub struct PickleStepDefinitionMatch<'s> {
+pub struct CukeStepDefinitionMatch<'s> {
     pub step_definition: StepDefinition,
     pub feature_path: String,
-    pub step: &'s PickleStep,
+    pub step: &'s cuke::Step<'s>,
     pub arguments: Vec<StepArgument<'s>>,
 }
 
-impl<'s> PickleStepDefinitionMatch<'s> {
-    fn get_step(&self) -> &PickleStep {
+impl<'s> CukeStepDefinitionMatch<'s> {
+    fn get_step(&self) -> &cuke::Step {
         &self.step
     }
 
@@ -139,14 +139,14 @@ impl<'s> PickleStepDefinitionMatch<'s> {
 }
 
 #[derive(Debug)]
-pub struct AmbiguousPickleStepDefinitionMatch<'s> {
+pub struct AmbiguousCukeStepDefinitionMatch<'s> {
     pub feature_path: String,
-    pub step: &'s PickleStep,
+    pub step: &'s cuke::Step<'s>,
     pub arguments: Vec<StepArgument<'s>>,
 }
 
-impl<'s> AmbiguousPickleStepDefinitionMatch<'s> {
-    fn get_step(&self) -> &PickleStep {
+impl<'s> AmbiguousCukeStepDefinitionMatch<'s> {
+    fn get_step(&self) -> &cuke::Step {
         &self.step
     }
 
@@ -172,13 +172,13 @@ impl<'s> AmbiguousPickleStepDefinitionMatch<'s> {
 }
 
 #[derive(Debug)]
-pub struct UndefinedPickleStepDefinitionMatch<'s> {
-    pub step: &'s PickleStep,
+pub struct UndefinedCukeStepDefinitionMatch<'s> {
+    pub step: &'s cuke::Step<'s>,
     pub arguments: Vec<StepArgument<'s>>,
 }
 
-impl<'s> UndefinedPickleStepDefinitionMatch<'s> {
-    fn get_step(&self) -> &PickleStep {
+impl<'s> UndefinedCukeStepDefinitionMatch<'s> {
+    fn get_step(&self) -> &cuke::Step {
         &self.step
     }
 

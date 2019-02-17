@@ -1,10 +1,11 @@
 use std::time::SystemTime;
 use std::mem;
+use std::fs;
 use {Config, ExecutionMode};
-use parser;
 use runner::{EventBus, Runner};
 use self::event_listener::*;
 use crate::api::event::Event;
+use walkdir::WalkDir;
 pub use self::glue::*;
 pub use self::hook_definition::*;
 pub use self::scenario::*;
@@ -59,36 +60,54 @@ pub fn run(glue: Glue, mut config: Config) -> i32 {
 }
 
 fn run_sequential(runner: Runner, event_bus: &mut EventBus, config: &Config) {
-    let feature_pickles_map = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
+    let walk_dir = WalkDir::new(config.features_dir)
+        .follow_links(true);
 
-    for (feature_file, pickle_events) in feature_pickles_map {
-        for pickle_event in pickle_events {
-            runner.run_pickle(&feature_file, pickle_event, &event_bus);
+    let mut gherkin_parser = gherkin::Parser::default();
+    let mut gherkin_compiler = gherkin::cuke::Compiler::default();
+
+    for dir_entry_result in walk_dir {
+        let entry = dir_entry_result.unwrap();
+
+        if !entry.file_name().to_string_lossy().ends_with(".feature") {
+            continue;
+        }
+
+        let path = entry.path();
+        let source = match fs::read_to_string(path) {
+            Ok(source) => source,
+            Err(err) => panic!("could not read feature file \"{}\": {}", path.display(), err),
+        };
+
+        let gherkin_document = match gherkin_parser.parse_str(&source) {
+            Ok(document) => document,
+            Err(err) => panic!("could not parse feature file \"{}\": {}", path.display(), err),
+        };
+
+        let uri = path.display().to_string();
+
+        let feature = match gherkin_document.feature {
+            Some(ref feature) => feature,
+            None => continue,
+        };
+
+        event_bus.send(Event::TestSourceRead {
+            time: SystemTime::now(),
+            uri: &uri,
+            source: &source,
+            feature: &feature,
+        });
+
+        for cuke in gherkin_compiler.compile(&gherkin_document) {
+            runner.run(&uri, cuke, &event_bus);
         }
     }
 }
 
 fn run_parallel_features(_runner: Runner, _event_bus: &mut EventBus, _config: &Config) {
     unimplemented!("run_parallel_features");
-//    let pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
-//    let mut pickle_events_per_feature = HashMap::new();
-//
-//    for pickle_event in pickle_events {
-//        pickle_events_per_feature.entry(pickle_event.uri.clone())
-//            .or_insert_with(Vec::new)
-//            .push(pickle_event);
-//    }
-//
-//    for (feature_uri, pickle_events) in pickle_events_per_feature {
-//        pickle_events.into_par_iter()
-//            .for_each(|pickle_event| runner.run_pickle(pickle_event, &event_bus));
-//    }
 }
 
 fn run_parallel_scenarios(_runner: Runner, _event_bus: &mut EventBus, _config: &Config) {
     unimplemented!("run_parallel_scenarios");
-//    let _pickle_events = parser::parse_pickle_events(&config.features_dir, &event_bus).unwrap();
-//
-////    pickle_events.into_par_iter()
-////        .for_each(|pickle_event| runner.run_pickle(pickle_event, &event_bus));
 }

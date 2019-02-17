@@ -1,4 +1,4 @@
-use gherkin::pickle::PickleTag;
+use gherkin::cuke::Tag;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -10,14 +10,14 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn evaluate(&self, pickle_tags: &[PickleTag]) -> bool {
+    pub fn evaluate(&self, tags: &[Tag]) -> bool {
         use self::Expression::*;
 
         match self {
-            Literal(expression) => expression.evaluate(pickle_tags),
-            Or(expression) => expression.evaluate(pickle_tags),
-            And(expression) => expression.evaluate(pickle_tags),
-            Not(expression) => expression.evaluate(pickle_tags),
+            Literal(expression) => expression.evaluate(tags),
+            Or(expression) => expression.evaluate(tags),
+            And(expression) => expression.evaluate(tags),
+            Not(expression) => expression.evaluate(tags),
             True => true,
         }
     }
@@ -29,8 +29,8 @@ pub struct LiteralExpression {
 }
 
 impl LiteralExpression {
-    pub fn evaluate(&self, pickle_tags: &[PickleTag]) -> bool {
-        pickle_tags.iter().any(|tag| tag.name == self.value)
+    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+        tags.iter().any(|tag| tag.name == self.value)
     }
 }
 
@@ -41,8 +41,8 @@ pub struct OrExpression {
 }
 
 impl OrExpression {
-    pub fn evaluate(&self, pickle_tags: &[PickleTag]) -> bool {
-        self.left.evaluate(pickle_tags) || self.right.evaluate(pickle_tags)
+    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+        self.left.evaluate(tags) || self.right.evaluate(tags)
     }
 }
 
@@ -53,8 +53,8 @@ pub struct AndExpression {
 }
 
 impl AndExpression {
-    pub fn evaluate(&self, pickle_tags: &[PickleTag]) -> bool {
-        self.left.evaluate(pickle_tags) && self.right.evaluate(pickle_tags)
+    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+        self.left.evaluate(tags) && self.right.evaluate(tags)
     }
 }
 
@@ -64,7 +64,7 @@ pub struct NotExpression {
 }
 
 impl NotExpression {
-    pub fn evaluate(&self, pickle_tags: &[PickleTag]) -> bool {
-        !self.expression.evaluate(pickle_tags)
+    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+        !self.expression.evaluate(tags)
     }
 }

@@ -2,7 +2,7 @@ mod expression;
 #[doc(hidden)]
 pub mod parser;
 
-use gherkin::pickle::PickleTag;
+use gherkin::cuke::Tag;
 use self::expression::Expression;
 
 #[derive(Debug, Clone)]
@@ -20,8 +20,8 @@ impl TagPredicate {
         Ok(tag_predicate)
     }
 
-    pub fn test(&self, pickle_tags: &[PickleTag]) -> bool {
-        self.expression.evaluate(pickle_tags)
+    pub fn test(&self, tags: &[Tag]) -> bool {
+        self.expression.evaluate(tags)
     }
 }
 
@@ -29,112 +29,112 @@ impl TagPredicate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gherkin::pickle::{PickleTag, PickleLocation};
+    use gherkin::cuke::{Tag, Location};
 
     #[test]
-    fn empty_tag_predicate_matches_pickle_with_any_tags() {
-        let tags = create_pickle_tags(&["@FOO"]);
+    fn empty_tag_predicate_matches_with_any_tags() {
+        let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn single_tag_predicate_does_not_match_pickle_with_no_tags() {
-        let tags = create_pickle_tags(&[]);
+    fn single_tag_predicate_does_not_match_with_no_tags() {
+        let tags = create_tags(&[]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
         assert!(!predicate.test(&tags));
     }
 
     #[test]
-    fn single_tag_predicate_matches_pickle_with_same_single_tag() {
-        let tags = create_pickle_tags(&["@FOO"]);
+    fn single_tag_predicate_matches_with_same_single_tag() {
+        let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn single_tag_predicate_matches_pickle_with_more_tags() {
-        let tags = create_pickle_tags(&["@FOO", "@BAR"]);
+    fn single_tag_predicate_matches_with_more_tags() {
+        let tags = create_tags(&["@FOO", "@BAR"]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn single_tag_predicate_does_not_match_pickle_with_different_single_tag() {
-        let tags = create_pickle_tags(&["@BAR"]);
+    fn single_tag_predicate_does_not_match_with_different_single_tag() {
+        let tags = create_tags(&["@BAR"]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
         assert!(!predicate.test(&tags));
     }
 
     #[test]
-    fn not_tag_predicate_matches_pickle_with_no_tags() {
-        let tags = create_pickle_tags(&[]);
+    fn not_tag_predicate_matches_with_no_tags() {
+        let tags = create_tags(&[]);
         let predicate = TagPredicate::new("not @FOO").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn not_tag_predicate_does_not_match_pickle_with_same_single_tag() {
-        let tags = create_pickle_tags(&["@FOO"]);
+    fn not_tag_predicate_does_not_match_with_same_single_tag() {
+        let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("not @FOO").unwrap();
 
         assert!(!predicate.test(&tags));
     }
 
     #[test]
-    fn not_tag_predicate_matches_pickle_with_different_single_tag() {
-        let tags = create_pickle_tags(&["@BAR"]);
+    fn not_tag_predicate_matches_with_different_single_tag() {
+        let tags = create_tags(&["@BAR"]);
         let predicate = TagPredicate::new("not @FOO").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn and_tag_predicate_matches_pickle_with_all_tags() {
-        let tags = create_pickle_tags(&["@FOO", "@BAR"]);
+    fn and_tag_predicate_matches_with_all_tags() {
+        let tags = create_tags(&["@FOO", "@BAR"]);
         let predicate = TagPredicate::new("@FOO and @BAR").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn and_tag_predicate_does_not_match_pickle_with_one_of_the_tags() {
-        let tags = create_pickle_tags(&["@FOO"]);
+    fn and_tag_predicate_does_not_match_with_one_of_the_tags() {
+        let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("@FOO and @BAR").unwrap();
 
         assert!(!predicate.test(&tags));
     }
 
     #[test]
-    fn or_tag_predicate_matches_pickle_with_one_of_the_tags() {
-        let tags = create_pickle_tags(&["@FOO"]);
+    fn or_tag_predicate_matches_with_one_of_the_tags() {
+        let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("@FOO or @BAR").unwrap();
 
         assert!(predicate.test(&tags));
     }
 
     #[test]
-    fn or_tag_predicate_does_not_match_pickle_none_of_the_tags() {
-        let tags = create_pickle_tags(&[]);
+    fn or_tag_predicate_does_not_match_none_of_the_tags() {
+        let tags = create_tags(&[]);
         let predicate = TagPredicate::new("@FOO or @BAR").unwrap();
 
         assert!(!predicate.test(&tags));
     }
 
-    fn create_pickle_tags(tags: &[&str]) -> Vec<PickleTag> {
+    fn create_tags<'a>(tags: &[&'a str]) -> Vec<Tag<'a>> {
         tags.iter()
-            .map(|tag| PickleTag {
-                location: PickleLocation {
+            .map(|tag| Tag {
+                location: Location {
                     line: 0,
                     column: 0,
                 },
-                name: tag.to_string(),
+                name: tag,
             })
             .collect()
     }

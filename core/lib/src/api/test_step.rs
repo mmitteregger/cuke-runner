@@ -1,16 +1,16 @@
 use std::fmt::Debug;
 
-use gherkin::pickle::PickleStep;
+use gherkin::cuke;
 
 use api::CodeLocation;
 use glue::step::argument::StepArgument;
 
-/// A test step can either represent the execution of a hook or a pickle step.
+/// A test step can either represent the execution of a hook or a cuke step.
 /// Each step is tied to some glue code.
 #[derive(Debug)]
 pub enum TestStep<'s> {
     Hook(&'s HookTestStep<'s>),
-    Pickle(&'s PickleStepTestStep<'s>),
+    Cuke(&'s CukeStepTestStep<'s>),
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
@@ -30,19 +30,22 @@ pub trait HookTestStep<'s>: Debug + Send + Sync {
     fn get_hook_type(&self) -> HookType;
 }
 
-/// A pickle test step matches a line in a Gherkin scenario or background.
-pub trait PickleStepTestStep<'s>: Debug + Send + Sync {
+/// A cuke test step matches a line in a Gherkin scenario or background.
+pub trait CukeStepTestStep<'s>: Debug + Send + Sync {
     /// Representation of the source code location of the glue.
     fn get_code_location(&self) -> Option<&CodeLocation>;
 
     /// The pattern or expression used to match the glue code to the Gherkin step.
-    fn get_pattern(&self) -> Option<&String>;
+    fn get_pattern(&self) -> Option<&str>;
 
-    /// The matched Gherkin step as a compiled Pickle.
-    fn get_pickle_step(&self) -> &PickleStep;
+    /// The matched Gherkin step.
+    fn get_cuke_step(&self) -> &cuke::Step;
 
     /// Returns arguments provided to the Gherkin step.
     fn get_arguments(&self) -> &[StepArgument];
+
+    /// The keyword of the Gherkin step like "Given ", "When " or "Then ".
+    fn get_step_keyword(&self) -> &str;
 
     /// The line in the feature file defining this step.
     fn get_step_line(&self) -> u32;
@@ -51,5 +54,8 @@ pub trait PickleStepTestStep<'s>: Debug + Send + Sync {
     fn get_step_location(&self) -> String;
 
     /// The full text of the Gherkin step.
-    fn get_step_text(&self) -> &String;
+    fn get_step_text(&self) -> &str;
+
+    /// Whether this step is part of a Background definition.
+    fn is_background_step(&self) -> bool;
 }

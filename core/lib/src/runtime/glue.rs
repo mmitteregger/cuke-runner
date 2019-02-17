@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use gherkin::pickle::PickleStep;
+use gherkin::cuke;
 
 use glue::StaticGlueDefinitions;
 use runtime::{
-    AmbiguousPickleStepDefinitionMatch, HookDefinition, PickleStepDefinitionMatch,
-    StepDefinition, StepDefinitionMatch, UndefinedPickleStepDefinitionMatch,
+    AmbiguousCukeStepDefinitionMatch, HookDefinition, CukeStepDefinitionMatch,
+    StepDefinition, StepDefinitionMatch, UndefinedCukeStepDefinitionMatch,
 };
 
 #[derive(Debug)]
@@ -86,7 +86,7 @@ impl Glue {
         &self.after_scenario_hooks
     }
 
-    pub fn step_definition_match<'s, 'a: 's>(&'a self, feature_path: &str, step: &'s PickleStep)
+    pub fn step_definition_match<'s, 'a: 's>(&'a self, feature_path: &str, step: &'s cuke::Step)
         -> StepDefinitionMatch<'s> {
 
         let mut matches = Vec::new();
@@ -95,7 +95,7 @@ impl Glue {
             let arguments = step_definition.matched_arguments(&step);
 
             if let Some(arguments) = arguments {
-                matches.push(PickleStepDefinitionMatch {
+                matches.push(CukeStepDefinitionMatch {
                     arguments,
                     step_definition: step_definition.clone(),
                     feature_path: feature_path.to_owned(),
@@ -105,13 +105,13 @@ impl Glue {
         }
 
         if matches.is_empty() {
-            return StepDefinitionMatch::Undefined(UndefinedPickleStepDefinitionMatch {
+            return StepDefinitionMatch::Undefined(UndefinedCukeStepDefinitionMatch {
                 step,
                 arguments: Vec::new(),
             });
         }
         if matches.len() > 1 {
-            return StepDefinitionMatch::Ambiguous(AmbiguousPickleStepDefinitionMatch {
+            return StepDefinitionMatch::Ambiguous(AmbiguousCukeStepDefinitionMatch {
                 feature_path: feature_path.to_owned(),
                 step,
                 arguments: Vec::new(),
@@ -119,7 +119,7 @@ impl Glue {
         }
 
         let step_definition_match = matches.pop().unwrap();
-        StepDefinitionMatch::Pickle(step_definition_match)
+        StepDefinitionMatch::Cuke(step_definition_match)
     }
 
 }

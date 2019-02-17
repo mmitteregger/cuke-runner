@@ -1,7 +1,6 @@
 use std::time::SystemTime;
 
-use gherkin::event::PickleEvent;
-use gherkin::pickle::{PickleTag};
+use gherkin::cuke::{Cuke, Tag};
 
 use error::Error;
 use runner::EventBus;
@@ -12,9 +11,9 @@ use glue;
 #[derive(Debug)]
 pub struct Scenario<'a, 'b, 'c: 'b> {
     test_results: Vec<TestResult>,
-    tags: &'a Vec<PickleTag>,
-    uri: &'a String,
-    name: &'a String,
+    tags: &'a Vec<Tag<'a>>,
+    uri: &'a str,
+    name: &'a str,
     id: String,
     lines: Vec<u32>,
     event_bus: &'b EventBus<'c>,
@@ -22,15 +21,12 @@ pub struct Scenario<'a, 'b, 'c: 'b> {
 }
 
 impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
-    pub fn new(pickle_event: &'a PickleEvent, event_bus: &'b EventBus<'c>) -> Scenario<'a, 'b, 'c> {
-        let pickle = &pickle_event.pickle;
-
+    pub fn new(uri: &'a str, cuke: &'a Cuke, event_bus: &'b EventBus<'c>) -> Scenario<'a, 'b, 'c> {
         let test_results = Vec::new();
-        let tags = &pickle.tags;
-        let uri = &pickle_event.uri;
-        let name = &pickle.name;
-        let locations = &pickle.locations;
-        let id = pickle_event.uri.clone() + ":" + &locations[0].line.to_string();
+        let tags = &cuke.tags;
+        let name = &cuke.name;
+        let locations = &cuke.locations;
+        let id = uri.to_string() + ":" + &locations[0].line.to_string();
         let lines = locations.iter()
             .map(|location| location.line)
             .collect::<Vec<u32>>();
@@ -84,19 +80,19 @@ impl<'a, 'b, 'c> Scenario<'a, 'b, 'c> {
         });
     }
 
-    pub fn get_name(&self) -> &String {
+    pub fn get_name(&self) -> &str {
         self.name
     }
 
-    pub fn get_id(&self) -> &String {
+    pub fn get_id(&self) -> &str {
         &self.id
     }
 
-    pub fn get_uri(&self) -> &String {
+    pub fn get_uri(&self) -> &str {
         self.uri
     }
 
-    pub fn get_lines(&self) -> &Vec<u32> {
+    pub fn get_lines(&self) -> &[u32] {
         &self.lines
     }
 }

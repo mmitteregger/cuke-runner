@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use gherkin::pickle::PickleTag;
+use gherkin::cuke::Tag;
 
 use super::TestStep;
 
@@ -8,13 +8,13 @@ use super::TestStep;
 pub trait TestCase: Debug + Send + Sync {
     fn get_test_steps(&self) -> Vec<TestStep>;
 
-    fn get_name(&self) -> &String;
+    fn get_name(&self) -> &str;
 
     fn get_scenario_designation(&self) -> String;
 
-    fn get_uri(&self) -> &String;
+    fn get_uri(&self) -> &str;
 
     fn get_line(&self) -> u32;
 
-    fn get_tags(&self) -> &Vec<PickleTag>;
+    fn get_tags(&self) -> &[Tag];
 }

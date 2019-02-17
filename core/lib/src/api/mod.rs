@@ -1,5 +1,5 @@
 pub use self::feature_file::FeatureFile;
-pub use self::test_step::{TestStep, HookTestStep, HookType, PickleStepTestStep};
+pub use self::test_step::{TestStep, HookTestStep, HookType, CukeStepTestStep};
 pub use self::test_case::TestCase;
 pub use self::test_result::{TestResult, TestResultStatus};
 pub use glue::CodeLocation;

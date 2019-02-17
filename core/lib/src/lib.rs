@@ -24,7 +24,6 @@ pub use runtime::Glue;
 
 mod config;
 mod error;
-mod parser;
 pub mod api;
 mod runner;
 mod runtime;

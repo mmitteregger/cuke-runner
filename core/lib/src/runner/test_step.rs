@@ -1,12 +1,12 @@
 use std::time::{SystemTime, Duration};
 
-use gherkin::pickle::PickleStep;
+use gherkin::cuke;
 
 use error::{Result, Error};
-use api::{self, event::Event, FeatureFile, HookType, CodeLocation, TestCase, TestResult, TestResultStatus};
+use api::{self, event::Event, HookType, CodeLocation, TestResult, TestResultStatus};
 use glue::step::argument::StepArgument;
 use runner::EventBus;
-use runtime::{StepDefinitionMatch, Scenario};
+use runtime::{TestCase, StepDefinitionMatch, Scenario};
 
 #[derive(Debug)]
 pub struct HookTestStep<'s> {
@@ -18,14 +18,13 @@ impl<'s> HookTestStep<'s> {
     pub fn run(
         &self,
         event_bus: &EventBus,
-        feature_file: &FeatureFile,
         test_case: &TestCase,
         scenario: &mut Scenario,
         skip: bool,
     ) -> TestResult
     {
         let test_step = &api::TestStep::Hook(self as &api::HookTestStep);
-        run_test_step(feature_file, test_case, test_step, &self.definition_match, event_bus, scenario, skip)
+        run_test_step(test_case, test_step, &self.definition_match, event_bus, scenario, skip)
     }
 }
 
@@ -40,18 +39,18 @@ impl<'s> api::HookTestStep<'s> for HookTestStep<'s> {
 }
 
 #[derive(Debug)]
-pub struct PickleStepTestStep<'s> {
+pub struct CukeStepTestStep<'s> {
     pub uri: String,
     pub before_step_hook_steps: Vec<HookTestStep<'s>>,
     pub after_step_hook_steps: Vec<HookTestStep<'s>>,
     pub step_definition_match: StepDefinitionMatch<'s>,
+    pub background_step: bool,
 }
 
-impl<'s> PickleStepTestStep<'s> {
+impl<'s> CukeStepTestStep<'s> {
     pub fn run(
         &self,
         event_bus: &EventBus,
-        feature_file: &FeatureFile,
         test_case: &TestCase,
         scenario: &mut Scenario,
         skip: bool,
@@ -65,18 +64,18 @@ impl<'s> PickleStepTestStep<'s> {
         );
 
         for before_step_hook_step in &self.before_step_hook_steps {
-            let hook_result = before_step_hook_step.run(event_bus, feature_file, test_case, scenario, skip);
+            let hook_result = before_step_hook_step.run(event_bus, test_case, scenario, skip);
             skip_self = skip_self || !hook_result.status.eq(&TestResultStatus::Passed);
             results.push(hook_result);
         }
 
-        let test_step = &api::TestStep::Pickle(self as &api::PickleStepTestStep);
-        let self_result = run_test_step(feature_file, test_case, test_step, &self.step_definition_match,
+        let test_step = &api::TestStep::Cuke(self as &api::CukeStepTestStep);
+        let self_result = run_test_step(test_case, test_step, &self.step_definition_match,
                 event_bus, scenario, skip_self);
         results.push(self_result);
 
         for after_step_hook_step in &self.after_step_hook_steps {
-            let hook_result = after_step_hook_step.run(event_bus, feature_file, test_case, scenario, skip);
+            let hook_result = after_step_hook_step.run(event_bus, test_case, scenario, skip);
             results.push(hook_result);
         }
 
@@ -86,21 +85,25 @@ impl<'s> PickleStepTestStep<'s> {
     }
 }
 
-impl<'s> api::PickleStepTestStep<'s> for PickleStepTestStep<'s> {
+impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
     fn get_code_location(&self) -> Option<&CodeLocation> {
         self.step_definition_match.get_location()
     }
 
-    fn get_pattern(&self) -> Option<&String> {
-        self.step_definition_match.get_pattern()
+    fn get_pattern(&self) -> Option<&str> {
+        self.step_definition_match.get_pattern().map(String::as_str)
     }
 
-    fn get_pickle_step(&self) -> &PickleStep {
+    fn get_cuke_step(&self) -> &cuke::Step {
         &self.step_definition_match.get_step()
     }
 
     fn get_arguments(&self) -> &[StepArgument] {
         &self.step_definition_match.get_arguments()
+    }
+
+    fn get_step_keyword(&self) -> &str {
+        &self.step_definition_match.get_step().keyword
     }
 
     fn get_step_line(&self) -> u32 {
@@ -113,14 +116,17 @@ impl<'s> api::PickleStepTestStep<'s> for PickleStepTestStep<'s> {
         format!("{}:{}", &self.uri, &self.get_step_line())
     }
 
-    fn get_step_text(&self) -> &String {
+    fn get_step_text(&self) -> &str {
         &self.step_definition_match.get_step().text
+    }
+
+    fn is_background_step(&self) -> bool {
+        self.background_step
     }
 }
 
 fn run_test_step(
-    feature_file: &FeatureFile,
-    test_case: &api::TestCase,
+    test_case: &TestCase,
     test_step: &api::TestStep,
     definition_match: &StepDefinitionMatch,
     event_bus: &EventBus,
@@ -131,7 +137,10 @@ fn run_test_step(
     let start_time = SystemTime::now();
     event_bus.send(Event::TestStepStarted {
         time: start_time,
-        feature_file,
+        uri: test_case.uri,
+        feature: test_case.cuke.feature,
+        background: test_case.cuke.background,
+        scenario_definition: &test_case.cuke.scenario_definition,
         test_case,
         test_step,
     });
@@ -150,7 +159,10 @@ fn run_test_step(
     let result = map_status_to_result(status, error, duration);
     event_bus.send(Event::TestStepFinished {
         time: stop_time,
-        feature_file,
+        uri: test_case.uri,
+        feature: test_case.cuke.feature,
+        background: test_case.cuke.background,
+        scenario_definition: &test_case.cuke.scenario_definition,
         test_case,
         test_step,
         result: &result,

@@ -1,14 +1,10 @@
-// Perf notes: The code in this module is *not* yett written with performance in mind
-// It is hacked together to print something useful,
-// but there are lots of unnecessary clones and loops that should be avoided!
-
 use std::cmp;
 use std::ops::Deref;
 
-use gherkin::ast::*;
-use gherkin::pickle::*;
+use gherkin::ast::{Feature, Background, ScenarioOutline, Examples, Tag};
+use gherkin::cuke;
 
-use api::{CodeLocation, FeatureFile, TestCase, TestResult, TestStep, PickleStepTestStep};
+use api::{CodeLocation, TestCase, TestResult, TestStep, CukeStepTestStep};
 use api::event::{Event, EventListener};
 use glue::step::argument::StepArgument;
 
@@ -42,22 +38,25 @@ impl EventListener for PrettyFormatter {
     fn on_event(&mut self, event: &Event) {
         match *event {
             Event::TestCaseStarted {
-                feature_file,
+                uri,
+                feature,
+                background,
+                scenario_definition,
                 test_case,
                 ..
-            } => self.handle_test_case_started(feature_file, test_case),
+            } => self.handle_test_case_started(uri, feature, background, scenario_definition, test_case),
             Event::TestStepStarted {
-                feature_file,
+                uri,
+                scenario_definition,
                 test_case,
                 test_step,
                 ..
-            } => self.handle_test_step_started(feature_file, test_case, test_step),
+            } => self.handle_test_step_started(uri, scenario_definition, test_case, test_step),
             Event::TestStepFinished {
-                feature_file,
                 test_step,
                 result,
                 ..
-            } => self.handle_test_step_finished(feature_file, test_step, result),
+            } => self.handle_test_step_finished(test_step, result),
             Event::Write {
                 text,
                 ..
@@ -68,37 +67,38 @@ impl EventListener for PrettyFormatter {
 }
 
 impl PrettyFormatter {
-    fn handle_test_case_started(&mut self, feature_file: &FeatureFile, test_case: &TestCase) {
-        self.handle_start_of_feature(feature_file);
-        self.handle_scenario_outline(feature_file, test_case);
+    fn handle_test_case_started(&mut self, uri: &str, feature: &Feature,
+        background: Option<&Background>, scenario_definition: &cuke::ScenarioDefinition,
+        test_case: &TestCase)
+    {
+        self.handle_start_of_feature(feature);
+        self.handle_scenario_outline(uri, scenario_definition, test_case);
 
-        if let Some(background) = self.get_background(feature_file) {
-            self.print_background(background, feature_file, test_case);
+        if let Some(background) = background {
+            self.print_background(uri, background, test_case);
             self.print_scenario_definition_text = true;
         } else {
-            self.print_scenario_definition(feature_file, test_case);
+            self.print_scenario_definition(uri, scenario_definition, test_case);
         }
     }
 
-    fn print_background(&mut self, background: &Background, feature_file: &FeatureFile,
-        test_case: &TestCase)
-    {
+    fn print_background(&mut self, uri: &str, background: &Background, test_case: &TestCase) {
         let definition_text = format!("{}: {}", background.keyword, background.name);
         let background_line = background.location.line;
-        let description = background.description.clone();
-        self.calculate_location_indentation(feature_file, &definition_text, &test_case.get_test_steps(), true);
+        let description = background.description.as_ref();
+        self.calculate_location_indentation(&definition_text, &test_case.get_test_steps(), true);
         let location_padding = self.create_padding_to_location(SCENARIO_INDENT, &definition_text);
         println!();
-        let location_text = self.format_feature_file_location(feature_file, background_line);
+        let location_text = self.format_uri_location(uri, background_line);
         println!("{}", SCENARIO_INDENT.to_owned() + &definition_text + &location_padding + &location_text);
-        self.print_description(description.as_ref());
+        self.print_description(description);
     }
 
-    fn handle_test_step_started(&mut self, feature_file: &FeatureFile, test_case: &TestCase, test_step: &TestStep) {
-        if let TestStep::Pickle(pickle_step_test_step) = test_step {
+    fn handle_test_step_started(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &TestCase, test_step: &TestStep) {
+        if let TestStep::Cuke(cuke_step_test_step) = test_step {
             if self.print_scenario_definition_text {
-                if !self.is_background_step(feature_file, *pickle_step_test_step) {
-                    self.print_scenario_definition(feature_file, test_case.deref());
+                if !cuke_step_test_step.is_background_step() {
+                    self.print_scenario_definition(uri, scenario_definition, test_case.deref());
                     self.print_scenario_definition_text = false;
                 } else {
                     self.print_scenario_definition_text = true;
@@ -107,11 +107,9 @@ impl PrettyFormatter {
         }
     }
 
-    fn handle_test_step_finished(&mut self, feature_file: &FeatureFile, test_step: &TestStep,
-        result: &TestResult)
-    {
-        if let TestStep::Pickle(pickle_step_test_step) = test_step {
-            self.print_step(feature_file, *pickle_step_test_step, result);
+    fn handle_test_step_finished(&mut self, test_step: &TestStep, result: &TestResult) {
+        if let TestStep::Cuke(cuke_step_test_step) = test_step {
+            self.print_step(*cuke_step_test_step, result);
         }
         self.print_error(result);
     }
@@ -120,8 +118,8 @@ impl PrettyFormatter {
         println!("{}", text);
     }
 
-    fn print_step(&self, feature_file: &FeatureFile, test_step: &PickleStepTestStep, result: &TestResult) {
-        let keyword = self.get_step_keyword(feature_file, test_step);
+    fn print_step(&self, test_step: &CukeStepTestStep, result: &TestResult) {
+        let keyword = test_step.get_step_keyword();
         let step_text = test_step.get_step_text();
         let definition_text = format!("{}{}", keyword, step_text);
         let location_padding = self.create_padding_to_location(STEP_INDENT, &definition_text);
@@ -164,7 +162,6 @@ impl PrettyFormatter {
         }
 
         result
-
     }
 
     fn print_error(&self, result: &TestResult) {
@@ -176,36 +173,33 @@ impl PrettyFormatter {
         }
     }
 
-    fn handle_start_of_feature(&mut self, feature_file: &FeatureFile) {
+    fn handle_start_of_feature(&mut self, feature: &Feature) {
         if self.print_feature_file_text {
             if !self.first_feature {
                 println!();
             }
 
-            self.print_feature(feature_file);
+            self.print_feature(feature);
             self.print_feature_file_text = false;
             self.first_feature = false;
         }
     }
 
-    fn print_feature(&self, feature_file: &FeatureFile) {
-        let feature = &feature_file.feature;
+    fn print_feature(&self, feature: &Feature) {
         self.print_tags(&feature.tags);
         println!("{}: {}", feature.keyword, feature.name);
         self.print_description(feature.description.as_ref());
     }
 
-    fn handle_scenario_outline(&mut self, feature_file: &FeatureFile, test_case: &TestCase) {
-        let scenario_definition = self.get_scenario_definition(feature_file, test_case.get_line());
-
-        if let ScenarioDefinition::ScenarioOutline(scenario_outline) = scenario_definition {
+    fn handle_scenario_outline(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &TestCase) {
+        if let cuke::ScenarioDefinition::ScenarioOutline(scenario_outline) = scenario_definition {
             let scenario_outline_line = scenario_outline.location.line;
             let mut reset_scenario_outline = false;
 
             {
                 if self.current_scenario_outline.is_none()
                     || self.current_scenario_outline.unwrap() != scenario_outline_line {
-                    self.print_scenario_outline(feature_file, scenario_outline);
+                    self.print_scenario_outline(uri, scenario_outline);
                     reset_scenario_outline = true;
                 }
             }
@@ -260,12 +254,12 @@ impl PrettyFormatter {
         self.print_description(examples.description.as_ref());
     }
 
-    fn print_scenario_outline(&self, feature_file: &FeatureFile, scenario_outline: &ScenarioOutline) {
+    fn print_scenario_outline(&self, uri: &str, scenario_outline: &ScenarioOutline) {
         println!();
         self.print_tags_with_ident(&scenario_outline.tags, SCENARIO_INDENT);
         let definition_text = format!("{}: {}",
             scenario_outline.keyword, scenario_outline.name);
-        let location_text = self.format_feature_file_location(feature_file, scenario_outline.location.line);
+        let location_text = self.format_uri_location(uri, scenario_outline.location.line);
         println!("{}", SCENARIO_INDENT.to_owned() + &definition_text + " " + &location_text);
         self.print_description(scenario_outline.description.as_ref());
         for step in &scenario_outline.steps {
@@ -281,91 +275,51 @@ impl PrettyFormatter {
     fn print_tags_with_ident(&self, tags: &[Tag], indent: &str) {
         if !tags.is_empty() {
             let tag_names: Vec<&str> = tags.iter()
-                .map(|tag| tag.name.as_str())
+                .map(|tag| tag.name.as_ref())
                 .collect();
             println!("{}{}", indent, tag_names.join(" "));
         }
     }
 
-    fn print_pickle_tags(&self, tags: &[PickleTag], indent: &str) {
+    fn print_cuke_tags(&self, tags: &[cuke::Tag], indent: &str) {
         if !tags.is_empty() {
             let tag_names: Vec<&str> = tags.iter()
-                .map(|tag| tag.name.as_str())
+                .map(cuke::Tag::as_ref)
                 .collect();
             println!("{}{}", indent, tag_names.join(" "));
         }
     }
 
-    fn print_description(&self, description: Option<&String>) {
+    fn print_description<S: AsRef<str>>(&self, description: Option<S>) {
         if let Some(description) = description {
-            println!("{}", description);
+            println!("{}", description.as_ref());
         }
     }
 
-    fn print_scenario_definition(&mut self, feature_file: &FeatureFile, test_case: &TestCase) {
-        let scenario_definition = self.get_scenario_definition(feature_file, test_case.get_line());
+    fn print_scenario_definition(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition,
+        test_case: &TestCase)
+    {
         let definition_text = format!("{}: {}",
             scenario_definition.get_keyword(), test_case.get_name());
         let test_steps = &test_case.get_test_steps();
-        let description = scenario_definition.get_description().cloned();
-        self.calculate_location_indentation(feature_file, &definition_text, test_steps, false);
+        let description = scenario_definition.get_description();
+        self.calculate_location_indentation(&definition_text, test_steps, false);
         let location_padding = self.create_padding_to_location(SCENARIO_INDENT, &definition_text);
         println!();
-        self.print_pickle_tags(test_case.get_tags(), SCENARIO_INDENT);
-        let location_text = self.format_feature_file_location(feature_file, test_case.get_line());
+        self.print_cuke_tags(test_case.get_tags(), SCENARIO_INDENT);
+        let location_text = self.format_uri_location(uri, test_case.get_line());
         println!("{}", SCENARIO_INDENT.to_owned() + &definition_text + &location_padding + &location_text);
-        self.print_description(description.as_ref());
+        self.print_description(description);
     }
 
-    fn get_scenario_definition<'f>(&self, feature_file: &'f FeatureFile, line: u32) -> &'f ScenarioDefinition {
-        for scenario_definition in &feature_file.feature.scenario_definitions {
-            if let ScenarioDefinition::ScenarioOutline(outline) = scenario_definition {
-                for examples in &outline.examples {
-                    if examples.location.line == line {
-                        return scenario_definition;
-                    }
-
-                    if let Some(table_header) = &examples.table_header {
-                        if table_header.location.line == line {
-                            return scenario_definition;
-                        }
-                    }
-
-                    if let Some(table_body) = &examples.table_body {
-                        for table_row in table_body {
-                            if table_row.location.line == line {
-                                return scenario_definition;
-                            }
-                        }
-                    }
-                }
-            } else if scenario_definition.get_location().line == line {
-                return scenario_definition;
-            }
-        }
-
-        panic!("Could not find scenario definition from feature {} at line {}",
-            &feature_file.uri, line);
-    }
-
-    fn get_background<'f>(&self, feature_file: &'f FeatureFile, ) -> Option<&'f Background> {
-        if let Some(scenario_definition) = feature_file.feature.scenario_definitions.first() {
-            if let ScenarioDefinition::Background(ref background) = scenario_definition {
-                return Some(background);
-            }
-        }
-
-        None
-    }
-
-    fn calculate_location_indentation(&mut self, feature_file: &FeatureFile, definition_text: &str,
+    fn calculate_location_indentation(&mut self, definition_text: &str,
         test_steps: &[TestStep], use_background_steps: bool) {
 
         let mut max_text_length = SCENARIO_INDENT.chars().count() + definition_text.chars().count();
         for step in test_steps {
-            if let TestStep::Pickle(test_step) = step.deref() {
-                if self.is_background_step(feature_file, *test_step) == use_background_steps {
-                    let step_text = self.step_text(feature_file, *test_step);
+            if let TestStep::Cuke(test_step) = step.deref() {
+                if test_step.is_background_step() == use_background_steps {
+                    let step_text = self.step_text(*test_step);
                     max_text_length = cmp::max(max_text_length, STEP_INDENT.chars().count() + step_text.chars().count());
                 }
             }
@@ -375,52 +329,10 @@ impl PrettyFormatter {
         self.location_indentation = max_text_length;
     }
 
-    fn is_background_step(&self, feature_file: &FeatureFile, test_step: &PickleStepTestStep) -> bool {
-        let line = test_step.get_step_line();
-
-        for scenario_definition in &feature_file.feature.scenario_definitions {
-            if let ScenarioDefinition::Background(background) = scenario_definition {
-                if background.location.line == line {
-                    return true;
-                }
-
-                for step in &background.steps {
-                    if step.location.line == line {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-
-        false
-    }
-
-    fn step_text(&self, feature_file: &FeatureFile, test_step: &PickleStepTestStep) -> String {
-        let keyword = self.get_step_keyword(feature_file, test_step);
-        let mut step_text = keyword;
-        step_text.push_str(test_step.get_step_text());
-        step_text
-    }
-
-    fn get_step_keyword(&self, feature_file: &FeatureFile, test_step: &PickleStepTestStep) -> String {
-        match self.get_step(feature_file, test_step.get_step_line()) {
-            Some(step) => step.keyword.to_owned(),
-            None => String::new(),
-        }
-    }
-
-    fn get_step<'f>(&self, feature_file: &'f FeatureFile, line: u32) -> Option<&'f Step> {
-        for scenario_definition in &feature_file.feature.scenario_definitions {
-            for step in scenario_definition.get_steps() {
-                if step.location.line == line {
-                    return Some(step);
-                }
-            }
-        }
-
-        None
+    fn step_text(&self, test_step: &CukeStepTestStep) -> String {
+        let keyword = test_step.get_step_keyword();
+        let text = test_step.get_step_text();
+        format!("{}{}", keyword, text)
     }
 
     fn create_padding_to_location(&self, indent: &str, text: &str) -> String {
@@ -433,8 +345,8 @@ impl PrettyFormatter {
         padding
     }
 
-    fn format_feature_file_location(&self, feature_file: &FeatureFile, line: u32) -> String {
-        let location = format!("{}:{}", feature_file.uri, line);
+    fn format_uri_location(&self, uri: &str, line: u32) -> String {
+        let location = format!("{}:{}", uri, line);
         format!("\x1B[90m# {}\x1B[0m", location)
     }
 
