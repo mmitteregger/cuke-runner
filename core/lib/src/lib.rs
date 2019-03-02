@@ -17,6 +17,7 @@ extern crate walkdir;
 extern crate regex;
 extern crate rayon;
 extern crate termcolor;
+extern crate indicatif;
 
 pub use config::{Config, ExecutionMode};
 pub use error::{Error, Result};
