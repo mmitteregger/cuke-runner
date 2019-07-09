@@ -17,7 +17,7 @@ proc-macro = true
 cuke_runner_glue = { path = "../glue" }
 syn = { version = "0.14", features = ["full"] }
 quote = "0.6"
-proc-macro2 = { version = "0.4", features = ["nightly"] }
+proc-macro2 = "0.4"
 regex = "1"
 log = "0.4"
 devise = "0.1"
