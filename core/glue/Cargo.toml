@@ -11,7 +11,7 @@ categories = ["development-tools::testing"]
 license = "MIT"
 
 [dependencies]
-gherkin = { path = "../../../cucumber/gherkin/rust" }
+gherkin = { git = "https://github.com/mmitteregger/gherkin-rust" }
 regex = "1.1.0"
 failure = "0.1"
 failure_derive = "0.1"
