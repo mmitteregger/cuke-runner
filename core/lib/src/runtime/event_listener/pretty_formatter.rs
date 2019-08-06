@@ -83,7 +83,7 @@ impl EventListener for PrettyFormatter {
 impl Inner {
     fn handle_test_case_started(&mut self, uri: &str, feature: &Feature,
         background: Option<&Background>, scenario_definition: &cuke::ScenarioDefinition,
-        test_case: &TestCase)
+        test_case: &dyn TestCase)
     {
         self.handle_start_of_feature(feature);
         self.handle_scenario_outline(uri, scenario_definition, test_case);
@@ -96,7 +96,7 @@ impl Inner {
         }
     }
 
-    fn print_background(&mut self, uri: &str, background: &Background, test_case: &TestCase) {
+    fn print_background(&mut self, uri: &str, background: &Background, test_case: &dyn TestCase) {
         let definition_text = format!("{}: {}", background.keyword, background.name);
         let background_line = background.location.line;
         let description = background.description.as_ref();
@@ -108,7 +108,7 @@ impl Inner {
         self.print_description(description);
     }
 
-    fn handle_test_step_started(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &TestCase, test_step: &TestStep) {
+    fn handle_test_step_started(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &dyn TestCase, test_step: &TestStep) {
         if let TestStep::Cuke(cuke_step_test_step) = test_step {
             if self.print_scenario_definition_text {
                 if !cuke_step_test_step.is_background_step() {
@@ -132,7 +132,7 @@ impl Inner {
         println!("{}", text);
     }
 
-    fn print_step(&self, test_step: &CukeStepTestStep, result: &TestResult) {
+    fn print_step(&self, test_step: &dyn CukeStepTestStep, result: &TestResult) {
         let keyword = test_step.get_step_keyword();
         let step_text = test_step.get_step_text();
         let definition_text = format!("{}{}", keyword, step_text);
@@ -205,7 +205,7 @@ impl Inner {
         self.print_description(feature.description.as_ref());
     }
 
-    fn handle_scenario_outline(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &TestCase) {
+    fn handle_scenario_outline(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &dyn TestCase) {
         if let cuke::ScenarioDefinition::ScenarioOutline(scenario_outline) = scenario_definition {
             let scenario_outline_line = scenario_outline.location.line;
             let mut reset_scenario_outline = false;
@@ -311,7 +311,7 @@ impl Inner {
     }
 
     fn print_scenario_definition(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition,
-        test_case: &TestCase)
+        test_case: &dyn TestCase)
     {
         let definition_text = format!("{}: {}",
             scenario_definition.get_keyword(), test_case.get_name());
@@ -343,7 +343,7 @@ impl Inner {
         self.location_indentation = max_text_length;
     }
 
-    fn step_text(&self, test_step: &CukeStepTestStep) -> String {
+    fn step_text(&self, test_step: &dyn CukeStepTestStep) -> String {
         let keyword = test_step.get_step_keyword();
         let text = test_step.get_step_text();
         format!("{}{}", keyword, text)

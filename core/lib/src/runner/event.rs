@@ -8,16 +8,16 @@ pub trait EventPublisher: Debug {
 
 #[derive(Debug)]
 pub(crate) struct EventBus<'a> {
-    event_listeners: Vec<&'a EventListener>,
+    event_listeners: Vec<&'a dyn EventListener>,
 }
 
 #[derive(Debug)]
 pub(crate) struct SyncEventBus<'a> {
-    event_listeners: Vec<&'a SyncEventListener>,
+    event_listeners: Vec<&'a dyn SyncEventListener>,
 }
 
 impl<'a> EventBus<'a> {
-    pub fn new(event_listeners: Vec<&'a EventListener>) -> EventBus<'a> {
+    pub fn new(event_listeners: Vec<&'a dyn EventListener>) -> EventBus<'a> {
         EventBus {
             event_listeners,
         }
@@ -25,7 +25,7 @@ impl<'a> EventBus<'a> {
 }
 
 impl<'a> SyncEventBus<'a> {
-    pub fn new(event_listeners: Vec<&'a SyncEventListener>) -> SyncEventBus<'a> {
+    pub fn new(event_listeners: Vec<&'a dyn SyncEventListener>) -> SyncEventBus<'a> {
         SyncEventBus {
             event_listeners,
         }

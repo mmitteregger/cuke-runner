@@ -12,7 +12,7 @@ pub enum ExecutionError {
     Other(#[cause] ::failure::Error),
 }
 
-pub fn panic_error(error: Box<::std::any::Any + Send + 'static>) -> ExecutionError {
+pub fn panic_error(error: Box<dyn (::std::any::Any) + Send + 'static>) -> ExecutionError {
     ExecutionError::Panic(PanicError { message: format!("{:?}", error) })
 }
 

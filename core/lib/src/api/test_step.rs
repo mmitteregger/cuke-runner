@@ -9,8 +9,8 @@ use glue::step::argument::StepArgument;
 /// Each step is tied to some glue code.
 #[derive(Debug)]
 pub enum TestStep<'s> {
-    Hook(&'s HookTestStep<'s>),
-    Cuke(&'s CukeStepTestStep<'s>),
+    Hook(&'s dyn HookTestStep<'s>),
+    Cuke(&'s dyn CukeStepTestStep<'s>),
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]

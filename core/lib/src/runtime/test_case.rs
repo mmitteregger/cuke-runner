@@ -22,23 +22,23 @@ impl<'s> api::TestCase for TestCase<'s> {
         let mut test_steps = Vec::new();
 
         for before_hook in &self.before_hooks {
-            test_steps.push(api::TestStep::Hook(before_hook as &api::HookTestStep));
+            test_steps.push(api::TestStep::Hook(before_hook as &dyn api::HookTestStep));
         }
 
         for test_step in &self.test_steps {
             for before_step_hook_step in &test_step.before_step_hook_steps {
-                test_steps.push(api::TestStep::Hook(before_step_hook_step as &api::HookTestStep));
+                test_steps.push(api::TestStep::Hook(before_step_hook_step as &dyn api::HookTestStep));
             }
 
-            test_steps.push(api::TestStep::Cuke(test_step as &api::CukeStepTestStep));
+            test_steps.push(api::TestStep::Cuke(test_step as &dyn api::CukeStepTestStep));
 
             for after_step_hook_step in &test_step.after_step_hook_steps {
-                test_steps.push(api::TestStep::Hook(after_step_hook_step as &api::HookTestStep));
+                test_steps.push(api::TestStep::Hook(after_step_hook_step as &dyn api::HookTestStep));
             }
         }
 
         for after_hook in &self.after_hooks {
-            test_steps.push(api::TestStep::Hook(after_hook as &api::HookTestStep));
+            test_steps.push(api::TestStep::Hook(after_hook as &dyn api::HookTestStep));
         }
 
         test_steps
@@ -73,7 +73,7 @@ pub fn run<EP: EventPublisher>(test_case: TestCase, event_publisher: &EP) {
         feature: test_case.cuke.feature,
         background: test_case.cuke.background,
         scenario_definition: &test_case.cuke.scenario_definition,
-        test_case: &test_case as &api::TestCase,
+        test_case: &test_case as &dyn api::TestCase,
     });
 
     let mut skip_next_step = test_case.dry_run;
@@ -113,6 +113,6 @@ pub fn run<EP: EventPublisher>(test_case: TestCase, event_publisher: &EP) {
         background: test_case.cuke.background,
         scenario_definition: &test_case.cuke.scenario_definition,
         result: &test_result,
-        test_case: &test_case as &api::TestCase,
+        test_case: &test_case as &dyn api::TestCase,
     });
 }

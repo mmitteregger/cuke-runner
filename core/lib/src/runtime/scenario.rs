@@ -16,12 +16,12 @@ pub struct Scenario<'a, 'b> {
     name: &'a str,
     id: String,
     lines: Vec<u32>,
-    event_publisher: &'b EventPublisher,
+    event_publisher: &'b dyn EventPublisher,
     pub(crate) glue_scenario: glue::scenario::Scenario,
 }
 
 impl<'a, 'b> Scenario<'a, 'b> {
-    pub fn new(uri: &'a str, cuke: &'a Cuke, event_publisher: &'b EventPublisher) -> Scenario<'a, 'b> {
+    pub fn new(uri: &'a str, cuke: &'a Cuke, event_publisher: &'b dyn EventPublisher) -> Scenario<'a, 'b> {
         let test_results = Vec::new();
         let tags = &cuke.tags;
         let name = &cuke.name;

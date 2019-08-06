@@ -32,7 +32,7 @@ pub enum Event<'e, 's: 'e> {
         feature: &'e Feature,
         background: Option<&'e Background>,
         scenario_definition: &'e ScenarioDefinition<'e>,
-        test_case: &'e TestCase,
+        test_case: &'e dyn TestCase,
     },
     /// Sent after the execution of a test case.
     TestStepStarted {
@@ -41,7 +41,7 @@ pub enum Event<'e, 's: 'e> {
         feature: &'e Feature,
         background: Option<&'e Background>,
         scenario_definition: &'e ScenarioDefinition<'e>,
-        test_case: &'e TestCase,
+        test_case: &'e dyn TestCase,
         test_step: &'e TestStep<'s>,
     },
     /// Sent when a hook wants to embed media into a report.
@@ -62,7 +62,7 @@ pub enum Event<'e, 's: 'e> {
         feature: &'e Feature,
         background: Option<&'e Background>,
         scenario_definition: &'e ScenarioDefinition<'e>,
-        test_case: &'e TestCase,
+        test_case: &'e dyn TestCase,
         test_step: &'e TestStep<'s>,
         result: &'e TestResult,
     },
@@ -73,7 +73,7 @@ pub enum Event<'e, 's: 'e> {
         feature: &'e Feature,
         background: Option<&'e Background>,
         scenario_definition: &'e ScenarioDefinition<'e>,
-        test_case: &'e TestCase,
+        test_case: &'e dyn TestCase,
         result: &'e TestResult,
     },
     /// Sent after all executions of test steps are finished.

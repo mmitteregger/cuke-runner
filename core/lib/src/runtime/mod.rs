@@ -35,7 +35,7 @@ pub fn run(glue: Glue, config: Config) -> i32 {
             let exit_status_listener = ExitStatusListener::new();
             let test_summary_listener = TestSummaryListener::new();
 
-            let mut listeners: Vec<&EventListener> = Vec::with_capacity(2 + event_listeners.len());
+            let mut listeners: Vec<&dyn EventListener> = Vec::with_capacity(2 + event_listeners.len());
             listeners.push(&exit_status_listener);
             listeners.push(&test_summary_listener);
 
@@ -56,7 +56,7 @@ pub fn run(glue: Glue, config: Config) -> i32 {
             let exit_status_listener = SyncExitStatusListener::new();
             let test_summary_listener = SyncTestSummaryListener::new();
 
-            let mut listeners: Vec<&SyncEventListener> = Vec::with_capacity(2 + event_listeners.len());
+            let mut listeners: Vec<&dyn SyncEventListener> = Vec::with_capacity(2 + event_listeners.len());
             listeners.push(&exit_status_listener);
             listeners.push(&test_summary_listener);
 
@@ -77,7 +77,7 @@ pub fn run(glue: Glue, config: Config) -> i32 {
             let exit_status_listener = SyncExitStatusListener::new();
             let test_summary_listener = SyncTestSummaryListener::new();
 
-            let mut listeners: Vec<&SyncEventListener> = Vec::with_capacity(2 + event_listeners.len());
+            let mut listeners: Vec<&dyn SyncEventListener> = Vec::with_capacity(2 + event_listeners.len());
             listeners.push(&exit_status_listener);
             listeners.push(&test_summary_listener);
 
@@ -211,7 +211,7 @@ fn parse_gherking_documents(config: &Config) -> Vec<ParsedGherkinDocument> {
 
 fn parse_cukes<'d>(
     parsed_gherkin_documents: &'d [ParsedGherkinDocument],
-    event_publisher: &EventPublisher,
+    event_publisher: &dyn EventPublisher,
 ) -> Vec<ParsedCuke<'d>>
 {
     let mut gherkin_compiler = gherkin::cuke::Compiler::default();

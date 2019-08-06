@@ -7,11 +7,17 @@ pub struct ProgressBarListener {
     progress_bar: ProgressBar,
 }
 
-impl ProgressBarListener {
-    pub fn new() -> ProgressBarListener {
+impl Default for ProgressBarListener {
+    fn default() -> ProgressBarListener {
         ProgressBarListener::with_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:60.cyan/blue}] {pos}/{len} ({eta})")
             .progress_chars("#>-"))
+    }
+}
+
+impl ProgressBarListener {
+    pub fn new() -> ProgressBarListener {
+        ProgressBarListener::default()
     }
 
     pub fn with_style(style: ProgressStyle) -> ProgressBarListener {

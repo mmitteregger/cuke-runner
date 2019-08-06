@@ -23,7 +23,7 @@ impl<'s> HookTestStep<'s> {
         skip: bool,
     ) -> TestResult
     {
-        let test_step = &api::TestStep::Hook(self as &api::HookTestStep);
+        let test_step = &api::TestStep::Hook(self as &dyn api::HookTestStep);
         run_test_step(test_case, test_step, &self.definition_match, event_publisher, scenario, skip)
     }
 }
@@ -69,7 +69,7 @@ impl<'s> CukeStepTestStep<'s> {
             results.push(hook_result);
         }
 
-        let test_step = &api::TestStep::Cuke(self as &api::CukeStepTestStep);
+        let test_step = &api::TestStep::Cuke(self as &dyn api::CukeStepTestStep);
         let self_result = run_test_step(test_case, test_step, &self.step_definition_match,
                 event_publisher, scenario, skip_self);
         results.push(self_result);

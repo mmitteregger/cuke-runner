@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct Scenario {
-    user_data: HashMap<TypeId, Box<Any>>,
+    user_data: HashMap<TypeId, Box<dyn Any>>,
 }
 
 impl Scenario {
