@@ -4,6 +4,7 @@ use devise::{FromMeta, MetaItem, Result};
 use glue;
 
 use proc_macro_ext::StringLit;
+use syn_ext::PathExt;
 
 #[derive(Debug)]
 crate struct HookType(crate glue::hook::HookType);
@@ -40,8 +41,8 @@ impl FromMeta for HookType {
         let span = meta.value_span();
         let help_text = format!("hook type must be one of: {}", VALID_HOOK_TYPES_STR);
 
-        if let MetaItem::Ident(ident) = meta {
-            let hook_type = ident.to_string().parse()
+        if let MetaItem::Path(path) = meta {
+            let hook_type = path.to_string().parse()
                 .map_err(|_| span.error("invalid hook type").help(&*help_text))?;
 
             if !VALID_HOOK_TYPES.contains(&hook_type) {
@@ -85,8 +86,8 @@ impl FromMeta for StepKeyword {
         let span = meta.value_span();
         let help_text = format!("keyword must be one of: {}", VALID_STEPS_STR);
 
-        if let MetaItem::Ident(ident) = meta {
-            let keyword = ident.to_string().parse()
+        if let MetaItem::Path(path) = meta {
+            let keyword = path.to_string().parse()
                 .map_err(|_| span.error("invalid keyword").help(&*help_text))?;
 
             if !VALID_STEPS.contains(&keyword) {

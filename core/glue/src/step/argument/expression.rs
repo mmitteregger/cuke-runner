@@ -14,7 +14,7 @@
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(custom_attribute)]
+/// # #![feature(custom_attribute, param_attrs)]
 /// #
 /// # pub struct Calc;
 /// # impl Calc {
@@ -23,14 +23,14 @@
 /// # }
 ///
 /// #[when("I add (\\d+) and (\\d+)")]
-/// pub fn add(calc: &mut Calc, arg1: &str, arg2: &str) {
+/// pub fn add(#[scenario] calc: &mut Calc, arg1: &str, arg2: &str) {
 ///     calc.push(arg1);
 ///     calc.push(arg2);
 ///     calc.push("+");
 /// }
 ///
 /// #[then("the result is (.*)")]
-/// pub fn assert_result(calc: &mut Calc, expected: f64) {
+/// pub fn assert_result(#[scenario] calc: &mut Calc, expected: f64) {
 ///     assert_eq!(calc.value(), expected);
 /// }
 /// ```

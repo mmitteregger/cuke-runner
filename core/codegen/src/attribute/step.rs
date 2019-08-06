@@ -1,9 +1,10 @@
 use proc_macro::{Span, TokenStream};
 
-use devise::{ext::TypeExt, FromMeta, Result, Spanned, SpanWrapped, syn};
+use devise::{FromMeta, Result, Spanned, SpanWrapped, syn};
 use proc_macro2::TokenStream as TokenStream2;
 
-use {PARAM_PREFIX, STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
+use {STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
+use attribute::GlueFnArg;
 use glue_codegen::{Regex, StepKeyword};
 use path_utils;
 use proc_macro_ext::{Diagnostics, StringLit};
@@ -33,58 +34,17 @@ struct Step {
     attribute: StepAttribute,
     /// The function that was decorated with the `step` attribute.
     function: syn::ItemFn,
-    /// The parsed inputs to the user's function. The first ident is the ident
-    /// as the user wrote it, while the second ident is the identifier that
-    /// should be used during code generation, the `cuke_runner_ident`.
-    inputs: Vec<(syn::Ident, syn::Ident, syn::Type)>,
+    /// Parsed function arguments.
+    arguments: Vec<GlueFnArg>,
 }
 
-fn parse_step(attr: StepAttribute, function: syn::ItemFn) -> Result<Step> {
+fn parse_step(attr: StepAttribute, mut function: syn::ItemFn) -> Result<Step> {
     // Gather diagnostics as we proceed.
     let mut diags = Diagnostics::new();
 
-    // Check the validity of function arguments.
-    let mut inputs = vec![];
-    for input in &function.decl.inputs {
-        let help = "all handler arguments must be of the form: `ident: Type`";
-        let span = input.span();
-        let (ident, ty) = match input {
-            syn::FnArg::Captured(arg) => match arg.pat {
-                syn::Pat::Ident(ref pat) => (&pat.ident, &arg.ty),
-                syn::Pat::Wild(_) => {
-                    diags.push(span.error("handler arguments cannot be ignored").help(help));
-                    continue;
-                }
-                _ => {
-                    diags.push(span.error("invalid use of pattern").help(help));
-                    continue;
-                }
-            }
-            // Other cases shouldn't happen since we parsed an `ItemFn`.
-            _ => {
-                diags.push(span.error("invalid handler argument").help(help));
-                continue;
-            }
-        };
+    let arguments = super::parse_glue_fn_args(&mut diags, &mut function);
 
-        let cuke_runner_ident = ident.prepend(PARAM_PREFIX);
-        inputs.push((ident.clone(), cuke_runner_ident, ty.with_stripped_lifetimes()));
-    }
-
-    diags.head_err_or(Step { attribute: attr, function, inputs })
-}
-
-fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
-    quote_spanned! { span =>
-        #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario) {
-            Ok(scenario_data) => scenario_data,
-            Err(error) => {
-                return Err(::cuke_runner::glue::error::ExecutionError::from(error))
-            },
-        };
-    }
+    diags.head_err_or(Step { attribute: attr, function, arguments })
 }
 
 fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize) -> TokenStream2 {
@@ -92,7 +52,7 @@ fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize
 
     if let syn::Type::Reference(ref type_reference) = ty {
         if let syn::Type::Path(ref type_path) = *type_reference.elem {
-            if type_path.path.segments.len() == 1 && type_path.path.segments[0].ident == "str" {
+            if type_path.path.is_ident("str") {
                 return quote_spanned! { span =>
                     #[allow(non_snake_case, unreachable_patterns)]
                     let #ident: #ty = {
@@ -134,28 +94,30 @@ fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize
 fn codegen_step(step: Step) -> Result<TokenStream> {
     // Gather everything we need.
     let (vis, user_handler_fn) = (&step.function.vis, &step.function);
-    let user_handler_fn_name = &user_handler_fn.ident;
-    let user_handler_fn_span = &user_handler_fn.ident.span().unstable();
+    let user_handler_fn_name = &user_handler_fn.sig.ident;
+    let user_handler_fn_span = &user_handler_fn.sig.ident.span().unstable();
     let user_handler_fn_path = path_utils::source_file_path(&user_handler_fn_span.source_file());
     let user_handler_fn_file_path_str = path_utils::path_to_str(&user_handler_fn_path);
     let user_handler_fn_line_number = user_handler_fn_span.start().line;
     let generated_fn_name = user_handler_fn_name.prepend(STEP_FN_PREFIX);
     let generated_struct_name = user_handler_fn_name.prepend(STEP_STRUCT_PREFIX);
-    let parameter_names = step.inputs.iter().map(|(_, cuke_runner_ident, _)| cuke_runner_ident);
+    let parameter_names = step.arguments.iter().map(|argument| &argument.cuke_runner_ident);
     let keyword = step.attribute.keyword;
     let expression = step.attribute.expression;
 
-    let mut data_statements = Vec::with_capacity(step.inputs.len());
-    let mut first = true;
-    for (index, (_ident, cuke_runner_ident, ty)) in step.inputs.iter().enumerate() {
-        if first {
-            data_statements.push(scenario_data_expr(cuke_runner_ident, &ty));
-            first = false;
-        } else {
-            let step_argument_index = index - 1;
-            data_statements.push(step_data_expr(cuke_runner_ident, &ty, step_argument_index));
-        }
-    }
+    let mut step_argument_index = 0;
+    let data_statements = step.arguments
+        .iter()
+        .map(|argument| {
+            if argument.scenario_arg {
+                super::scenario_data_expr(&argument.cuke_runner_ident, &argument.ty)
+            } else {
+                let step_data_expr = step_data_expr(&argument.cuke_runner_ident, &argument.ty, step_argument_index);
+                step_argument_index += 1;
+                step_data_expr
+            }
+        })
+        .collect::<Vec<_>>();
 
     Ok(quote! {
         #[inline(never)] // to see the function in the stack trace in case of a panic

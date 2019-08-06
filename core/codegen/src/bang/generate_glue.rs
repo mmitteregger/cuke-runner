@@ -94,7 +94,7 @@ fn add_from_items(static_glue_definition_paths: &mut Vec<Path>,
         match item {
             Item::Fn(item_fn) => {
                 let current_path = module_paths.join("::");
-                let function_name = item_fn.ident.to_string();
+                let function_name = item_fn.sig.ident.to_string();
                 let glue_fn_path = format!("{}::{}", current_path, &function_name);
 
                 if !is_visible(item_fn.vis) {
@@ -185,7 +185,7 @@ fn get_attribute(attrs: Vec<Attribute>, fn_attribute_names: &[&str]) -> Option<A
         let is_matching_attr = {
             let first_attr_path_segment = attr.path.segments.first()
                 .expect("failed to find first attribute path segment");
-            let attr_name = first_attr_path_segment.value().ident.to_string();
+            let attr_name = first_attr_path_segment.ident.to_string();
             fn_attribute_names.contains(&attr_name.as_ref())
         };
 

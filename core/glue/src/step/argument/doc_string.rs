@@ -19,14 +19,14 @@ use gherkin::cuke::String as CukeString;
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(custom_attribute)]
+/// # #![feature(custom_attribute, param_attrs)]
 /// #
 /// # pub struct Calc;
 /// # impl Calc {
 /// #     pub fn value(&self) -> f64 { 0f64 }
 /// # }
 /// #[then("the result is:")]
-/// pub fn assert_doc_string_result(calc: &Calc, expected: f64) {
+/// pub fn assert_doc_string_result(#[scenario] calc: &Calc, expected: f64) {
 ///     assert_eq!(calc.value(), expected);
 /// }
 /// ```

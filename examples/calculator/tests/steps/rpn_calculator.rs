@@ -44,34 +44,34 @@ pub fn init(scenario: &mut Scenario) {
 // // #[after_configuration] taking configuration as function argument
 
 #[given("a calculator I just turned on")]
-pub fn reset_calculator(calc: &mut Calc) {
+pub fn reset_calculator(#[scenario] calc: &mut Calc) {
     calc.reset();
 }
 
 #[when("I add (\\d+) and (\\d+)")]
-pub fn add(calc: &mut Calc, arg1: &str, arg2: &str) {
+pub fn add(#[scenario] calc: &mut Calc, arg1: &str, arg2: &str) {
     calc.push(arg1);
     calc.push(arg2);
     calc.push("+");
 }
 
 #[given("I press (.+)")]
-pub fn press(calc: &mut Calc, what: &str) {
+pub fn press(#[scenario] calc: &mut Calc, what: &str) {
     calc.push(what)
 }
 
 #[then("the result is (.*)")]
-pub fn assert_result(calc: &mut Calc, expected: f64) {
+pub fn assert_result(#[scenario] calc: &mut Calc, expected: f64) {
     assert_eq!(calc.value(), expected);
 }
 
 #[then("the result is:")]
-pub fn assert_doc_string_result(calc: &mut Calc, expected: f64) {
+pub fn assert_doc_string_result(#[scenario] calc: &mut Calc, expected: f64) {
     assert_eq!(calc.value(), expected);
 }
 
 #[given("the previous entries:")]
-pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
+pub fn previous_entries(#[scenario] calc: &mut Calc, data_table: &DataTable) {
     for entry in data_table.body_rows::<Entry>() {
         calc.push(entry.first);
         calc.push(entry.second);

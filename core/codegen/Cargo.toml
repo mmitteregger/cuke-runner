@@ -15,12 +15,12 @@ proc-macro = true
 
 [dependencies]
 cuke_runner_glue = { path = "../glue" }
-syn = { version = "0.14", features = ["full"] }
-quote = "0.6"
-proc-macro2 = "0.4"
+syn = { version = "1", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
 regex = "1"
 log = "0.4"
-devise = "0.1"
+devise = { git = "https://github.com/mmitteregger/Devise.git", branch = "stable-syn-quote-and-proc-macro2" }
 
 [dev-dependencies]
 cuke_runner = { path = "../lib" }

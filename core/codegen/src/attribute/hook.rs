@@ -1,6 +1,6 @@
 use proc_macro::{Span, TokenStream};
 
-use devise::{ext::TypeExt, FromMeta, Result, Spanned, SpanWrapped, syn};
+use devise::{FromMeta, Result, SpanWrapped, syn};
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 
 use {
@@ -12,8 +12,8 @@ use {
     BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
     BEFORE_STEP_HOOK_FN_PREFIX,
     BEFORE_STEP_HOOK_STRUCT_PREFIX,
-    PARAM_PREFIX,
 };
+use attribute::GlueFnArg;
 use glue_codegen::{HookType, TagExpression};
 use path_utils;
 use proc_macro_ext::{Diagnostics, StringLit};
@@ -44,58 +44,17 @@ struct Hook {
     attribute: HookAttribute,
     /// The function that was decorated with the `step` attribute.
     function: syn::ItemFn,
-    /// The parsed inputs to the user's function. The first ident is the ident
-    /// as the user wrote it, while the second ident is the identifier that
-    /// should be used during code generation, the `cuke_runner_ident`.
-    inputs: Vec<(syn::Ident, syn::Ident, syn::Type)>,
+    /// Parsed function arguments.
+    arguments: Vec<GlueFnArg>,
 }
 
-fn parse_hook(attr: HookAttribute, function: syn::ItemFn) -> Result<Hook> {
+fn parse_hook(attr: HookAttribute, mut function: syn::ItemFn) -> Result<Hook> {
     // Gather diagnostics as we proceed.
     let mut diags = Diagnostics::new();
 
-    // Check the validity of function arguments.
-    let mut inputs = vec![];
-    for input in &function.decl.inputs {
-        let help = "all handler arguments must be of the form: `ident: Type`";
-        let span = input.span();
-        let (ident, ty) = match input {
-            syn::FnArg::Captured(arg) => match arg.pat {
-                syn::Pat::Ident(ref pat) => (&pat.ident, &arg.ty),
-                syn::Pat::Wild(_) => {
-                    diags.push(span.error("handler arguments cannot be ignored").help(help));
-                    continue;
-                }
-                _ => {
-                    diags.push(span.error("invalid use of pattern").help(help));
-                    continue;
-                }
-            }
-            // Other cases shouldn't happen since we parsed an `ItemFn`.
-            _ => {
-                diags.push(span.error("invalid handler argument").help(help));
-                continue;
-            }
-        };
+    let arguments = super::parse_glue_fn_args(&mut diags, &mut function);
 
-        let cuke_runner_ident = ident.prepend(PARAM_PREFIX);
-        inputs.push((ident.clone(), cuke_runner_ident, ty.with_stripped_lifetimes()));
-    }
-
-    diags.head_err_or(Hook { attribute: attr, function, inputs })
-}
-
-fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
-    quote_spanned! { span =>
-        #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario) {
-            Ok(scenario_data) => scenario_data,
-            Err(error) => {
-                return Err(::cuke_runner::glue::error::ExecutionError::from(error))
-            },
-        };
-    }
+    diags.head_err_or(Hook { attribute: attr, function, arguments })
 }
 
 fn generate_fn_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
@@ -127,24 +86,26 @@ fn generate_struct_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> I
 fn codegen_hook(hook: Hook) -> Result<TokenStream> {
     // Gather everything we need.
     let (vis, user_handler_fn) = (&hook.function.vis, &hook.function);
-    let user_handler_fn_name = &user_handler_fn.ident;
-    let user_handler_fn_span = &user_handler_fn.ident.span().unstable();
+    let user_handler_fn_name = &user_handler_fn.sig.ident;
+    let user_handler_fn_span = &user_handler_fn.sig.ident.span().unstable();
     let user_handler_fn_path = path_utils::source_file_path(&user_handler_fn_span.source_file());
     let user_handler_fn_file_path_str = path_utils::path_to_str(&user_handler_fn_path);
     let user_handler_fn_line_number = user_handler_fn_span.start().line;
     let hook_type = hook.attribute.hook_type;
     let generated_fn_name = generate_fn_name(user_handler_fn_name, &hook_type.value);
     let generated_struct_name = generate_struct_name(user_handler_fn_name, &hook_type.value);
-    let parameter_names = hook.inputs.iter().map(|(_, cuke_runner_ident, _)| cuke_runner_ident);
+    let parameter_names = hook.arguments.iter().map(|argument| &argument.cuke_runner_ident);
     let order = hook.attribute.order.unwrap_or(0);
     let tag_expression = hook.attribute.tag_expression
         .map(|t| t.0)
         .unwrap_or_else(String::new);
 
-    let mut data_statements = Vec::with_capacity(hook.inputs.len());
-    for (_ident, cuke_runner_ident, ty) in hook.inputs.iter() {
-        data_statements.push(scenario_data_expr(cuke_runner_ident, &ty));
-    };
+    let data_statements = hook.arguments
+        .iter()
+        .map(|argument| {
+            super::scenario_data_expr(&argument.cuke_runner_ident, &argument.ty)
+        })
+        .collect::<Vec<_>>();
 
     Ok(quote! {
         #[inline(never)] // to see the function in the stack trace in case of a panic

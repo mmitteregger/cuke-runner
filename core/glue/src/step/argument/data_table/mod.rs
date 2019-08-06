@@ -25,7 +25,7 @@ mod iter;
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(custom_attribute)]
+/// # #![feature(custom_attribute, param_attrs)]
 /// #
 /// # pub struct Calc;
 /// # impl Calc {
@@ -50,7 +50,7 @@ mod iter;
 /// }
 ///
 /// #[given("the previous entries:")]
-/// pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
+/// pub fn previous_entries(#[scenario] calc: &mut Calc, data_table: &DataTable) {
 ///     for entry in data_table.body_rows::<Entry>() {
 ///         calc.push(entry.first);
 ///         calc.push(entry.second);
@@ -104,7 +104,7 @@ impl<'s> DataTable<'s> {
     /// ```
     /// Glue code:
     /// ```rust
-    /// # #![feature(custom_attribute)]
+    /// # #![feature(custom_attribute, param_attrs)]
     /// #
     /// # pub struct Calc;
     /// # impl Calc {
@@ -129,7 +129,7 @@ impl<'s> DataTable<'s> {
     /// }
     ///
     /// #[given("the previous entries:")]
-    /// pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
+    /// pub fn previous_entries(#[scenario] calc: &mut Calc, data_table: &DataTable) {
     ///     for entry in data_table.rows::<Entry>() {
     ///         calc.push(entry.first);
     ///         calc.push(entry.second);
@@ -159,7 +159,7 @@ impl<'s> DataTable<'s> {
     /// ```
     /// Glue code:
     /// ```rust
-    /// # #![feature(custom_attribute)]
+    /// # #![feature(custom_attribute, param_attrs)]
     /// #
     /// # pub struct Calc;
     /// # impl Calc {
@@ -184,7 +184,7 @@ impl<'s> DataTable<'s> {
     /// }
     ///
     /// #[given("the previous entries:")]
-    /// pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
+    /// pub fn previous_entries(#[scenario] calc: &mut Calc, data_table: &DataTable) {
     ///     for entry in data_table.body_rows::<Entry>() {
     ///         calc.push(entry.first);
     ///         calc.push(entry.second);

@@ -2,6 +2,7 @@
 
 use devise::syn;
 use proc_macro::Diagnostic;
+use quote::ToTokens;
 
 pub fn syn_to_diag(error: syn::parse::Error) -> Diagnostic {
     error.span().unstable().error(error.to_string())
@@ -14,6 +15,16 @@ pub trait IdentExt {
 impl IdentExt for syn::Ident {
     fn prepend(&self, string: &str) -> syn::Ident {
         syn::Ident::new(&format!("{}{}", string, self), self.span())
+    }
+}
+
+pub trait PathExt {
+    fn to_string(&self) -> String;
+}
+
+impl PathExt for syn::Path {
+    fn to_string(&self) -> String {
+        self.to_token_stream().to_string()
     }
 }
 
