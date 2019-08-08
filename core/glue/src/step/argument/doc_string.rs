@@ -13,6 +13,7 @@ impl<'s> DocString<'s> {
     }
 }
 
+#[doc(hidden)]
 impl<'s> From<&'s CukeString<'s>> for DocString<'s> {
     fn from(cuke_string: &'s CukeString<'s>) -> Self {
         DocString {
