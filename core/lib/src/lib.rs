@@ -18,6 +18,7 @@ extern crate regex;
 extern crate rayon;
 extern crate termcolor;
 extern crate indicatif;
+extern crate unicode_segmentation;
 
 pub use config::{Config, ExecutionMode};
 pub use error::{Error, Result};

@@ -1,16 +1,18 @@
+use std::cell::RefCell;
 use std::cmp;
 use std::ops::Deref;
-use std::cell::RefCell;
 
-use gherkin::ast::{Feature, Background, ScenarioOutline, Examples, Tag};
+use gherkin::ast::{Argument, Background, Examples, Feature, ScenarioOutline, Tag};
 use gherkin::cuke;
+use unicode_segmentation::UnicodeSegmentation;
 
-use api::{CodeLocation, TestCase, TestResult, TestStep, CukeStepTestStep};
+use api::{CodeLocation, CukeStepTestStep, TestCase, TestResult, TestStep};
 use api::event::{Event, EventListener};
 use glue::step::argument::StepArgument;
 
 const SCENARIO_INDENT: &str = "  ";
 const STEP_INDENT: &str = "    ";
+const ATTACHED_STEP_ARGUMENT_INDENT: &str = "      ";
 const EXAMPLES_INDENT: &str = "    ";
 const ERROR_INDENT: &str = "      ";
 
@@ -137,9 +139,14 @@ impl Inner {
         let step_text = test_step.get_step_text();
         let definition_text = format!("{}{}", keyword, step_text);
         let location_padding = self.create_padding_to_location(STEP_INDENT, &definition_text);
-        let formatted_step_text = self.format_step_text(&keyword, step_text, result.status.ansi_color_code(), test_step.get_arguments());
+        let arguments = test_step.get_arguments();
+        let formatted_step_text = self.format_step_text(&keyword, step_text, result.status.ansi_color_code(), arguments);
         let location = self.format_code_location(test_step.get_code_location());
         println!("{}", STEP_INDENT.to_owned() + &formatted_step_text + &location_padding + &location);
+
+        if let Some(attached_step_text) = self.format_attached_step_arguments(arguments) {
+            println!("\x1B[{}m{}\x1B[0m", result.status.ansi_color_code(), attached_step_text);
+        }
     }
 
     fn format_step_text(&self, keyword: &str, step_text: &str,
@@ -173,6 +180,86 @@ impl Inner {
         if begin_index != step_text.len() {
             let text_after_args = &step_text[begin_index..step_text.len()];
             result.push_str(&format!("\x1B[{}m{}\x1B[0m", ansi_color_code, text_after_args));
+        }
+
+        result
+    }
+
+    fn format_attached_step_arguments(&self, arguments: &[StepArgument]) -> Option<String> {
+        for argument in arguments {
+            match argument {
+                StepArgument::Expression(_expression) => {},
+                StepArgument::DocString(doc_string) => {
+                    return Some(self.format_doc_string(doc_string.value()));
+                },
+                StepArgument::DataTable(data_table) => {
+                    return Some(self.format_data_table(data_table.iter()));
+                },
+            }
+        }
+
+        None
+    }
+
+    fn format_doc_string(&self, doc_string: &str) -> String {
+        let mut result = String::new();
+        result.push_str(ATTACHED_STEP_ARGUMENT_INDENT);
+        result.push_str("\"\"\"\n");
+        for line in doc_string.lines() {
+            result.push_str(ATTACHED_STEP_ARGUMENT_INDENT);
+            result.push_str(line);
+            result.push('\n');
+        }
+        result.push_str(ATTACHED_STEP_ARGUMENT_INDENT);
+        result.push_str("\"\"\"");
+        result
+    }
+
+    fn format_data_table<'a>(&self, data_table_iter: impl Iterator<Item=impl Iterator<Item=&'a str>>)
+        -> String
+    {
+        let mut result = String::new();
+
+        let data_table = data_table_iter
+            .map(|cells_iter| cells_iter.collect::<Vec<&str>>())
+            .collect::<Vec<Vec<&str>>>();
+
+        let mut max_column_graphemes_counts = vec![0; data_table[0].len()];
+        for row in &data_table {
+            for (index, cell_value) in row.iter().enumerate() {
+                let graphemes_count = UnicodeSegmentation::graphemes(*cell_value, true)
+                    .count();
+                let prev_max = max_column_graphemes_counts[index];
+                max_column_graphemes_counts[index] = std::cmp::max(prev_max, graphemes_count);
+            }
+        }
+
+        let mut first_row = true;
+        for row in &data_table {
+            if first_row {
+                first_row = false;
+            } else {
+                result.push('\n');
+            }
+
+            result.push_str(ATTACHED_STEP_ARGUMENT_INDENT);
+
+            let mut first_column = true;
+            for (index, cell_value) in row.iter().enumerate() {
+                if first_column {
+                    result.push('|');
+                    first_column = false;
+                }
+
+                let graphemes_count = UnicodeSegmentation::graphemes(*cell_value, true)
+                    .count();
+                let indent = " ".repeat(max_column_graphemes_counts[index] - graphemes_count);
+
+                result.push(' ');
+                result.push_str(cell_value);
+                result.push_str(&indent);
+                result.push_str(" |");
+            }
         }
 
         result
@@ -266,6 +353,18 @@ impl Inner {
         self.print_tags_with_ident(&examples.tags, EXAMPLES_INDENT);
         println!("{}", EXAMPLES_INDENT.to_owned() + &examples.keyword + ": " + &examples.name);
         self.print_description(examples.description.as_ref());
+
+        let examples_table_iter = examples.table_header
+            .iter()
+            .chain(examples.table_body
+                .iter()
+                .flat_map(|table_rows| table_rows))
+            .map(|table_row| {
+                table_row.cells
+                    .iter()
+                    .map(|table_cell| table_cell.value.as_str())
+            });
+        println!("\x1B[36m{}\x1B[0m", self.format_data_table(examples_table_iter));
     }
 
     fn print_scenario_outline(&self, uri: &str, scenario_outline: &ScenarioOutline) {
@@ -279,7 +378,31 @@ impl Inner {
         for step in &scenario_outline.steps {
             let step_text = format!("\x1B[36m{}{}\x1B[0m", step.keyword, step.text);
             println!("{}", STEP_INDENT.to_owned() + &step_text);
+
+            if let Some(attached_argument) = self.format_attached_argument(&step.argument) {
+                println!("\x1B[36m{}\x1B[0m", attached_argument);
+            }
         }
+    }
+
+    fn format_attached_argument(&self, argument: &Option<Argument>) -> Option<String> {
+        argument.as_ref().map(|argument| {
+            match argument {
+                Argument::DocString(doc_string) => {
+                    self.format_doc_string(&doc_string.content)
+                },
+                Argument::DataTable(data_table) => {
+                    let data_table_iter = data_table.rows
+                        .iter()
+                        .map(|row| {
+                            row.cells
+                                .iter()
+                                .map(|cell| cell.value.as_str())
+                        });
+                    self.format_data_table(data_table_iter)
+                },
+            }
+        })
     }
 
     fn print_tags(&self, tags: &[Tag]) {
