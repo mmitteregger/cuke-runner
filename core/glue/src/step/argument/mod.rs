@@ -4,7 +4,17 @@ mod data_table;
 
 pub use self::expression::Expression;
 pub use self::doc_string::DocString;
-pub use self::data_table::{DataTable, FromDataTableRow};
+pub use self::data_table::{
+    DataTable,
+    FromDataTableRowIter,
+    FromDataTableBodyRowIter,
+    FromDataTableRow,
+    FromDataTableBodyRow,
+    Row,
+    RowRef,
+    BodyRow,
+    BodyRowRef,
+};
 
 use std::fmt;
 use std::str::FromStr;
@@ -20,17 +30,24 @@ pub enum StepArgument<'s> {
     DataTable(DataTable<'s>),
 }
 
+/// Result for a [`FromStepArgument`] conversion.
+///
+/// [`FromStepArgument`]: ./trait.FromStepArgument.html
 pub type FromStepArgumentResult<T> = ::std::result::Result<T, FromStepArgumentError>;
 
-/// Converts a `StepArgument` to `Self`.
+/// Converts a [`StepArgument`] to `Self`.
 ///
 /// The lifetime parameter `'s` refers to the lifetime of the step.
 /// It cannot escape the step function.
+///
+/// [`StepArgument`]: ./enum.StepArgument.html
 pub trait FromStepArgument<'s>: Sized {
     fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<Self>;
 }
 
-/// The error holding information for a failed `FromStepArgument` conversion.
+/// The error holding information for a failed [`FromStepArgument`] conversion.
+///
+/// [`FromStepArgument`]: ./trait.FromStepArgument.html
 #[derive(Fail, Debug)]
 pub struct FromStepArgumentError {
     message: String,

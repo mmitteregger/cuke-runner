@@ -14,6 +14,15 @@ Feature: Basic Arithmetic
     When I add 4 and 7
     Then the result is 11
 
+  Scenario: DocString Addition
+  # Try to change one of the values below to provoke a failure
+    When I add 4 and 2
+    Then the result is:
+    # DocStrings may be useful for rather small multiline text (e.g. json)
+    """text
+    6
+    """
+
   Scenario Outline: Many additions
     Given the previous entries:
       | first | second | operation |

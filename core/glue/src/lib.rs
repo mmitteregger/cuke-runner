@@ -3,6 +3,7 @@ extern crate regex;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
+extern crate indexmap;
 
 pub mod error;
 pub mod scenario;
