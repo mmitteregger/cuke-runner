@@ -1,14 +1,18 @@
-use std::time::SystemTime;
-use std::fs;
 use std::collections::HashMap;
-use {Config, ExecutionMode};
-use runner::{EventBus, SyncEventBus, EventPublisher, Runner};
-use self::event_listener::{TestSummaryListener, SyncTestSummaryListener, ExitStatusListener, SyncExitStatusListener};
-use crate::api::event::{Event, EventListener, SyncEventListener};
+use std::fs;
+use std::time::SystemTime;
+
 use gherkin::ast::GherkinDocument;
 use gherkin::cuke::Cuke;
-use walkdir::{DirEntry, WalkDir};
 use rayon::prelude::*;
+use walkdir::{DirEntry, WalkDir};
+
+use {Config, ExecutionMode};
+use runner::{EventBus, EventPublisher, Runner, SyncEventBus};
+
+use crate::api::event::{Event, EventListener, SyncEventListener};
+
+use self::event_listener::{ExitStatusListener, SyncExitStatusListener, SyncTestSummaryListener, TestSummaryListener};
 pub use self::glue::*;
 pub use self::hook_definition::*;
 pub use self::scenario::*;
@@ -28,9 +32,11 @@ pub mod event_listener;
 
 
 pub fn run(glue: Glue, config: Config) -> i32 {
+    cuke_runner_glue::panic::register_cuke_runner_hook();
+
     let runner = Runner::new(glue, config.dry_run);
 
-    match config.execution_mode {
+    let exit_status = match config.execution_mode {
         ExecutionMode::Sequential { event_listeners } => {
             let exit_status_listener = ExitStatusListener::new();
             let test_summary_listener = TestSummaryListener::new();
@@ -92,7 +98,9 @@ pub fn run(glue: Glue, config: Config) -> i32 {
             test_summary_listener.print_test_summary();
             exit_status_listener.get_exit_status(config.strict)
         },
-    }
+    };
+
+    exit_status
 }
 
 struct ParsedGherkinDocument {
@@ -172,7 +180,7 @@ fn run_parallel_scenarios(runner: Runner, event_bus: &SyncEventBus, config: &Con
 
 fn init_rayon() {
     rayon::ThreadPoolBuilder::new()
-        .thread_name(|thread_index| format!("rayon-{}", thread_index))
+        .thread_name(|thread_index| format!("cuke-runner-{}", thread_index))
         .build_global()
         .expect("Failed to build global rayon thread pool");
 }

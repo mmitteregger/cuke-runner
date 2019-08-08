@@ -4,11 +4,15 @@ extern crate failure;
 #[macro_use]
 extern crate failure_derive;
 extern crate indexmap;
+extern crate backtrace;
+#[macro_use]
+extern crate lazy_static;
 
 pub mod error;
 pub mod scenario;
 pub mod step;
 pub mod hook;
+pub mod panic;
 
 use std::fmt;
 

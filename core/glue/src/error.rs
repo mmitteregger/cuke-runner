@@ -2,28 +2,41 @@ use std::fmt;
 
 use crate::scenario::FromScenarioError;
 use crate::step::argument::FromStepArgumentError;
+use crate::panic::{self, PanicInfo};
 
 #[derive(Fail, Debug)]
 pub enum ExecutionError {
     /// An error that occurred while converting scenario data to a step function parameter.
     FromScenario(#[cause] FromScenarioError),
     FromStepArgument(#[cause] FromStepArgumentError),
-    Panic(#[cause] PanicError),
+    Panic(PanicError),
     Other(#[cause] ::failure::Error),
-}
-
-pub fn panic_error(error: Box<dyn (::std::any::Any) + Send + 'static>) -> ExecutionError {
-    ExecutionError::Panic(PanicError { message: format!("{:?}", error) })
 }
 
 #[derive(Fail, Debug)]
 pub struct PanicError {
-    message: String,
+    panic_info: PanicInfo,
+}
+
+impl PanicError {
+    #[doc(hidden)]
+    pub fn new() -> PanicError {
+        let cuke_panic_info = panic::remove_current_panic_info()
+            .expect("could not find current panic info");
+
+        PanicError {
+            panic_info: cuke_panic_info,
+        }
+    }
+
+    pub fn panic_info(&self) -> &PanicInfo {
+        &self.panic_info
+    }
 }
 
 impl fmt::Display for PanicError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.message, f)
+        write!(f, "{}", self.panic_info.short_display())
     }
 }
 

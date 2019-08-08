@@ -29,7 +29,7 @@ mod config;
 mod error;
 pub mod api;
 mod runner;
-mod runtime;
+pub(crate) mod runtime;
 
 pub fn execute_cucumber_tests(glue: Glue, config: Config) {
     let exit_status = runtime::run(glue, config);

@@ -17,6 +17,7 @@ pub struct Glue {
     after_scenario_hooks: Vec<HookDefinition>,
 }
 
+#[doc(hidden)]
 impl From<&[StaticGlueDefinitions]> for Glue {
     fn from(static_glue_definitions: &[StaticGlueDefinitions]) -> Glue {
         let before_scenario_hooks = static_glue_definitions.iter()
@@ -65,6 +66,7 @@ impl From<&[StaticGlueDefinitions]> for Glue {
     }
 }
 
+#[doc(hidden)]
 impl Glue {
     pub fn get_step_definitions_by_pattern(&self) -> &HashMap<&'static str, StepDefinition> {
         &self.step_definitions_by_pattern

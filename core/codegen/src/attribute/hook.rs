@@ -152,6 +152,7 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
     };
 
     Ok(quote! {
+        #[inline(never)] // to see the function in the stack trace in case of a panic
         #user_handler_fn
 
         /// Cuke runner code generated wrapping hook function.
@@ -165,7 +166,7 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
             let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(|| #user_handler_fn_name(#(#parameter_names),*)));
             match result {
                 Ok(user_handler_fn_result) => return Ok(()),
-                Err(err) => return Err(::cuke_runner::glue::error::panic_error(err)),
+                Err(_err) => return Err(::cuke_runner::glue::error::ExecutionError::Panic(::cuke_runner::glue::error::PanicError::new())),
             };
         }
 
