@@ -9,7 +9,7 @@ mod row;
 mod convert;
 mod iter;
 
-/// A data table that is part of a step text.
+/// A data table that is attached to a step text.
 ///
 /// The lifetime parameter `'s` refers to the lifetime of the step.
 /// It cannot escape the step function.

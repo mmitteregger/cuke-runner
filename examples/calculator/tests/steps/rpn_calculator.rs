@@ -65,6 +65,11 @@ pub fn assert_result(calc: &mut Calc, expected: f64) {
     assert_eq!(calc.value(), expected);
 }
 
+#[then("the result is:")]
+pub fn assert_doc_string_result(calc: &mut Calc, expected: f64) {
+    assert_eq!(calc.value(), expected);
+}
+
 #[given("the previous entries:")]
 pub fn previous_entries(calc: &mut Calc, data_table: &DataTable) {
     for entry in data_table.body_rows::<Entry>() {
