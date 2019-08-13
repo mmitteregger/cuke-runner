@@ -125,6 +125,9 @@ impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
     }
 }
 
+// #[inline(never)] to keep the function in the stack trace for the panic handler
+// to identify that this is an panic in a cucumber test
+#[inline(never)]
 fn run_test_step<EP: EventPublisher>(
     test_case: &TestCase,
     test_step: &api::TestStep,

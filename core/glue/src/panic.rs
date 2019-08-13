@@ -242,13 +242,16 @@ pub fn register_cuke_runner_hook() {
                     .iter()
                     .any(|symbol| {
                         if let Some(symbol_name) = symbol.name() {
+                            // function needs to be annotated with `#[inline(never)]`
+                            // to prevent the call from being optimized out
                             symbol_name.to_string().starts_with(
-                                "cuke_runner::runtime::step_definition::StepDefinition::execute")
+                                "cuke_runner::runner::test_step::run_test_step")
                         } else {
                             false
                         }
                     })
             });
+
         if panic_in_cuke_runner_test {
             PANIC_INFOS.write().unwrap().insert(thread_id, cuke_panic_info);
         } else {
