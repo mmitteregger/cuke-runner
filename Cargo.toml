@@ -7,4 +7,5 @@ members = [
   "core/codegen",
   "core/lib",
   "examples/calculator",
+  "examples/gherkin-testdata",
 ]

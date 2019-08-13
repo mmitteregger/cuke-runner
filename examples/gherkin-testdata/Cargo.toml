@@ -1,0 +1,6 @@
+[package]
+name = "gherkin-testdata"
+version = "0.0.0"
+
+[dev-dependencies]
+cuke_runner = { path = "../../core/lib" }
