@@ -4,3 +4,4 @@ version = "0.0.0"
 
 [dev-dependencies]
 cuke_runner = { path = "../../core/lib" }
+cuke_runner_listener = { path = "../../core/listener", features = ["progress_bar"] }

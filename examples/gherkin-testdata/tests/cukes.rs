@@ -2,15 +2,17 @@
 
 #[macro_use]
 extern crate cuke_runner;
+extern crate cuke_runner_listener;
 
 use std::path::PathBuf;
+
 use cuke_runner::{Config, ExecutionMode, Glue};
-use cuke_runner::event_listener::PrettyFormatter;
+use cuke_runner_listener::{ProgressBarListener, ProgressStyle};
 
 mod steps;
 
 #[test]
-fn test_cucumber_features_sequential() {
+fn test_cucumber_features() {
     let glue = glue![steps];
 
     let config = Config {
@@ -20,9 +22,11 @@ fn test_cucumber_features_sequential() {
         colored_output: true,
         dry_run: false,
         tags: vec![],
-        execution_mode: ExecutionMode::Sequential {
+        execution_mode: ExecutionMode::ParallelScenarios {
             event_listeners: &[
-                &PrettyFormatter::new(),
+                &ProgressBarListener::with_style(ProgressStyle::default_bar()
+                    .template("[{elapsed}] [{bar:60.cyan/blue}] {pos}/{len}")
+                    .progress_chars("=> ")),
             ],
         },
     };

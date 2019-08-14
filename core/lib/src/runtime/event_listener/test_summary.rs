@@ -142,7 +142,7 @@ fn write_passed(stdout: &mut StandardStream, passed: usize) {
     if has_passed_tests {
         stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green))).unwrap();
     }
-    stdout.write_all("    Passed: ".as_bytes()).unwrap();
+    stdout.write_all(b"    Passed: ").unwrap();
     stdout.write_all(passed.to_string().as_bytes()).unwrap();
     stdout.write_all(b"\n").unwrap();
     if has_passed_tests {

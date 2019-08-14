@@ -3,15 +3,16 @@
 extern crate calculator;
 #[macro_use]
 extern crate cuke_runner;
+extern crate cuke_runner_listener;
 
 use std::path::PathBuf;
 use cuke_runner::{Config, ExecutionMode, Glue};
-use cuke_runner::event_listener::PrettyFormatter;
+use cuke_runner_listener::PrettyPrintListener;
 
 mod steps;
 
 #[test]
-fn test_cucumber_features_sequential() {
+fn test_cucumber_features() {
     let glue = glue![steps];
 
     let config = Config {
@@ -23,7 +24,7 @@ fn test_cucumber_features_sequential() {
         tags: vec![],
         execution_mode: ExecutionMode::Sequential {
             event_listeners: &[
-                &PrettyFormatter::new(),
+                &PrettyPrintListener::new(),
             ],
         },
     };

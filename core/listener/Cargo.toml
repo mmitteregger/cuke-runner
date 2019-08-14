@@ -1,0 +1,23 @@
+[package]
+name = "cuke_runner_listener"
+version = "0.0.1"
+authors = ["Michael Mitteregger <michael.mitteregger@gmx.at>"]
+description = "Core event listeners and reporter plugins for cuke-runner"
+homepage = "https://github.com/mmitteregger/cuke-runner"
+repository = "https://github.com/mmitteregger/cuke-runner"
+readme = "../README.md"
+keywords = ["cucumber", "bdd", "testing", "gherkin"]
+categories = ["development-tools::testing"]
+license = "MIT"
+edition = "2018"
+
+[features]
+default = []
+pretty_print = ["termcolor", "unicode-segmentation"]
+progress_bar = ["indicatif"]
+
+[dependencies]
+cuke_runner = { path = "../lib" }
+termcolor = { version = "1", optional = true }
+unicode-segmentation = { version = "1", optional = true }
+indicatif = { version = "0.11", optional = true }

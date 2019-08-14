@@ -6,6 +6,7 @@ members = [
   "core/glue",
   "core/codegen",
   "core/lib",
+  "core/listener",
   "examples/calculator",
   "examples/gherkin-testdata",
 ]

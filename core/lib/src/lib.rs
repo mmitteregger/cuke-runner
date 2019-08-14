@@ -8,17 +8,15 @@ extern crate cuke_runner_codegen;
 #[doc(hidden)] pub use cuke_runner_codegen::*;
 
 pub extern crate cuke_runner_glue as glue;
+pub extern crate gherkin;
 
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
-extern crate gherkin;
 extern crate walkdir;
 extern crate regex;
 extern crate rayon;
 extern crate termcolor;
-extern crate indicatif;
-extern crate unicode_segmentation;
 
 pub use config::{Config, ExecutionMode};
 pub use error::{Error, Result};

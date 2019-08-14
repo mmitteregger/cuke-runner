@@ -2,13 +2,13 @@ use std::cell::RefCell;
 use std::cmp;
 use std::ops::Deref;
 
-use gherkin::ast::{Argument, Background, Examples, Feature, ScenarioOutline, Tag};
-use gherkin::cuke;
 use unicode_segmentation::UnicodeSegmentation;
 
-use api::{CodeLocation, CukeStepTestStep, TestCase, TestResult, TestStep};
-use api::event::{Event, EventListener};
-use glue::step::argument::StepArgument;
+use cuke_runner::api::{CodeLocation, CukeStepTestStep, TestCase, TestResult, TestStep};
+use cuke_runner::api::event::{Event, EventListener};
+use cuke_runner::gherkin::ast::{Argument, Background, Examples, Feature, ScenarioOutline, Tag};
+use cuke_runner::gherkin::cuke;
+use cuke_runner::glue::step::argument::StepArgument;
 
 const SCENARIO_INDENT: &str = "  ";
 const STEP_INDENT: &str = "    ";
@@ -16,8 +16,26 @@ const ATTACHED_STEP_ARGUMENT_INDENT: &str = "      ";
 const EXAMPLES_INDENT: &str = "    ";
 const ERROR_INDENT: &str = "      ";
 
+/// Prints the cuke-runner tests progress in colored textual form to the console (stdout).
+///
+/// The `pretty_print` feature needs to be enabled to use this event listener.
+///
+/// To prevent interleaved garbage text this listener does not implement `Sync`
+/// and thus can only be used with `ExecutionMode::Sequential`.
+///
+/// # Examples
+///
+/// ```rust
+/// use cuke_runner_listener::PrettyPrintListener;
+///
+/// let event_listeners = &[
+///     &PrettyPrintListener::new(),
+/// ];
+/// ```
+///
+/// <script src="https://asciinema.org/a/MhaLm4GcHKbYtkAYL17UqtvVy.js" id="asciicast-MhaLm4GcHKbYtkAYL17UqtvVy" async data-cols="150"></script>
 #[derive(Debug, Default)]
-pub struct PrettyFormatter {
+pub struct PrettyPrintListener {
     inner: RefCell<Inner>,
 }
 
@@ -44,13 +62,13 @@ impl Default for Inner {
     }
 }
 
-impl PrettyFormatter {
-    pub fn new() -> PrettyFormatter {
-        PrettyFormatter::default()
+impl PrettyPrintListener {
+    pub fn new() -> PrettyPrintListener {
+        PrettyPrintListener::default()
     }
 }
 
-impl EventListener for PrettyFormatter {
+impl EventListener for PrettyPrintListener {
     fn on_event(&self, event: &Event) {
         match *event {
             Event::TestCaseStarted {
@@ -77,6 +95,7 @@ impl EventListener for PrettyFormatter {
                 text,
                 ..
             } => self.inner.borrow().handle_write(text),
+            Event::TestRunFinished { .. } => println!(),
             _ => {},
         }
     }
@@ -495,4 +514,16 @@ impl Inner {
         }
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PrettyPrintListener;
+
+    fn assert_send<T: Send>() {}
+
+    #[test]
+    fn test_send() {
+        assert_send::<PrettyPrintListener>();
+    }
 }
