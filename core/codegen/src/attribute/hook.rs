@@ -4,17 +4,18 @@ use devise::{ext::TypeExt, FromMeta, Result, Spanned, SpanWrapped, syn};
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 
 use {
-    PARAM_PREFIX,
+    AFTER_SCENARIO_HOOK_FN_PREFIX,
+    AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
+    AFTER_STEP_HOOK_FN_PREFIX,
+    AFTER_STEP_HOOK_STRUCT_PREFIX,
     BEFORE_SCENARIO_HOOK_FN_PREFIX,
     BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
     BEFORE_STEP_HOOK_FN_PREFIX,
     BEFORE_STEP_HOOK_STRUCT_PREFIX,
-    AFTER_STEP_HOOK_FN_PREFIX,
-    AFTER_STEP_HOOK_STRUCT_PREFIX,
-    AFTER_SCENARIO_HOOK_FN_PREFIX,
-    AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
+    PARAM_PREFIX,
 };
 use glue_codegen::{HookType, TagExpression};
+use path_utils;
 use proc_macro_ext::{Diagnostics, StringLit};
 use syn_ext::{IdentExt, syn_to_diag};
 
@@ -128,16 +129,10 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
     let (vis, user_handler_fn) = (&hook.function.vis, &hook.function);
     let user_handler_fn_name = &user_handler_fn.ident;
     let user_handler_fn_span = &user_handler_fn.ident.span().unstable();
-    let user_handler_fn_path = {
-        let source_file_path = user_handler_fn_span.source_file().path();
-        match source_file_path.canonicalize() {
-            Ok(canonicalized_path) => canonicalized_path,
-            Err(_) => source_file_path,
-        }
-    };
-    let hook_type = hook.attribute.hook_type;
-    let user_handler_fn_file_path = user_handler_fn_path.to_string_lossy().to_owned();
+    let user_handler_fn_path = path_utils::source_file_path(&user_handler_fn_span.source_file());
+    let user_handler_fn_file_path_str = path_utils::path_to_str(&user_handler_fn_path);
     let user_handler_fn_line_number = user_handler_fn_span.start().line;
+    let hook_type = hook.attribute.hook_type;
     let generated_fn_name = generate_fn_name(user_handler_fn_name, &hook_type.value);
     let generated_struct_name = generate_struct_name(user_handler_fn_name, &hook_type.value);
     let parameter_names = hook.inputs.iter().map(|(_, cuke_runner_ident, _)| cuke_runner_ident);
@@ -178,8 +173,8 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
                 order: #order,
                 tag_expression: #tag_expression,
                 hook_fn: #generated_fn_name,
-                location: ::cuke_runner::glue::CodeLocation {
-                    file_path: #user_handler_fn_file_path,
+                location: ::cuke_runner::glue::location::StaticGlueCodeLocation {
+                    file_path: #user_handler_fn_file_path_str,
                     line_number: #user_handler_fn_line_number,
                 },
             };

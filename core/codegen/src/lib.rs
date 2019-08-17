@@ -28,6 +28,7 @@ mod attribute;
 mod bang;
 mod glue_codegen;
 mod syn_ext;
+mod path_utils;
 
 crate static BEFORE_SCENARIO_HOOK_STRUCT_PREFIX: &str = "static_cuke_runner_before_scenario_hook_info_for_";
 crate static BEFORE_SCENARIO_HOOK_FN_PREFIX: &str = "cuke_runner_before_scenario_hook_fn_";

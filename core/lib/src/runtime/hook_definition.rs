@@ -1,8 +1,9 @@
 use std::fmt;
+use std::path::{Path, PathBuf};
 
 use gherkin::cuke::Tag;
 
-use api::CodeLocation;
+use api::GlueCodeLocation;
 use error::Result;
 use glue::hook::{HookFn, StaticHookDef};
 use glue::hook::TagPredicate;
@@ -14,7 +15,7 @@ pub struct HookDefinition {
     order: u32,
 //    timeout: Option<Duration>,
     hook_fn: HookFn,
-    location: CodeLocation,
+    location: GlueCodeLocation,
 }
 
 impl fmt::Debug for HookDefinition {
@@ -29,8 +30,8 @@ impl fmt::Debug for HookDefinition {
     }
 }
 
-impl From<&&StaticHookDef> for HookDefinition {
-    fn from(static_hook_def: &&StaticHookDef) -> Self {
+impl From<(&Path, &&StaticHookDef)> for HookDefinition {
+    fn from((base_path, static_hook_def): (&Path, &&StaticHookDef)) -> Self {
         let tag_predicate = TagPredicate::new(static_hook_def.tag_expression)
             .unwrap_or_else(|err| {
                 panic!("tag expression \"{}\"is invalid: {}\n\
@@ -38,17 +39,29 @@ impl From<&&StaticHookDef> for HookDefinition {
                     static_hook_def.tag_expression, err);
             });
 
+        let absolute_file_path = PathBuf::from(&static_hook_def.location.file_path);
+        let relative_file_path = match absolute_file_path.strip_prefix(base_path) {
+            Ok(relative_path) => relative_path,
+            Err(_strip_prefix_error) => {
+                panic!("unable to strip base path \"{}\" from path \"{}\"",
+                    base_path.display(), absolute_file_path.display());
+            },
+        };
+
         HookDefinition {
             tag_predicate,
             order: 0,
             hook_fn: static_hook_def.hook_fn,
-            location: static_hook_def.location,
+            location: GlueCodeLocation {
+                file_path: relative_file_path.to_owned(),
+                line_number: static_hook_def.location.line_number,
+            },
         }
     }
 }
 
 impl HookDefinition {
-    pub fn get_location(&self) -> &CodeLocation {
+    pub fn get_location(&self) -> &GlueCodeLocation {
         &self.location
     }
 

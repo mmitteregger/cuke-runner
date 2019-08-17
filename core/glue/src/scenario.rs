@@ -8,6 +8,7 @@ pub struct Scenario {
 }
 
 impl Scenario {
+    #[doc(hidden)]
     pub fn new() -> Scenario {
         Scenario {
             user_data: HashMap::new(),

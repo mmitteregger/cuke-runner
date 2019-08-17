@@ -1,21 +1,23 @@
-#[doc(hidden)]
-pub mod tag_predicate;
-
 use std::fmt;
 use std::str::FromStr;
 
-use crate::CodeLocation;
-use crate::scenario::Scenario;
 use crate::error::ExecutionError;
+use crate::location::StaticGlueCodeLocation;
+use crate::scenario::Scenario;
 
 #[doc(hidden)]
 pub use self::tag_predicate::TagPredicate;
 
+#[doc(hidden)]
+pub mod tag_predicate;
+
 /// The type of a generated hook handler (wraps a user defined hook function).
+#[doc(hidden)]
 pub type HookFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;
 
 /// Generated info for a hook definition
 /// (for example a `#[before_scenario(...)]` annotated function).
+#[doc(hidden)]
 pub struct StaticHookDef {
     /// Name of the step definition function.
     pub name: &'static str,
@@ -46,7 +48,7 @@ pub struct StaticHookDef {
     /// The generated hook handler function that will call the user defined annotated function.
     pub hook_fn: HookFn,
     /// Location of the user defined annotated function.
-    pub location: CodeLocation,
+    pub location: StaticGlueCodeLocation,
 }
 
 impl fmt::Debug for StaticHookDef {

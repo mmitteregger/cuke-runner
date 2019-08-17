@@ -3,7 +3,7 @@ use std::time::{SystemTime, Duration};
 use gherkin::cuke;
 
 use error::{Result, Error};
-use api::{self, event::Event, HookType, CodeLocation, TestResult, TestResultStatus};
+use api::{self, event::Event, HookType, GlueCodeLocation, TestResult, TestResultStatus};
 use glue::step::argument::StepArgument;
 use runner::EventPublisher;
 use runtime::{TestCase, StepDefinitionMatch, Scenario};
@@ -29,7 +29,7 @@ impl<'s> HookTestStep<'s> {
 }
 
 impl<'s> api::HookTestStep<'s> for HookTestStep<'s> {
-    fn get_code_location(&self) -> Option<&CodeLocation> {
+    fn get_glue_code_location(&self) -> Option<&GlueCodeLocation> {
         self.definition_match.get_location()
     }
 
@@ -86,7 +86,7 @@ impl<'s> CukeStepTestStep<'s> {
 }
 
 impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
-    fn get_code_location(&self) -> Option<&CodeLocation> {
+    fn get_glue_code_location(&self) -> Option<&GlueCodeLocation> {
         self.step_definition_match.get_location()
     }
 

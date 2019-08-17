@@ -4,7 +4,7 @@ use std::ops::Deref;
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use cuke_runner::api::{CodeLocation, CukeStepTestStep, TestCase, TestResult, TestStep};
+use cuke_runner::api::{GlueCodeLocation, CukeStepTestStep, TestCase, TestResult, TestStep};
 use cuke_runner::api::event::{Event, EventListener};
 use cuke_runner::gherkin::ast::{Argument, Background, Examples, Feature, ScenarioOutline, Tag};
 use cuke_runner::gherkin::cuke;
@@ -160,7 +160,7 @@ impl Inner {
         let location_padding = self.create_padding_to_location(STEP_INDENT, &definition_text);
         let arguments = test_step.get_arguments();
         let formatted_step_text = self.format_step_text(&keyword, step_text, result.status.ansi_color_code(), arguments);
-        let location = self.format_code_location(test_step.get_code_location());
+        let location = self.format_glue_code_location(test_step.get_glue_code_location());
         println!("{}", STEP_INDENT.to_owned() + &formatted_step_text + &location_padding + &location);
 
         if let Some(attached_step_text) = self.format_attached_step_arguments(arguments) {
@@ -506,7 +506,7 @@ impl Inner {
         format!("\x1B[90m# {}\x1B[0m", location)
     }
 
-    fn format_code_location(&self, location: Option<&CodeLocation>) -> String {
+    fn format_glue_code_location(&self, location: Option<&GlueCodeLocation>) -> String {
         if let Some(location) = location {
             format!("\x1B[90m# {}\x1B[0m", location)
         } else {

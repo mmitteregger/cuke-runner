@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use gherkin::cuke;
 
-use api::CodeLocation;
+use api::GlueCodeLocation;
 use glue::step::argument::StepArgument;
 
 /// A test step can either represent the execution of a hook or a cuke step.
@@ -24,7 +24,7 @@ pub enum HookType {
 /// Hooks are invoked before and after each scenario and before and after each gherkin step in a scenario.
 pub trait HookTestStep<'s>: Debug + Send + Sync {
     /// Representation of the source code location of the glue.
-    fn get_code_location(&self) -> Option<&CodeLocation>;
+    fn get_glue_code_location(&self) -> Option<&GlueCodeLocation>;
 
     /// The hook hook type (BeforeScenario, AfterScenario, ...).
     fn get_hook_type(&self) -> HookType;
@@ -33,7 +33,7 @@ pub trait HookTestStep<'s>: Debug + Send + Sync {
 /// A cuke test step matches a line in a Gherkin scenario or background.
 pub trait CukeStepTestStep<'s>: Debug + Send + Sync {
     /// Representation of the source code location of the glue.
-    fn get_code_location(&self) -> Option<&CodeLocation>;
+    fn get_glue_code_location(&self) -> Option<&GlueCodeLocation>;
 
     /// The pattern or expression used to match the glue code to the Gherkin step.
     fn get_pattern(&self) -> Option<&str>;

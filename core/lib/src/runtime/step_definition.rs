@@ -4,12 +4,13 @@ use std::fmt;
 
 use gherkin::cuke;
 
-use api::CodeLocation;
+use api::GlueCodeLocation;
 use glue::step::{StaticStepDef, StepFn};
 use glue::step::argument::{StepArgument, DocString, DataTable};
 use runtime::Scenario;
 
 use super::step_expression::StepExpression;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone)]
 pub struct StepDefinition {
@@ -17,7 +18,7 @@ pub struct StepDefinition {
     pub parameter_infos: Vec<TypeId>,
 //    pub timeout: Duration,
     pub step_fn: StepFn,
-    pub location: CodeLocation,
+    pub location: GlueCodeLocation,
 }
 
 impl fmt::Debug for StepDefinition {
@@ -32,13 +33,25 @@ impl fmt::Debug for StepDefinition {
     }
 }
 
-impl From<&&StaticStepDef> for StepDefinition {
-    fn from(static_step_def: &&StaticStepDef) -> Self {
+impl From<(&Path, &&StaticStepDef)> for StepDefinition {
+    fn from((base_path, static_step_def): (&Path, &&StaticStepDef)) -> Self {
+        let absolute_file_path = PathBuf::from(&static_step_def.location.file_path);
+        let relative_file_path = match absolute_file_path.strip_prefix(base_path) {
+            Ok(relative_path) => relative_path,
+            Err(_strip_prefix_error) => {
+                panic!("unable to strip base path \"{}\" from path \"{}\"",
+                    base_path.display(), absolute_file_path.display());
+            },
+        };
+
         StepDefinition {
             expression: StepExpression::from_regex(static_step_def.expression),
             parameter_infos: Vec::new(),
             step_fn: static_step_def.step_fn,
-            location: static_step_def.location,
+            location: GlueCodeLocation {
+                file_path: relative_file_path.to_owned(),
+                line_number: static_step_def.location.line_number,
+            },
         }
     }
 }
@@ -75,7 +88,7 @@ impl StepDefinition {
     /// The source line where the step definition is defined.
     ///
     /// Example: foo/bar/Zap.brainfuck:42
-    pub fn get_location(&self) -> &CodeLocation {
+    pub fn get_location(&self) -> &GlueCodeLocation {
         &self.location
     }
 

@@ -1,4 +1,3 @@
-use std::env;
 use std::fs;
 use std::ops::Add;
 use std::path::PathBuf;
@@ -15,14 +14,7 @@ use {
 };
 
 crate fn generate_glue_macro(_input: TokenStream) -> Result<TokenStream> {
-    let create_root_path = env::current_dir()
-        .expect("current directory for crate root path");
-    let crate_relative_path = env::args()
-        .find(|arg| arg.ends_with(".rs"))
-        .expect("could not find compiling rust file in current argument list");
-    let current_file_path = create_root_path.join(crate_relative_path);
-
-    debug!("current_file_path: {}", current_file_path.display());
+    let current_file_path = super::get_current_file_path();
 
     let before_scenario_hook_definition_path_tokens: Vec<Path> = parse_paths(&current_file_path,
         &["before_scenario"], BEFORE_SCENARIO_HOOK_STRUCT_PREFIX);

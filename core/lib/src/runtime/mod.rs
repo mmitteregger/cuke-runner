@@ -206,7 +206,8 @@ fn parse_gherking_documents(config: &Config) -> Vec<ParsedGherkinDocument> {
                 Err(err) => panic!("could not parse feature file \"{}\": {}", &path.display(), err),
             };
 
-            let uri = path.display().to_string();
+            let path_relative_to_features_dir = path.strip_prefix(config.features_dir).unwrap();
+            let uri = path_relative_to_features_dir.display().to_string();
 
             ParsedGherkinDocument {
                 uri,

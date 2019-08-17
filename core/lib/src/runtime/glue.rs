@@ -7,6 +7,7 @@ use runtime::{
     AmbiguousCukeStepDefinitionMatch, HookDefinition, CukeStepDefinitionMatch,
     StepDefinition, StepDefinitionMatch, UndefinedCukeStepDefinitionMatch,
 };
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Glue {
@@ -18,23 +19,25 @@ pub struct Glue {
 }
 
 #[doc(hidden)]
-impl From<&[StaticGlueDefinitions]> for Glue {
-    fn from(static_glue_definitions: &[StaticGlueDefinitions]) -> Glue {
+impl From<(PathBuf, &[StaticGlueDefinitions])> for Glue {
+    fn from((base_path, static_glue_definitions): (PathBuf, &[StaticGlueDefinitions])) -> Glue {
+        let base_path = base_path.as_path();
+
         let before_scenario_hooks = static_glue_definitions.iter()
             .flat_map(|glue| glue.before_scenario_hooks.iter())
-            .map(HookDefinition::from)
+            .map(|static_hook_def| HookDefinition::from((base_path, static_hook_def)))
             .collect();
         let before_step_hooks = static_glue_definitions.iter()
             .flat_map(|glue| glue.before_step_hooks.iter())
-            .map(HookDefinition::from)
+            .map(|static_hook_def| HookDefinition::from((base_path, static_hook_def)))
             .collect();
         let after_step_hooks = static_glue_definitions.iter()
             .flat_map(|glue| glue.after_step_hooks.iter())
-            .map(HookDefinition::from)
+            .map(|static_hook_def| HookDefinition::from((base_path, static_hook_def)))
             .collect();
         let after_scenario_hooks = static_glue_definitions.iter()
             .flat_map(|glue| glue.after_scenario_hooks.iter())
-            .map(HookDefinition::from)
+            .map(|static_hook_def| HookDefinition::from((base_path, static_hook_def)))
             .collect();
 
         let step_definitions_capacity = static_glue_definitions.iter()
@@ -44,9 +47,9 @@ impl From<&[StaticGlueDefinitions]> for Glue {
         static_glue_definitions.iter()
             .flat_map(|glue| glue.steps.iter())
             .map(|static_step_definition|
-                (static_step_definition.expression, StepDefinition::from(static_step_definition)))
+                (static_step_definition.expression, StepDefinition::from((base_path, static_step_definition))))
             .for_each(|(expression, step_definition)| {
-                let new_location = step_definition.location;
+                let new_location = step_definition.location.clone();
 
                 if let Some(prev) = step_definitions_by_pattern.insert(expression, step_definition) {
                     let prev_location = prev.location;

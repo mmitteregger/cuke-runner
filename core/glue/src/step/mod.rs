@@ -1,17 +1,19 @@
-pub mod argument;
-
 use std::fmt;
 use std::str::FromStr;
 
-use crate::CodeLocation;
+use crate::error::ExecutionError;
+use crate::location::StaticGlueCodeLocation;
 use crate::scenario::Scenario;
 use crate::step::argument::StepArgument;
-use crate::error::ExecutionError;
+
+pub mod argument;
 
 /// The type of a step handler (wraps a user defined step function).
+#[doc(hidden)]
 pub type StepFn = fn(&mut Scenario, &[StepArgument]) -> ::std::result::Result<(), ExecutionError>;
 
 /// Generated info for a step definition (a `#[step(...)]` annotated function).
+#[doc(hidden)]
 pub struct StaticStepDef {
     /// Name of the step definition function.
     pub name: &'static str,
@@ -22,7 +24,7 @@ pub struct StaticStepDef {
     /// The generated step handler function that will call the user defined annotated function.
     pub step_fn: StepFn,
     /// Location of the user defined annotated function.
-    pub location: CodeLocation,
+    pub location: StaticGlueCodeLocation,
 }
 
 impl fmt::Debug for StaticStepDef {

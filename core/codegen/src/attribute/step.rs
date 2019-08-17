@@ -4,7 +4,8 @@ use devise::{ext::TypeExt, FromMeta, Result, Spanned, SpanWrapped, syn};
 use proc_macro2::TokenStream as TokenStream2;
 
 use {PARAM_PREFIX, STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
-use glue_codegen::{StepKeyword, Regex};
+use glue_codegen::{Regex, StepKeyword};
+use path_utils;
 use proc_macro_ext::{Diagnostics, StringLit};
 use syn_ext::{IdentExt, syn_to_diag};
 
@@ -135,14 +136,8 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
     let (vis, user_handler_fn) = (&step.function.vis, &step.function);
     let user_handler_fn_name = &user_handler_fn.ident;
     let user_handler_fn_span = &user_handler_fn.ident.span().unstable();
-    let user_handler_fn_path = {
-        let source_file_path = user_handler_fn_span.source_file().path();
-        match source_file_path.canonicalize() {
-            Ok(canonicalized_path) => canonicalized_path,
-            Err(_) => source_file_path,
-        }
-    };
-    let user_handler_fn_file_path = user_handler_fn_path.to_string_lossy().to_owned();
+    let user_handler_fn_path = path_utils::source_file_path(&user_handler_fn_span.source_file());
+    let user_handler_fn_file_path_str = path_utils::path_to_str(&user_handler_fn_path);
     let user_handler_fn_line_number = user_handler_fn_span.start().line;
     let generated_fn_name = user_handler_fn_name.prepend(STEP_FN_PREFIX);
     let generated_struct_name = user_handler_fn_name.prepend(STEP_STRUCT_PREFIX);
@@ -190,8 +185,8 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
                 keyword: #keyword,
                 expression: #expression,
                 step_fn: #generated_fn_name,
-                location: ::cuke_runner::glue::CodeLocation {
-                    file_path: #user_handler_fn_file_path,
+                location: ::cuke_runner::glue::location::StaticGlueCodeLocation {
+                    file_path: #user_handler_fn_file_path_str,
                     line_number: #user_handler_fn_line_number,
                 },
             };

@@ -2,7 +2,7 @@ use gherkin::cuke;
 use glue::step::argument::StepArgument;
 
 use error::{Result, Error};
-use api::CodeLocation;
+use api::GlueCodeLocation;
 use runtime::{HookDefinition, StepDefinition};
 use runtime::Scenario;
 
@@ -42,7 +42,7 @@ impl<'s> StepDefinitionMatch<'s> {
         }
     }
 
-    pub fn get_location(&self) -> Option<&CodeLocation> {
+    pub fn get_location(&self) -> Option<&GlueCodeLocation> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_location(),
             StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_location(),
@@ -90,7 +90,7 @@ impl<'s> HookDefinitionMatch<'s> {
         Ok(())
     }
 
-    pub fn get_location(&self) -> Option<&CodeLocation> {
+    pub fn get_location(&self) -> Option<&GlueCodeLocation> {
         Some(&self.hook_definition.get_location())
     }
 
@@ -125,7 +125,7 @@ impl<'s> CukeStepDefinitionMatch<'s> {
         Ok(())
     }
 
-    fn get_location(&self) -> Option<&CodeLocation> {
+    fn get_location(&self) -> Option<&GlueCodeLocation> {
         Some(&self.step_definition.get_location())
     }
 
@@ -158,7 +158,7 @@ impl<'s> AmbiguousCukeStepDefinitionMatch<'s> {
         self.run_step(scenario)
     }
 
-    fn get_location(&self) -> Option<&CodeLocation> {
+    fn get_location(&self) -> Option<&GlueCodeLocation> {
         None
     }
 
@@ -190,7 +190,7 @@ impl<'s> UndefinedCukeStepDefinitionMatch<'s> {
         self.run_step(scenario)
     }
 
-    fn get_location(&self) -> Option<&CodeLocation> {
+    fn get_location(&self) -> Option<&GlueCodeLocation> {
         None
     }
 
