@@ -15,3 +15,8 @@ pub use pretty_print::PrettyPrintListener;
 mod progress_bar;
 #[cfg(feature = "progress_bar")]
 pub use progress_bar::{ProgressBarListener, ProgressStyle};
+
+#[cfg(feature = "json_report")]
+mod json_report;
+#[cfg(feature = "json_report")]
+pub use json_report::JsonReportListener;
