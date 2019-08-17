@@ -13,7 +13,7 @@
 ///   Then the result is 9
 /// ```
 /// and the glue code:
-/// ```rust,no-run
+/// ```rust
 /// # #![feature(custom_attribute)]
 /// #
 /// # pub struct Calc;

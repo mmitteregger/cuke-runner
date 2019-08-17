@@ -24,7 +24,7 @@ mod iter;
 ///   | 2     | 1      | +         |
 /// ```
 /// and the glue code:
-/// ```rust,no-run
+/// ```rust
 /// # #![feature(custom_attribute)]
 /// #
 /// # pub struct Calc;
@@ -103,7 +103,7 @@ impl<'s> DataTable<'s> {
     ///   | 2     | 1      | +         |
     /// ```
     /// Glue code:
-    /// ```rust,no-run
+    /// ```rust
     /// # #![feature(custom_attribute)]
     /// #
     /// # pub struct Calc;
@@ -158,7 +158,7 @@ impl<'s> DataTable<'s> {
     ///   | 2     | 1      | +         |
     /// ```
     /// Glue code:
-    /// ```rust,no-run
+    /// ```rust
     /// # #![feature(custom_attribute)]
     /// #
     /// # pub struct Calc;

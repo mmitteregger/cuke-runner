@@ -18,7 +18,7 @@ use gherkin::cuke::String as CukeString;
 ///   """
 /// ```
 /// and the glue code:
-/// ```rust,no-run
+/// ```rust
 /// # #![feature(custom_attribute)]
 /// #
 /// # pub struct Calc;
