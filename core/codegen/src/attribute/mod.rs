@@ -1,4 +1,4 @@
-use devise::{ext::TypeExt, Spanned, syn};
+use devise::{ext::TypeExt, Result, Spanned, syn};
 use proc_macro2::TokenStream as TokenStream2;
 
 use PARAM_PREFIX;
@@ -75,15 +75,38 @@ fn parse_glue_fn_args(diags: &mut Diagnostics, function: &mut syn::ItemFn) -> Ve
     arguments
 }
 
-fn scenario_data_expr(ident: &syn::Ident, ty: &syn::Type) -> TokenStream2 {
+fn scenario_data_expr(argument: &GlueFnArg) -> Result<TokenStream2> {
+    let ty = &argument.ty;
+    let ident = &argument.cuke_runner_ident;
     let span = ident.span().unstable().join(ty.span()).unwrap().into();
-    quote_spanned! { span =>
+    let from_scenario = match ty {
+        syn::Type::Reference(type_ref) => {
+            if type_ref.mutability.is_some() {
+                quote_spanned! { span =>
+                    ::cuke_runner::glue::scenario::FromScenarioMut::from_scenario_mut(__scenario)
+                }
+            } else {
+                quote_spanned! { span =>
+                    ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario)
+                }
+            }
+        },
+        _ => {
+            let diagnostic = argument.user_ident
+                .span()
+                .unstable()
+                .error("scenario data argument must be a shared or mutable reference");
+            return Err(diagnostic);
+        },
+    };
+
+    Ok(quote_spanned! { span =>
         #[allow(non_snake_case, unreachable_patterns)]
-        let #ident: #ty = match ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario) {
+        let #ident: #ty = match #from_scenario {
             Ok(scenario_data) => scenario_data,
             Err(error) => {
                 return Err(::cuke_runner::glue::error::ExecutionError::from(error))
             },
         };
-    }
+    })
 }

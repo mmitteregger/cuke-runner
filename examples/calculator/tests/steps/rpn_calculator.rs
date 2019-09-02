@@ -1,5 +1,5 @@
 use calculator::RpnCalculator;
-use cuke_runner::glue::scenario::{FromScenario, FromScenarioError, Scenario};
+use cuke_runner::glue::scenario::{FromScenarioError, FromScenarioMut, Scenario};
 use cuke_runner::glue::step::argument::{BodyRowRef, DataTable, FromDataTableBodyRow};
 
 #[derive(Debug)]
@@ -19,16 +19,16 @@ impl ::std::ops::DerefMut for Calc {
     }
 }
 
-impl<'a> FromScenario<'a> for &'a mut Calc {
-    fn from_scenario(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
-        scenario.get_user_data::<Calc>()
+impl<'a> FromScenarioMut<'a> for &'a mut Calc {
+    fn from_scenario_mut(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
+        scenario.get_mut::<Calc>()
             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
     }
 }
 
 #[before_scenario]
 pub fn init(scenario: &mut Scenario) {
-    scenario.set_user_data(Calc(RpnCalculator::new()));
+    scenario.set(Calc(RpnCalculator::new()));
 }
 
 // // Other hooks and attributes that should be supported:

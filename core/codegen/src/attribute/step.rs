@@ -106,18 +106,18 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
     let expression = step.attribute.expression;
 
     let mut step_argument_index = 0;
-    let data_statements = step.arguments
-        .iter()
-        .map(|argument| {
-            if argument.scenario_arg {
-                super::scenario_data_expr(&argument.cuke_runner_ident, &argument.ty)
-            } else {
-                let step_data_expr = step_data_expr(&argument.cuke_runner_ident, &argument.ty, step_argument_index);
-                step_argument_index += 1;
-                step_data_expr
-            }
-        })
-        .collect::<Vec<_>>();
+    let mut data_statements = Vec::with_capacity(step.arguments.len());
+    for argument in &step.arguments {
+        let data_statement = if argument.scenario_arg {
+            super::scenario_data_expr(&argument)?
+        } else {
+            let step_data_expr = step_data_expr(&argument.cuke_runner_ident, &argument.ty, step_argument_index);
+            step_argument_index += 1;
+            step_data_expr
+        };
+
+        data_statements.push(data_statement);
+    }
 
     Ok(quote! {
         #[inline(never)] // to see the function in the stack trace in case of a panic

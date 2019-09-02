@@ -100,12 +100,11 @@ fn codegen_hook(hook: Hook) -> Result<TokenStream> {
         .map(|t| t.0)
         .unwrap_or_else(String::new);
 
-    let data_statements = hook.arguments
-        .iter()
-        .map(|argument| {
-            super::scenario_data_expr(&argument.cuke_runner_ident, &argument.ty)
-        })
-        .collect::<Vec<_>>();
+    let mut data_statements = Vec::with_capacity(hook.arguments.len());
+    for argument in &hook.arguments {
+        let data_statement = super::scenario_data_expr(&argument)?;
+        data_statements.push(data_statement);
+    }
 
     Ok(quote! {
         #[inline(never)] // to see the function in the stack trace in case of a panic
