@@ -9,6 +9,7 @@ use walkdir::{DirEntry, WalkDir};
 
 use {Config, ExecutionMode};
 use runner::{EventBus, EventPublisher, Runner, SyncEventBus};
+use runtime::filter::Filters;
 
 use crate::api::event::{Event, EventListener, SyncEventListener};
 
@@ -29,12 +30,13 @@ pub mod test_case;
 mod scenario;
 mod step_definition_match;
 pub mod event_listener;
-
+mod filter;
 
 pub fn run(glue: Glue, config: Config) -> i32 {
     cuke_runner_glue::panic::register_cuke_runner_hook();
 
     let runner = Runner::new(glue, config.dry_run);
+    let filters = Filters::from(&config);
 
     let exit_status = match config.execution_mode {
         ExecutionMode::Sequential { event_listeners } => {
@@ -51,11 +53,11 @@ pub fn run(glue: Glue, config: Config) -> i32 {
 
             let event_bus = EventBus::new(listeners);
 
-            run_sequential(runner, &event_bus, &config);
+            run_sequential(runner, filters, &event_bus, &config);
 
             test_summary_listener.print_test_summary();
             exit_status_listener.get_exit_status(config.strict)
-        },
+        }
         ExecutionMode::ParallelFeatures { event_listeners } => {
             init_rayon();
 
@@ -72,11 +74,11 @@ pub fn run(glue: Glue, config: Config) -> i32 {
 
             let event_bus = SyncEventBus::new(listeners);
 
-            run_parallel_features(runner, &event_bus, &config);
+            run_parallel_features(runner, filters, &event_bus, &config);
 
             test_summary_listener.print_test_summary();
             exit_status_listener.get_exit_status(config.strict)
-        },
+        }
         ExecutionMode::ParallelScenarios { event_listeners } => {
             init_rayon();
 
@@ -93,11 +95,11 @@ pub fn run(glue: Glue, config: Config) -> i32 {
 
             let event_bus = SyncEventBus::new(listeners);
 
-            run_parallel_scenarios(runner, &event_bus, &config);
+            run_parallel_scenarios(runner, filters, &event_bus, &config);
 
             test_summary_listener.print_test_summary();
             exit_status_listener.get_exit_status(config.strict)
-        },
+        }
     };
 
     exit_status
@@ -114,7 +116,7 @@ struct ParsedCuke<'d> {
     cuke: Cuke<'d>,
 }
 
-fn run_sequential(runner: Runner, event_bus: &EventBus, config: &Config) {
+fn run_sequential(runner: Runner, filters: Filters, event_bus: &EventBus, config: &Config) {
     let parsed_gherkin_documents = parse_gherking_documents(config);
     let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus);
 
@@ -124,7 +126,9 @@ fn run_sequential(runner: Runner, event_bus: &EventBus, config: &Config) {
     });
 
     for parsed_cuke in parsed_cukes {
-        runner.run(&parsed_cuke.uri, parsed_cuke.cuke, event_bus)
+        if filters.apply(parsed_cuke.uri, &parsed_cuke.cuke) {
+            runner.run(&parsed_cuke.uri, parsed_cuke.cuke, event_bus);
+        }
     }
 
     event_bus.send(Event::TestRunFinished {
@@ -132,7 +136,7 @@ fn run_sequential(runner: Runner, event_bus: &EventBus, config: &Config) {
     });
 }
 
-fn run_parallel_features(runner: Runner, event_bus: &SyncEventBus, config: &Config) {
+fn run_parallel_features(runner: Runner, filters: Filters, event_bus: &SyncEventBus, config: &Config) {
     let parsed_gherkin_documents = parse_gherking_documents(config);
     let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus);
 
@@ -151,7 +155,9 @@ fn run_parallel_features(runner: Runner, event_bus: &SyncEventBus, config: &Conf
 
     feature_cukes.into_par_iter().for_each(|(uri, cukes)| {
         for cuke in cukes {
-            runner.run(uri, cuke, event_bus)
+            if filters.apply(uri, &cuke) {
+                runner.run(uri, cuke, event_bus);
+            }
         }
     });
 
@@ -160,7 +166,7 @@ fn run_parallel_features(runner: Runner, event_bus: &SyncEventBus, config: &Conf
     });
 }
 
-fn run_parallel_scenarios(runner: Runner, event_bus: &SyncEventBus, config: &Config) {
+fn run_parallel_scenarios(runner: Runner, filters: Filters, event_bus: &SyncEventBus, config: &Config) {
     let parsed_gherkin_documents = parse_gherking_documents(config);
     let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus);
 
@@ -170,7 +176,9 @@ fn run_parallel_scenarios(runner: Runner, event_bus: &SyncEventBus, config: &Con
     });
 
     parsed_cukes.into_par_iter().for_each(|parsed_cuke| {
-        runner.run(parsed_cuke.uri, parsed_cuke.cuke, event_bus);
+        if filters.apply(parsed_cuke.uri, &parsed_cuke.cuke) {
+            runner.run(parsed_cuke.uri, parsed_cuke.cuke, event_bus);
+        }
     });
 
     event_bus.send(Event::TestRunFinished {

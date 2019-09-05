@@ -144,7 +144,7 @@ impl FromMeta for TagExpression {
         let span = string.subspan(1..=string.len())
             .unwrap_or_else(|| string.1.span());
 
-        let result = glue::hook::tag_predicate::parser::parse(string.as_ref());
+        let result = glue::filter::tag::parser::parse(string.as_ref());
         match result {
             Ok(_expression) => Ok(TagExpression(string.to_owned())),
             Err(err) => Err(span.error(format!("tag expression \"{}\" is invalid: {}", &*string, err))),

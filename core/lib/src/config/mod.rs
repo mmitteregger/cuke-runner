@@ -13,7 +13,7 @@ pub struct Config<'c> {
     pub strict: bool,
     pub colored_output: bool,
     pub dry_run: bool,
-    pub tags: Vec<String>,
+    pub tags: &'c [&'c str],
     pub execution_mode: ExecutionMode<'c>,
 }
 

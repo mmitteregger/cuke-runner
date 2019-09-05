@@ -5,12 +5,6 @@ use crate::error::ExecutionError;
 use crate::location::StaticGlueCodeLocation;
 use crate::scenario::Scenario;
 
-#[doc(hidden)]
-pub use self::tag_predicate::TagPredicate;
-
-#[doc(hidden)]
-pub mod tag_predicate;
-
 /// The type of a generated hook handler (wraps a user defined hook function).
 #[doc(hidden)]
 pub type HookFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;

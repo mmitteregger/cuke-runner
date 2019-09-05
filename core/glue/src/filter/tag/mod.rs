@@ -6,13 +6,13 @@ use gherkin::cuke::Tag;
 use self::expression::Expression;
 
 #[derive(Debug, Clone)]
-pub struct TagPredicate {
-    text: &'static str,
+pub struct TagPredicate<'p> {
+    text: &'p str,
     expression: Expression,
 }
 
-impl TagPredicate {
-    pub fn new(tag_expression: &'static str) -> Result<TagPredicate, String> {
+impl<'p> TagPredicate<'p> {
+    pub fn new(tag_expression: &'p str) -> Result<TagPredicate<'p>, String> {
         let tag_predicate = TagPredicate {
             text: tag_expression,
             expression: parser::parse(tag_expression)?,
@@ -20,7 +20,7 @@ impl TagPredicate {
         Ok(tag_predicate)
     }
 
-    pub fn test(&self, tags: &[Tag]) -> bool {
+    pub fn apply(&self, tags: &[Tag]) -> bool {
         self.expression.evaluate(tags)
     }
 }
@@ -36,7 +36,7 @@ mod tests {
         let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -44,7 +44,7 @@ mod tests {
         let tags = create_tags(&[]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
-        assert!(!predicate.test(&tags));
+        assert!(!predicate.apply(&tags));
     }
 
     #[test]
@@ -52,7 +52,7 @@ mod tests {
         let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -60,7 +60,7 @@ mod tests {
         let tags = create_tags(&["@FOO", "@BAR"]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -68,7 +68,7 @@ mod tests {
         let tags = create_tags(&["@BAR"]);
         let predicate = TagPredicate::new("@FOO").unwrap();
 
-        assert!(!predicate.test(&tags));
+        assert!(!predicate.apply(&tags));
     }
 
     #[test]
@@ -76,7 +76,7 @@ mod tests {
         let tags = create_tags(&[]);
         let predicate = TagPredicate::new("not @FOO").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -84,7 +84,7 @@ mod tests {
         let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("not @FOO").unwrap();
 
-        assert!(!predicate.test(&tags));
+        assert!(!predicate.apply(&tags));
     }
 
     #[test]
@@ -92,7 +92,7 @@ mod tests {
         let tags = create_tags(&["@BAR"]);
         let predicate = TagPredicate::new("not @FOO").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -100,7 +100,7 @@ mod tests {
         let tags = create_tags(&["@FOO", "@BAR"]);
         let predicate = TagPredicate::new("@FOO and @BAR").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -108,7 +108,7 @@ mod tests {
         let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("@FOO and @BAR").unwrap();
 
-        assert!(!predicate.test(&tags));
+        assert!(!predicate.apply(&tags));
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod tests {
         let tags = create_tags(&["@FOO"]);
         let predicate = TagPredicate::new("@FOO or @BAR").unwrap();
 
-        assert!(predicate.test(&tags));
+        assert!(predicate.apply(&tags));
     }
 
     #[test]
@@ -124,7 +124,7 @@ mod tests {
         let tags = create_tags(&[]);
         let predicate = TagPredicate::new("@FOO or @BAR").unwrap();
 
-        assert!(!predicate.test(&tags));
+        assert!(!predicate.apply(&tags));
     }
 
     fn create_tags<'a>(tags: &[&'a str]) -> Vec<Tag<'a>> {

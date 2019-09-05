@@ -5,15 +5,15 @@ use gherkin::cuke::Tag;
 
 use api::GlueCodeLocation;
 use error::Result;
+use glue::filter::tag::TagPredicate;
 use glue::hook::{HookFn, StaticHookDef};
-use glue::hook::TagPredicate;
 use runtime::Scenario;
 
 #[derive(Clone)]
 pub struct HookDefinition {
-    tag_predicate: TagPredicate,
+    tag_predicate: TagPredicate<'static>,
     order: u32,
-//    timeout: Option<Duration>,
+    //    timeout: Option<Duration>,
     hook_fn: HookFn,
     location: GlueCodeLocation,
 }
@@ -45,7 +45,7 @@ impl From<(&Path, &&StaticHookDef)> for HookDefinition {
             Err(_strip_prefix_error) => {
                 panic!("unable to strip base path \"{}\" from path \"{}\"",
                     base_path.display(), absolute_file_path.display());
-            },
+            }
         };
 
         HookDefinition {
@@ -74,7 +74,7 @@ impl HookDefinition {
     }
 
     pub fn matches(&self, tags: &[Tag]) -> bool {
-        self.tag_predicate.test(tags)
+        self.tag_predicate.apply(tags)
     }
 
     pub fn get_order(&self) -> u32 {

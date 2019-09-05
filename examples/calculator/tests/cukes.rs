@@ -21,7 +21,7 @@ fn test_cucumber_features() {
         strict: true,
         colored_output: true,
         dry_run: false,
-        tags: vec![],
+        tags: &["not @ignore"],
         execution_mode: ExecutionMode::Sequential {
             event_listeners: &[
                 &PrettyPrintListener::new(),

@@ -42,3 +42,9 @@ Feature: Basic Arithmetic
       | a  | b  | c  |
       | 10 | 20 | 35 |
       | 20 | 30 | 55 |
+
+  @ignore
+  Scenario: Ignored due to "@ignore" tag
+  See tags config in cukes.rs
+
+    When not ignored the test will fail due to this undefined step

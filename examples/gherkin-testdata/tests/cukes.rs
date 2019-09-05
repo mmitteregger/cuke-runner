@@ -31,7 +31,7 @@ fn test_cucumber_features() {
         strict: true,
         colored_output: true,
         dry_run: false,
-        tags: vec![],
+        tags: &[],
         execution_mode: ExecutionMode::ParallelScenarios {
             event_listeners: &[
                 &ProgressBarListener::with_style(ProgressStyle::default_bar()

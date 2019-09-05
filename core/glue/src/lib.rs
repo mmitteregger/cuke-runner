@@ -12,6 +12,8 @@ pub mod error;
 pub mod scenario;
 #[doc(hidden)]
 pub mod location;
+#[doc(hidden)]
+pub mod filter;
 pub mod step;
 pub mod hook;
 pub mod panic;
