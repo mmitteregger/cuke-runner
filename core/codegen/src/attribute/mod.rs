@@ -1,5 +1,7 @@
+use proc_macro::Diagnostic;
+
 use devise::{ext::TypeExt, Result, Spanned, syn};
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Span as Span2, TokenStream as TokenStream2};
 
 use PARAM_PREFIX;
 use proc_macro_ext::Diagnostics;
@@ -79,25 +81,92 @@ fn scenario_data_expr(argument: &GlueFnArg) -> Result<TokenStream2> {
     let ty = &argument.ty;
     let ident = &argument.cuke_runner_ident;
     let span = ident.span().unstable().join(ty.span()).unwrap().into();
+
     let from_scenario = match ty {
-        syn::Type::Reference(type_ref) => {
-            if type_ref.mutability.is_some() {
-                quote_spanned! { span =>
-                    ::cuke_runner::glue::scenario::FromScenarioMut::from_scenario_mut(__scenario)
-                }
-            } else {
-                quote_spanned! { span =>
-                    ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario)
-                }
+        syn::Type::Reference(type_reference) => {
+            from_scenario_expr(type_reference, span)
+        }
+        /*
+        Example:
+        Path(TypePath {
+            qself: None,
+            path: Path {
+                leading_colon: None,
+                segments: [
+                    PathSegment {
+                        ident: Ident {
+                            ident: "Option",
+                            span: #0 bytes(19180..19186)
+                        },
+                        arguments: AngleBracketed(AngleBracketedGenericArguments {
+                            colon2_token: None,
+                            lt_token: Lt,
+                            args: [
+                                Type(Reference(TypeReference {
+                                    and_token: And,
+                                    lifetime: None,
+                                    mutability: None,
+                                    elem: Path(TypePath {
+                                        qself: None,
+                                        path: Path {
+                                            leading_colon: None,
+                                            segments: [
+                                                PathSegment {
+                                                    ident: Ident {
+                                                        ident: "<CustomTypeName>",
+                                                        span: #0 bytes(19188..19195)
+                                                    },
+                                                    arguments: None
+                                                }
+                                            ]
+                                        }
+                                    })
+                                }))
+                            ],
+                            gt_token: Gt
+                        })
+                    }
+                ]
             }
-        },
-        _ => {
-            let diagnostic = argument.user_ident
-                .span()
-                .unstable()
-                .error("scenario data argument must be a shared or mutable reference");
-            return Err(diagnostic);
-        },
+        })
+        */
+        syn::Type::Path(type_path) => {
+            let first_path_segment = if type_path.path.segments.len() == 1 {
+                &type_path.path.segments[0]
+            } else {
+                return Err(invalid_scenario_data_argument(argument));
+            };
+
+            let option_path_segment = if first_path_segment.ident == "Option" {
+                first_path_segment
+            } else {
+                return Err(invalid_scenario_data_argument(argument));
+            };
+
+            let option_argument = match &option_path_segment.arguments {
+                syn::PathArguments::AngleBracketed(arguments) => {
+                    if arguments.args.len() == 1 {
+                        &arguments.args[0]
+                    } else {
+                        return Err(invalid_scenario_data_argument(argument));
+                    }
+                }
+                _ => return Err(invalid_scenario_data_argument(argument)),
+            };
+
+            let option_type = match option_argument {
+                syn::GenericArgument::Type(option_type) => option_type,
+                _ => return Err(invalid_scenario_data_argument(argument)),
+            };
+
+            let option_type_reference = match option_type {
+                syn::Type::Reference(option_type_reference) => option_type_reference,
+                _ => return Err(invalid_scenario_data_argument(argument)),
+            };
+
+            from_scenario_expr(option_type_reference, span)
+        }
+        _ => return Err(invalid_scenario_data_argument(argument)),
     };
 
     Ok(quote_spanned! { span =>
@@ -109,4 +178,27 @@ fn scenario_data_expr(argument: &GlueFnArg) -> Result<TokenStream2> {
             },
         };
     })
+}
+
+fn from_scenario_expr(type_reference: &syn::TypeReference, span: Span2) -> TokenStream2 {
+    if type_reference.mutability.is_some() {
+        quote_spanned! { span =>
+            ::cuke_runner::glue::scenario::FromScenarioMut::from_scenario_mut(__scenario)
+        }
+    } else {
+        quote_spanned! { span =>
+            ::cuke_runner::glue::scenario::FromScenario::from_scenario(__scenario)
+        }
+    }
+}
+
+fn invalid_scenario_data_argument(argument: &GlueFnArg) -> Diagnostic {
+    argument.user_ident
+        .span()
+        .unstable()
+        .error("unsupported scenario data argument, must be one of:
+        * shared reference: &T
+        * mutable reference: &mut T
+        * optional shared reference: Option<&T>
+        * optional mutable reference: Option<&mut T>")
 }

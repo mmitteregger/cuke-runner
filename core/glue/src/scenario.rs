@@ -79,3 +79,15 @@ impl<'a> FromScenarioMut<'a> for &'a mut Scenario {
         Ok(scenario)
     }
 }
+
+impl<'a, T: 'static> FromScenario<'a> for Option<&'a T> {
+    fn from_scenario(scenario: &'a Scenario) -> FromScenarioResult<Option<&'a T>> {
+        Ok(scenario.get::<T>())
+    }
+}
+
+impl<'a, T: 'static> FromScenarioMut<'a> for Option<&'a mut T> {
+    fn from_scenario_mut(scenario: &'a mut Scenario) -> FromScenarioResult<Option<&'a mut T>> {
+        Ok(scenario.get_mut::<T>())
+    }
+}
