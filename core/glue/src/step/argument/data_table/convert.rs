@@ -61,3 +61,15 @@ impl<'r, 'dt: 'r> FromDataTableBodyRow<'dt> for BodyRow {
         body_row.to_owned()
     }
 }
+
+impl<'r, 'dt: 'r> FromDataTableRow<'dt> for &'dt str {
+    fn from(row: RowRef<'_, 'dt>) -> Self {
+        row[0]
+    }
+}
+
+impl<'r, 'dt: 'r> FromDataTableBodyRow<'dt> for &'dt str {
+    fn from(body_row: BodyRowRef<'_, 'dt>) -> Self {
+        body_row[0]
+    }
+}
