@@ -126,8 +126,11 @@ fn add_from_items(static_glue_definition_paths: &mut Vec<Path>,
 //                    debug!("Skipping private module: {}", module_path);
 //                    continue;
 //                }
-                if !item_mod.attrs.is_empty() {
-                    panic!("attributes on glue module declarations are not supported yet")
+
+                for module_attribute in item_mod.attrs {
+                    if module_attribute.path.is_ident("path") {
+                        panic!("path attribute on glue module declarations are not supported yet");
+                    }
                 }
 
                 if let Some(content) = item_mod.content {
