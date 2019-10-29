@@ -20,7 +20,7 @@ quote = "1"
 proc-macro2 = "1"
 regex = "1"
 log = "0.4"
-devise = { git = "https://github.com/mmitteregger/Devise.git", branch = "stable-syn-quote-and-proc-macro2" }
+devise = { git = "https://github.com/SergioBenitez/Devise.git", rev = "e58b3ac9afc3b6ff10a8aaf02a3e768a8f530089" }
 
 [dev-dependencies]
 cuke_runner = { path = "../lib" }
