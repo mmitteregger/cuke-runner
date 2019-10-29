@@ -14,7 +14,7 @@
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(custom_attribute, param_attrs)]
+/// # #![feature(custom_attribute)]
 /// #
 /// # pub struct Calc;
 /// # impl Calc {

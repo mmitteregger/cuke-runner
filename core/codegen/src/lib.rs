@@ -15,7 +15,6 @@ extern crate syn;
 #[macro_use]
 extern crate log;
 extern crate devise;
-extern crate syntax_pos;
 
 use proc_macro::TokenStream;
 
