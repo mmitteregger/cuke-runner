@@ -19,7 +19,8 @@ use gherkin::cuke::String as CukeString;
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(custom_attribute)]
+/// # #![feature(register_attr)]
+/// # #![register_attr(given, when, then, scenario)]
 /// #
 /// # pub struct Calc;
 /// # impl Calc {

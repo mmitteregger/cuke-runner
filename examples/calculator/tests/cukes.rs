@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, custom_attribute)]
+#![feature(proc_macro_hygiene)]
 
 extern crate calculator;
 #[macro_use]
