@@ -159,6 +159,8 @@ fn add_from_items(static_glue_definition_paths: &mut Vec<Path>,
                         add_from_file(static_glue_definition_paths, module_paths, fs_path,
                             fn_attribute_names, struct_prefix);
                         module_paths.pop();
+
+                        fs_path.pop();
                         continue;
                     }
 
