@@ -1,5 +1,6 @@
 use std::cmp::{Eq, PartialEq};
 use std::hash::{Hash, Hasher};
+
 use gherkin::ast::Feature;
 
 #[derive(Debug)]

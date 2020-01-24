@@ -135,6 +135,7 @@ mod tests {
                     column: 0,
                 },
                 name: tag,
+                ast_node_id: "test",
             })
             .collect()
     }

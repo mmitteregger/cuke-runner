@@ -3,6 +3,7 @@ use std::fs;
 use std::time::SystemTime;
 
 use gherkin::ast::GherkinDocument;
+use gherkin::{IdGenerator, IncrementingIdGenerator};
 use gherkin::cuke::Cuke;
 use rayon::prelude::*;
 use walkdir::{DirEntry, WalkDir};
@@ -117,8 +118,9 @@ struct ParsedCuke<'d> {
 }
 
 fn run_sequential(runner: Runner, filters: Filters, event_bus: &EventBus, config: &Config) {
-    let parsed_gherkin_documents = parse_gherking_documents(config);
-    let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus);
+    let mut id_generator = IncrementingIdGenerator::new();
+    let parsed_gherkin_documents = parse_gherking_documents(config, &mut id_generator);
+    let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus, &mut id_generator);
 
     event_bus.send(Event::TestRunStarted {
         time: SystemTime::now(),
@@ -137,8 +139,9 @@ fn run_sequential(runner: Runner, filters: Filters, event_bus: &EventBus, config
 }
 
 fn run_parallel_features(runner: Runner, filters: Filters, event_bus: &SyncEventBus, config: &Config) {
-    let parsed_gherkin_documents = parse_gherking_documents(config);
-    let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus);
+    let mut id_generator = IncrementingIdGenerator::new();
+    let parsed_gherkin_documents = parse_gherking_documents(config, &mut id_generator);
+    let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus, &mut id_generator);
 
     event_bus.send(Event::TestRunStarted {
         time: SystemTime::now(),
@@ -167,8 +170,9 @@ fn run_parallel_features(runner: Runner, filters: Filters, event_bus: &SyncEvent
 }
 
 fn run_parallel_scenarios(runner: Runner, filters: Filters, event_bus: &SyncEventBus, config: &Config) {
-    let parsed_gherkin_documents = parse_gherking_documents(config);
-    let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus);
+    let mut id_generator = IncrementingIdGenerator::new();
+    let parsed_gherkin_documents = parse_gherking_documents(config, &mut id_generator);
+    let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus, &mut id_generator);
 
     event_bus.send(Event::TestRunStarted {
         time: SystemTime::now(),
@@ -193,11 +197,16 @@ fn init_rayon() {
         .expect("Failed to build global rayon thread pool");
 }
 
-fn parse_gherking_documents(config: &Config) -> Vec<ParsedGherkinDocument> {
+fn parse_gherking_documents(
+    config: &Config,
+    id_generator: &mut dyn IdGenerator,
+) -> Vec<ParsedGherkinDocument>
+{
     let walk_dir = WalkDir::new(config.features_dir)
         .follow_links(true);
 
-    let mut gherkin_parser = gherkin::Parser::default();
+    let builder = gherkin::DocumentBuilder::with_id_generator(id_generator);
+    let mut gherkin_parser = gherkin::Parser::with_builder(builder);
 
     walk_dir.into_iter()
         .map(Result::unwrap)
@@ -229,9 +238,10 @@ fn parse_gherking_documents(config: &Config) -> Vec<ParsedGherkinDocument> {
 fn parse_cukes<'d>(
     parsed_gherkin_documents: &'d [ParsedGherkinDocument],
     event_publisher: &dyn EventPublisher,
+    id_generator: &mut dyn IdGenerator,
 ) -> Vec<ParsedCuke<'d>>
 {
-    let mut gherkin_compiler = gherkin::cuke::Compiler::default();
+    let mut gherkin_compiler = gherkin::cuke::Compiler::new(id_generator);
 
     parsed_gherkin_documents.iter()
         .flat_map(|parsed_gherkin_document| {

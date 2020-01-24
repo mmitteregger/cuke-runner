@@ -4,9 +4,9 @@ use std::ops::Deref;
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use cuke_runner::api::{GlueCodeLocation, CukeStepTestStep, TestCase, TestResult, TestStep};
+use cuke_runner::api::{CukeStepTestStep, GlueCodeLocation, TestCase, TestResult, TestStep};
 use cuke_runner::api::event::{Event, EventListener};
-use cuke_runner::gherkin::ast::{Argument, Background, Examples, Feature, ScenarioOutline, Tag};
+use cuke_runner::gherkin::ast::{Argument, Background, Examples, Feature, Scenario, Tag};
 use cuke_runner::gherkin::cuke;
 use cuke_runner::glue::step::argument::StepArgument;
 
@@ -43,7 +43,7 @@ pub struct PrettyPrintListener {
 struct Inner {
     first_feature: bool,
     print_feature_file_text: bool,
-    print_scenario_definition_text: bool,
+    print_scenario_text: bool,
     current_scenario_outline: Option<u32>,
     current_examples: Option<u32>,
     location_indentation: usize,
@@ -54,7 +54,7 @@ impl Default for Inner {
         Inner {
             first_feature: true,
             print_feature_file_text: true,
-            print_scenario_definition_text: false,
+            print_scenario_text: false,
             current_scenario_outline: None,
             current_examples: None,
             location_indentation: 0,
@@ -74,27 +74,39 @@ impl EventListener for PrettyPrintListener {
             Event::TestCaseStarted {
                 uri,
                 feature,
-                background,
-                scenario_definition,
+                feature_background,
+                rule_background,
+                scenario,
                 test_case,
                 ..
-            } => self.inner.borrow_mut().handle_test_case_started(uri, feature, background, scenario_definition, test_case),
+            } => self.inner.borrow_mut()
+                .handle_test_case_started(
+                    uri,
+                    feature,
+                    feature_background,
+                    rule_background,
+                    scenario,
+                    test_case,
+                ),
             Event::TestStepStarted {
                 uri,
-                scenario_definition,
+                scenario,
                 test_case,
                 test_step,
                 ..
-            } => self.inner.borrow_mut().handle_test_step_started(uri, scenario_definition, test_case, test_step),
+            } => self.inner.borrow_mut()
+                .handle_test_step_started(uri, scenario, test_case, test_step),
             Event::TestStepFinished {
                 test_step,
                 result,
                 ..
-            } => self.inner.borrow_mut().handle_test_step_finished(test_step, result),
+            } => self.inner.borrow_mut()
+                .handle_test_step_finished(test_step, result),
             Event::Write {
                 text,
                 ..
-            } => self.inner.borrow().handle_write(text),
+            } => self.inner.borrow()
+                .handle_write(text),
             Event::TestRunFinished { .. } => println!(),
             _ => {},
         }
@@ -102,25 +114,30 @@ impl EventListener for PrettyPrintListener {
 }
 
 impl Inner {
-    fn handle_test_case_started(&mut self, uri: &str, feature: &Feature,
-        background: Option<&Background>, scenario_definition: &cuke::ScenarioDefinition,
-        test_case: &dyn TestCase)
-    {
+    fn handle_test_case_started(
+        &mut self,
+        uri: &str,
+        feature: &Feature,
+        feature_background: Option<&Background>,
+        rule_background: Option<&Background>,
+        scenario: &Scenario,
+        test_case: &dyn TestCase,
+    ) {
         self.handle_start_of_feature(feature);
-        self.handle_scenario_outline(uri, scenario_definition, test_case);
+        self.handle_scenario_outline(uri, scenario, test_case);
 
-        if let Some(background) = background {
+        if let Some(background) = feature_background {
             self.print_background(uri, background, test_case);
-            self.print_scenario_definition_text = true;
+            self.print_scenario_text = true;
         } else {
-            self.print_scenario_definition(uri, scenario_definition, test_case);
+            self.print_scenario(uri, scenario, test_case);
         }
     }
 
     fn print_background(&mut self, uri: &str, background: &Background, test_case: &dyn TestCase) {
         let definition_text = format!("{}: {}", background.keyword, background.name);
-        let background_line = background.location.line;
-        let description = background.description.as_ref();
+        let background_line = background.location.unwrap().line;
+        let description = &background.description;
         self.calculate_location_indentation(&definition_text, &test_case.get_test_steps(), true);
         let location_padding = self.create_padding_to_location(SCENARIO_INDENT, &definition_text);
         println!();
@@ -129,14 +146,14 @@ impl Inner {
         self.print_description(description);
     }
 
-    fn handle_test_step_started(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &dyn TestCase, test_step: &TestStep) {
+    fn handle_test_step_started(&mut self, uri: &str, scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep) {
         if let TestStep::Cuke(cuke_step_test_step) = test_step {
-            if self.print_scenario_definition_text {
+            if self.print_scenario_text {
                 if !cuke_step_test_step.is_background_step() {
-                    self.print_scenario_definition(uri, scenario_definition, test_case.deref());
-                    self.print_scenario_definition_text = false;
+                    self.print_scenario(uri, scenario, test_case.deref());
+                    self.print_scenario_text = false;
                 } else {
-                    self.print_scenario_definition_text = true;
+                    self.print_scenario_text = true;
                 }
             }
         }
@@ -308,18 +325,18 @@ impl Inner {
     fn print_feature(&self, feature: &Feature) {
         self.print_tags(&feature.tags);
         println!("{}: {}", feature.keyword, feature.name);
-        self.print_description(feature.description.as_ref());
+        self.print_description(&feature.description);
     }
 
-    fn handle_scenario_outline(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition, test_case: &dyn TestCase) {
-        if let cuke::ScenarioDefinition::ScenarioOutline(scenario_outline) = scenario_definition {
-            let scenario_outline_line = scenario_outline.location.line;
+    fn handle_scenario_outline(&mut self, uri: &str, scenario: &Scenario, test_case: &dyn TestCase) {
+        if !scenario.examples.is_empty() {
+            let scenario_outline_line = scenario.location.unwrap().line;
             let mut reset_scenario_outline = false;
 
             {
                 if self.current_scenario_outline.is_none()
                     || self.current_scenario_outline.unwrap() != scenario_outline_line {
-                    self.print_scenario_outline(uri, scenario_outline);
+                    self.print_scenario_outline(uri, scenario);
                     reset_scenario_outline = true;
                 }
             }
@@ -327,25 +344,23 @@ impl Inner {
             let test_case_line = test_case.get_line();
 
             let mut current_examples = None;
-            for examples in &scenario_outline.examples {
-                if examples.location.line == test_case_line {
+            for examples in &scenario.examples {
+                if examples.location.unwrap().line == test_case_line {
                     current_examples = Some(examples);
                     break;
                 }
 
                 if let Some(table_header) = &examples.table_header {
-                    if table_header.location.line == test_case_line {
+                    if table_header.location.unwrap().line == test_case_line {
                         current_examples = Some(examples);
                         break;
                     }
                 }
 
-                if let Some(table_body) = &examples.table_body {
-                    for table_row in table_body {
-                        if table_row.location.line == test_case_line {
-                            current_examples = Some(examples);
-                            break;
-                        }
+                for table_row in &examples.table_body {
+                    if table_row.location.unwrap().line == test_case_line {
+                        current_examples = Some(examples);
+                        break;
                     }
                 }
             }
@@ -353,9 +368,9 @@ impl Inner {
             let current_examples = current_examples.expect("current examples");
 
             if self.current_examples.is_none()
-                || self.current_examples.unwrap() != current_examples.location.line {
+                || self.current_examples.unwrap() != current_examples.location.unwrap().line {
                 self.print_examples(current_examples);
-                self.current_examples = Some(current_examples.location.line);
+                self.current_examples = Some(current_examples.location.unwrap().line);
             }
 
             if reset_scenario_outline {
@@ -371,13 +386,11 @@ impl Inner {
         println!();
         self.print_tags_with_ident(&examples.tags, EXAMPLES_INDENT);
         println!("{}", EXAMPLES_INDENT.to_owned() + &examples.keyword + ": " + &examples.name);
-        self.print_description(examples.description.as_ref());
+        self.print_description(&examples.description);
 
         let examples_table_iter = examples.table_header
             .iter()
-            .chain(examples.table_body
-                .iter()
-                .flat_map(|table_rows| table_rows))
+            .chain(examples.table_body.iter())
             .map(|table_row| {
                 table_row.cells
                     .iter()
@@ -386,15 +399,15 @@ impl Inner {
         println!("\x1B[36m{}\x1B[0m", self.format_data_table(examples_table_iter));
     }
 
-    fn print_scenario_outline(&self, uri: &str, scenario_outline: &ScenarioOutline) {
+    fn print_scenario_outline(&self, uri: &str, scenario: &Scenario) {
         println!();
-        self.print_tags_with_ident(&scenario_outline.tags, SCENARIO_INDENT);
+        self.print_tags_with_ident(&scenario.tags, SCENARIO_INDENT);
         let definition_text = format!("{}: {}",
-            scenario_outline.keyword, scenario_outline.name);
-        let location_text = self.format_uri_location(uri, scenario_outline.location.line);
+            scenario.keyword, scenario.name);
+        let location_text = self.format_uri_location(uri, scenario.location.unwrap().line);
         println!("{}", SCENARIO_INDENT.to_owned() + &definition_text + " " + &location_text);
-        self.print_description(scenario_outline.description.as_ref());
-        for step in &scenario_outline.steps {
+        self.print_description(&scenario.description);
+        for step in &scenario.steps {
             let step_text = format!("\x1B[36m{}{}\x1B[0m", step.keyword, step.text);
             println!("{}", STEP_INDENT.to_owned() + &step_text);
 
@@ -446,19 +459,20 @@ impl Inner {
         }
     }
 
-    fn print_description<S: AsRef<str>>(&self, description: Option<S>) {
-        if let Some(description) = description {
-            println!("{}", description.as_ref());
+    fn print_description<S: AsRef<str>>(&self, description: S) {
+        let description = description.as_ref();
+        if !description.is_empty() {
+            println!("{}", description);
         }
     }
 
-    fn print_scenario_definition(&mut self, uri: &str, scenario_definition: &cuke::ScenarioDefinition,
+    fn print_scenario(&mut self, uri: &str, scenario: &Scenario,
         test_case: &dyn TestCase)
     {
         let definition_text = format!("{}: {}",
-            scenario_definition.get_keyword(), test_case.get_name());
+            scenario.keyword, test_case.get_name());
         let test_steps = &test_case.get_test_steps();
-        let description = scenario_definition.get_description();
+        let description = &scenario.description;
         self.calculate_location_indentation(&definition_text, test_steps, false);
         let location_padding = self.create_padding_to_location(SCENARIO_INDENT, &definition_text);
         println!();

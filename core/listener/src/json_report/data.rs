@@ -74,8 +74,8 @@ pub struct Row {
 
 #[derive(Debug, Serialize)]
 pub struct DocString {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_type: Option<String>,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub media_type: String,
     pub value: String,
     pub line: u32,
 }
@@ -161,7 +161,7 @@ fn doc_string_from(arguments: &[StepArgument]) -> Option<DocString> {
                 StepArgument::DataTable(_data_table) => None,
                 StepArgument::DocString(doc_string) => {
                     let doc_string = DocString {
-                        content_type: doc_string.content_type().map(|content_type| content_type.to_owned()),
+                        media_type: doc_string.media_type().to_owned(),
                         value: doc_string.value().to_owned(),
                         line: doc_string.line(),
                     };
@@ -192,7 +192,7 @@ impl From<&gherkin::ast::Tag> for Tag {
     fn from(tag: &gherkin::ast::Tag) -> Self {
         Tag {
             name: tag.name.clone(),
-            location: Location::from(&tag.location),
+            location: Location::from(&tag.location.unwrap()),
         }
     }
 }

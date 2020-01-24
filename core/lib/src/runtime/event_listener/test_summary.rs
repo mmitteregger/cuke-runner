@@ -3,7 +3,7 @@ use std::io::Write;
 use std::sync::Mutex;
 use std::time::Instant;
 
-use gherkin::cuke::ScenarioDefinition;
+use gherkin::ast::Scenario;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use api::{TestCase, TestResultStatus};
@@ -20,16 +20,16 @@ struct TestSummary {
 }
 
 impl TestSummary {
-    fn add_result(&mut self, scenario_definition: &ScenarioDefinition, test_case: &dyn TestCase,
+    fn add_result(&mut self, scenario: &Scenario, test_case: &dyn TestCase,
         status: TestResultStatus)
     {
         match status {
             TestResultStatus::Passed => self.passed += 1,
-            TestResultStatus::Skipped => self.skipped.push(TestInfo::from((scenario_definition, test_case))),
-            TestResultStatus::Pending => self.pending.push(TestInfo::from((scenario_definition, test_case))),
-            TestResultStatus::Undefined => self.undefined.push(TestInfo::from((scenario_definition, test_case))),
-            TestResultStatus::Ambiguous => self.ambiguous.push(TestInfo::from((scenario_definition, test_case))),
-            TestResultStatus::Failed => self.failed.push(TestInfo::from((scenario_definition, test_case))),
+            TestResultStatus::Skipped => self.skipped.push(TestInfo::from((scenario, test_case))),
+            TestResultStatus::Pending => self.pending.push(TestInfo::from((scenario, test_case))),
+            TestResultStatus::Undefined => self.undefined.push(TestInfo::from((scenario, test_case))),
+            TestResultStatus::Ambiguous => self.ambiguous.push(TestInfo::from((scenario, test_case))),
+            TestResultStatus::Failed => self.failed.push(TestInfo::from((scenario, test_case))),
         }
     }
 }
@@ -42,10 +42,10 @@ struct TestInfo {
     line: u32,
 }
 
-impl<'a> From<(&'a ScenarioDefinition<'a>, &'a dyn TestCase)> for TestInfo {
-    fn from((scenario_definition, test_case): (&'a ScenarioDefinition, &'a dyn TestCase)) -> Self {
+impl<'a> From<(&'a Scenario, &'a dyn TestCase)> for TestInfo {
+    fn from((scenario, test_case): (&'a Scenario, &'a dyn TestCase)) -> Self {
         TestInfo {
-            keyword: scenario_definition.get_keyword().to_owned(),
+            keyword: scenario.keyword.to_owned(),
             name: test_case.get_name().to_owned(),
             uri: test_case.get_uri().to_owned(),
             line: test_case.get_line(),
@@ -75,9 +75,9 @@ impl TestSummaryListener {
 
 impl EventListener for TestSummaryListener {
     fn on_event(&self, event: &Event) {
-        if let Event::TestCaseFinished { scenario_definition, test_case, ref result, .. } = *event {
+        if let Event::TestCaseFinished { scenario, test_case, ref result, .. } = *event {
             self.test_summary.borrow_mut()
-                .add_result(scenario_definition, test_case, result.status)
+                .add_result(scenario, test_case, result.status)
         }
     }
 }
@@ -105,9 +105,9 @@ impl SyncTestSummaryListener {
 
 impl EventListener for SyncTestSummaryListener {
     fn on_event(&self, event: &Event) {
-        if let Event::TestCaseFinished { scenario_definition, test_case, ref result, .. } = *event {
+        if let Event::TestCaseFinished { scenario, test_case, ref result, .. } = *event {
             self.test_summary.lock().unwrap().borrow_mut()
-                .add_result(scenario_definition, test_case, result.status)
+                .add_result(scenario, test_case, result.status)
         }
     }
 }

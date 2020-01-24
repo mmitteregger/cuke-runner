@@ -71,8 +71,9 @@ pub fn run<EP: EventPublisher>(test_case: TestCase, event_publisher: &EP) {
         time: start_time,
         uri: test_case.uri,
         feature: test_case.cuke.feature,
-        background: test_case.cuke.background,
-        scenario_definition: &test_case.cuke.scenario_definition,
+        feature_background: test_case.cuke.feature_background,
+        rule_background: test_case.cuke.rule_background,
+        scenario: &test_case.cuke.scenario,
         test_case: &test_case as &dyn api::TestCase,
     });
 
@@ -110,8 +111,9 @@ pub fn run<EP: EventPublisher>(test_case: TestCase, event_publisher: &EP) {
         time: stop_time,
         uri: test_case.uri,
         feature: test_case.cuke.feature,
-        background: test_case.cuke.background,
-        scenario_definition: &test_case.cuke.scenario_definition,
+        feature_background: test_case.cuke.feature_background,
+        rule_background: test_case.cuke.rule_background,
+        scenario: &test_case.cuke.scenario,
         result: &test_result,
         test_case: &test_case as &dyn api::TestCase,
     });

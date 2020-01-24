@@ -63,10 +63,38 @@ impl<'s> DocString<'s> {
     ///   """
     /// ```
     /// The returned content type is `Some("text")`.
+    #[deprecated(note = "superseded by `media_type`")]
     pub fn content_type(&self) -> Option<&str> {
-        self.cuke_string.content_type
-            .as_ref()
-            .map(|content_type| content_type.as_ref())
+        if self.cuke_string.media_type.is_empty() {
+            None
+        } else {
+            Some(self.cuke_string.media_type.as_ref())
+        }
+    }
+
+    /// Returns the media type of the doc string.
+    ///
+    /// # Examples
+    ///
+    /// With the step:
+    /// ```gherkin
+    ///   Then the result is:
+    ///   """
+    ///   6
+    ///   """
+    /// ```
+    /// The returned media type is an empty string `""`.
+    ///
+    /// But when the step is:
+    /// ```gherkin
+    ///   Then the result is:
+    ///   """text
+    ///   6
+    ///   """
+    /// ```
+    /// The returned media type is `"text"`.
+    pub fn media_type(&self) -> &str {
+        self.cuke_string.media_type.as_ref()
     }
 
     /// Returns the line of the doc string start delimiter.

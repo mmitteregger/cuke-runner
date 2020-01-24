@@ -34,7 +34,7 @@ impl Runner {
             before_hooks,
             after_hooks,
             test_steps,
-        ) = if cuke.background_steps.is_empty() && cuke.scenario_steps.is_empty() {
+        ) = if cuke.scenario_steps.is_empty() {
             (
                 Vec::new(),
                 Vec::new(),
@@ -98,7 +98,20 @@ impl Runner {
         let feature_path = uri;
         let tags = &cuke.tags;
 
-        for step in &cuke.background_steps {
+        for step in &cuke.feature_background_steps {
+            let step_definition_match = self.glue.step_definition_match(feature_path, step);
+            let before_step_hook_steps = self.get_before_step_hooks(tags);
+            let after_step_hook_steps = self.get_after_step_hooks(tags);
+
+            test_steps.push(CukeStepTestStep {
+                uri: feature_path.to_string(),
+                before_step_hook_steps,
+                after_step_hook_steps,
+                step_definition_match,
+                background_step: true,
+            });
+        }
+        for step in &cuke.rule_background_steps {
             let step_definition_match = self.glue.step_definition_match(feature_path, step);
             let before_step_hook_steps = self.get_before_step_hooks(tags);
             let after_step_hook_steps = self.get_after_step_hooks(tags);

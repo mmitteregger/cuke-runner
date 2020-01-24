@@ -4,8 +4,7 @@ use std::fmt::Debug;
 use std::io::Write;
 use std::sync::Mutex;
 
-use gherkin::ast::Background;
-use gherkin::cuke::ScenarioDefinition;
+use gherkin::ast::{Background, Scenario};
 
 use cuke_runner::api::{HookType, TestCase, TestResult, TestStep};
 use cuke_runner::api::event::{Event, EventListener};
@@ -83,8 +82,9 @@ impl<W: Write + Send + Debug> EventListener for JsonReportListener<W> {
             }
             Event::TestStepFinished {
                 uri,
-                background,
-                scenario_definition,
+                feature_background,
+                rule_background,
+                scenario,
                 test_case,
                 test_step,
                 result,
@@ -92,7 +92,7 @@ impl<W: Write + Send + Debug> EventListener for JsonReportListener<W> {
             } => {
                 let report_lock = self.report.lock().unwrap();
                 let mut report = report_lock.borrow_mut();
-                report.add_test_step_result(uri, background, scenario_definition,
+                report.add_test_step_result(uri, feature_background, rule_background, scenario,
                     test_case, test_step, result);
             }
             Event::TestRunFinished { .. } => {
@@ -115,17 +115,16 @@ impl<W: Write + Send + Debug> Report<W> {
             uri: uri.to_string(),
             keyword: feature.keyword.to_owned(),
             name: feature.name.to_owned(),
-            line: feature.location.line,
-            description: feature.description.as_ref()
-                .map(|description| description.to_owned())
-                .unwrap_or(String::new()),
+            line: feature.location.unwrap().line,
+            description: feature.description.to_owned(),
             elements: Vec::new(),
             tags: feature.tags.iter().map(Tag::from).collect(),
         });
     }
 
-    fn add_test_step_result(&mut self, uri: &str, background: Option<&Background>,
-        scenario_definition: &ScenarioDefinition, test_case: &dyn TestCase, test_step: &TestStep,
+    fn add_test_step_result(&mut self, uri: &str,
+        feature_background: Option<&Background>, rule_background: Option<&Background>,
+        scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep,
         result: &TestResult)
     {
         let mut new_id_count = self.id_count + 1;
@@ -146,12 +145,12 @@ impl<W: Write + Send + Debug> Report<W> {
                         last_element
                     } else {
                         let id = format!("element-{}", new_id_count);
-                        feature.elements.push(create_element_from_scenario(id, scenario_definition, test_case, ty));
+                        feature.elements.push(create_element_from_scenario(id, scenario, test_case, ty));
                         feature.elements.last_mut().unwrap()
                     }
                 } else {
                     let id = format!("element-{}", new_id_count);
-                    feature.elements.push(create_element_from_scenario(id, scenario_definition, test_case, ty));
+                    feature.elements.push(create_element_from_scenario(id, scenario, test_case, ty));
                     feature.elements.last_mut().unwrap()
                 };
 
@@ -176,13 +175,13 @@ impl<W: Write + Send + Debug> Report<W> {
                             new_id_count -= 1;
                             last_element
                         } else {
-                            let background = background.unwrap();
+                            let background = feature_background.unwrap();
                             let id = format!("element-{}", new_id_count);
                             feature.elements.push(create_element_from_background(id, background, ty));
                             feature.elements.last_mut().unwrap()
                         }
                     } else {
-                        let background = background.unwrap();
+                        let background = feature_background.unwrap();
                         let id = format!("element-{}", new_id_count);
                         feature.elements.push(create_element_from_background(id, background, ty));
                         feature.elements.last_mut().unwrap()
@@ -196,12 +195,12 @@ impl<W: Write + Send + Debug> Report<W> {
                             last_element
                         } else {
                             let id = format!("element-{}", new_id_count);
-                            feature.elements.push(create_element_from_scenario(id, scenario_definition, test_case, ty));
+                            feature.elements.push(create_element_from_scenario(id, scenario, test_case, ty));
                             feature.elements.last_mut().unwrap()
                         }
                     } else {
                         let id = format!("element-{}", new_id_count);
-                        feature.elements.push(create_element_from_scenario(id, scenario_definition, test_case, ty));
+                        feature.elements.push(create_element_from_scenario(id, scenario, test_case, ty));
                         feature.elements.last_mut().unwrap()
                     }
                 };
@@ -232,10 +231,8 @@ fn create_element_from_background(id: String, background: &Background, ty: &str)
         id,
         keyword: background.keyword.to_owned(),
         name: background.name.to_owned(),
-        line: background.location.line,
-        description: background.description.as_ref()
-            .map(|description| description.to_owned())
-            .unwrap_or(String::new()),
+        line: background.location.unwrap().line,
+        description: background.description.to_owned(),
         ty: ty.to_owned(),
         steps: Vec::new(),
         before: Vec::new(),
@@ -244,17 +241,15 @@ fn create_element_from_background(id: String, background: &Background, ty: &str)
     }
 }
 
-fn create_element_from_scenario(id: String, scenario_definition: &ScenarioDefinition,
+fn create_element_from_scenario(id: String, scenario: &Scenario,
     test_case: &dyn TestCase, ty: &str) -> Element
 {
     Element {
         id,
-        keyword: scenario_definition.get_keyword().to_owned(),
+        keyword: scenario.keyword.to_owned(),
         name: test_case.get_name().to_owned(),
         line: test_case.get_line(),
-        description: scenario_definition.get_description()
-            .map(|description| description.to_owned())
-            .unwrap_or(String::new()),
+        description: scenario.description.to_owned(),
         ty: ty.to_owned(),
         steps: Vec::new(),
         before: Vec::new(),

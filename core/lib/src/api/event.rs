@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use std::time::SystemTime;
 
-use gherkin::ast::{Feature, Background};
-use gherkin::cuke::{Cuke, ScenarioDefinition};
+use gherkin::ast::{Feature, Background, Scenario};
+use gherkin::cuke::Cuke;
 
 use api::{TestCase, TestStep, TestResult};
 
@@ -30,8 +30,9 @@ pub enum Event<'e, 's: 'e> {
         time: SystemTime,
         uri: &'e str,
         feature: &'e Feature,
-        background: Option<&'e Background>,
-        scenario_definition: &'e ScenarioDefinition<'e>,
+        feature_background: Option<&'e Background>,
+        rule_background: Option<&'e Background>,
+        scenario: &'e Scenario,
         test_case: &'e dyn TestCase,
     },
     /// Sent after the execution of a test case.
@@ -39,8 +40,9 @@ pub enum Event<'e, 's: 'e> {
         time: SystemTime,
         uri: &'e str,
         feature: &'e Feature,
-        background: Option<&'e Background>,
-        scenario_definition: &'e ScenarioDefinition<'e>,
+        feature_background: Option<&'e Background>,
+        rule_background: Option<&'e Background>,
+        scenario: &'e Scenario,
         test_case: &'e dyn TestCase,
         test_step: &'e TestStep<'s>,
     },
@@ -60,8 +62,9 @@ pub enum Event<'e, 's: 'e> {
         time: SystemTime,
         uri: &'e str,
         feature: &'e Feature,
-        background: Option<&'e Background>,
-        scenario_definition: &'e ScenarioDefinition<'e>,
+        feature_background: Option<&'e Background>,
+        rule_background: Option<&'e Background>,
+        scenario: &'e Scenario,
         test_case: &'e dyn TestCase,
         test_step: &'e TestStep<'s>,
         result: &'e TestResult,
@@ -71,8 +74,9 @@ pub enum Event<'e, 's: 'e> {
         time: SystemTime,
         uri: &'e str,
         feature: &'e Feature,
-        background: Option<&'e Background>,
-        scenario_definition: &'e ScenarioDefinition<'e>,
+        feature_background: Option<&'e Background>,
+        rule_background: Option<&'e Background>,
+        scenario: &'e Scenario,
         test_case: &'e dyn TestCase,
         result: &'e TestResult,
     },
