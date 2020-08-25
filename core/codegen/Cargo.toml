@@ -21,7 +21,8 @@ quote = "1"
 proc-macro2 = "1"
 regex = "1"
 log = "0.4"
-devise = { git = "https://github.com/SergioBenitez/Devise.git", rev = "e58b3ac9afc3b6ff10a8aaf02a3e768a8f530089" }
+#devise = { git = "https://github.com/SergioBenitez/Devise.git", rev = "e58b3ac9afc3b6ff10a8aaf02a3e768a8f530089" }
+devise = { git = "https://github.com/SergioBenitez/Devise.git", rev = "1e42a2691ef9934a446b8ed0ca1c4c8cf283f8bf" }
 
 [dev-dependencies]
 cuke_runner = { path = "../lib" }

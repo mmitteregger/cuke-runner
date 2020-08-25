@@ -14,15 +14,21 @@
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(register_attr)]
-/// # #![register_attr(given, when, then, scenario)]
+/// # use cuke_runner::{when, then};
+/// # use cuke_runner::glue::scenario::{FromScenarioError, FromScenarioMut, Scenario};
 /// #
 /// # pub struct Calc;
 /// # impl Calc {
 /// #     pub fn push(&mut self, s: &str) {}
 /// #     pub fn value(&self) -> f64 { 0f64 }
 /// # }
-///
+/// #
+/// # impl<'a> FromScenarioMut<'a> for &'a mut Calc {
+/// #     fn from_scenario_mut(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
+/// #         scenario.get_mut::<Calc>()
+/// #             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
+/// #     }
+/// # }
 /// #[when("I add (\\d+) and (\\d+)")]
 /// pub fn add(#[scenario] calc: &mut Calc, arg1: &str, arg2: &str) {
 ///     calc.push(arg1);

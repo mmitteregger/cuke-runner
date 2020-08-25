@@ -1,6 +1,7 @@
 use quote::ToTokens;
 use proc_macro2::TokenStream as TokenStream2;
 use devise::{FromMeta, MetaItem, Result};
+use devise::ext::SpanDiagnosticExt;
 use quote::quote;
 
 use crate::glue;
@@ -8,19 +9,19 @@ use crate::proc_macro_ext::StringLit;
 use crate::syn_ext::PathExt;
 
 #[derive(Debug)]
-crate struct HookType(crate glue::hook::HookType);
+pub struct HookType(pub glue::hook::HookType);
 
 #[derive(Debug)]
-crate struct StepKeyword(crate glue::step::StepKeyword);
+pub struct StepKeyword(pub glue::step::StepKeyword);
 
 #[derive(Debug)]
-crate struct Regex(crate regex::Regex);
+pub struct Regex(pub regex::Regex);
 
 #[derive(Debug)]
-crate struct TagExpression(crate String);
+pub struct TagExpression(pub String);
 
 #[derive(Clone, Debug)]
-crate struct Optional<T>(crate Option<T>);
+pub struct Optional<T>(pub Option<T>);
 
 impl FromMeta for StringLit {
     fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
@@ -121,8 +122,7 @@ impl ToTokens for StepKeyword {
 impl FromMeta for Regex {
     fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         let string = StringLit::from_meta(meta)?;
-        let span = string.subspan(1..=string.len())
-            .unwrap_or_else(|| string.1.span());
+        let span = string.subspan(1..=string.len());
 
         let result = regex::Regex::new(&string);
         match result {
@@ -142,8 +142,7 @@ impl ToTokens for Regex {
 impl FromMeta for TagExpression {
     fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         let string = StringLit::from_meta(meta)?;
-        let span = string.subspan(1..=string.len())
-            .unwrap_or_else(|| string.1.span());
+        let span = string.subspan(1..=string.len());
 
         let result = glue::filter::tag::parser::parse(string.as_ref());
         match result {

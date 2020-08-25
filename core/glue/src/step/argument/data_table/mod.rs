@@ -25,12 +25,19 @@ mod iter;
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(register_attr)]
-/// # #![register_attr(given, when, then, scenario)]
+/// # use cuke_runner::given;
+/// # use cuke_runner::glue::scenario::{FromScenarioError, FromScenarioMut, Scenario};
 /// #
 /// # pub struct Calc;
 /// # impl Calc {
 /// #     pub fn push(&mut self, s: &str) {}
+/// # }
+/// #
+/// # impl<'a> FromScenarioMut<'a> for &'a mut Calc {
+/// #     fn from_scenario_mut(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
+/// #         scenario.get_mut::<Calc>()
+/// #             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
+/// #     }
 /// # }
 /// use cuke_runner_glue::step::argument::{DataTable, FromDataTableBodyRow, BodyRowRef};
 ///
@@ -105,12 +112,19 @@ impl<'s> DataTable<'s> {
     /// ```
     /// Glue code:
     /// ```rust
-    /// # #![feature(register_attr)]
-    /// # #![register_attr(given, when, then, scenario)]
+    /// # use cuke_runner::given;
+    /// # use cuke_runner::glue::scenario::{FromScenarioError, FromScenarioMut, Scenario};
     /// #
     /// # pub struct Calc;
     /// # impl Calc {
     /// #     pub fn push(&mut self, s: &str) {}
+    /// # }
+    /// #
+    /// # impl<'a> FromScenarioMut<'a> for &'a mut Calc {
+    /// #     fn from_scenario_mut(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
+    /// #         scenario.get_mut::<Calc>()
+    /// #             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
+    /// #     }
     /// # }
     /// use cuke_runner_glue::step::argument::{DataTable, FromDataTableRow, RowRef};
     ///
@@ -161,12 +175,19 @@ impl<'s> DataTable<'s> {
     /// ```
     /// Glue code:
     /// ```rust
-    /// # #![feature(register_attr)]
-    /// # #![register_attr(given, when, then, scenario)]
+    /// # use cuke_runner::given;
+    /// # use cuke_runner::glue::scenario::{FromScenarioError, FromScenarioMut, Scenario};
     /// #
     /// # pub struct Calc;
     /// # impl Calc {
     /// #     pub fn push(&mut self, s: &str) {}
+    /// # }
+    /// #
+    /// # impl<'a> FromScenarioMut<'a> for &'a mut Calc {
+    /// #     fn from_scenario_mut(scenario: &'a mut Scenario) -> Result<&'a mut Calc, FromScenarioError> {
+    /// #         scenario.get_mut::<Calc>()
+    /// #             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
+    /// #     }
     /// # }
     /// use cuke_runner_glue::step::argument::{DataTable, FromDataTableBodyRow, BodyRowRef};
     ///

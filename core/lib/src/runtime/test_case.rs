@@ -18,7 +18,7 @@ pub struct TestCase<'c> {
 }
 
 impl<'s> api::TestCase for TestCase<'s> {
-    fn get_test_steps(&self) -> Vec<api::TestStep<'_>> {
+    fn get_test_steps(&self) -> Vec<api::TestStep<'_, '_>> {
         let mut test_steps = Vec::new();
 
         for before_hook in &self.before_hooks {

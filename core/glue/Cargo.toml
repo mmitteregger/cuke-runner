@@ -19,3 +19,6 @@ failure_derive = "0.1"
 indexmap = "1.0.2"
 backtrace = "0.3"
 lazy_static = "1"
+
+[dev-dependencies]
+cuke_runner = { path = "../lib" }

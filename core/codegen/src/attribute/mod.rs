@@ -1,6 +1,6 @@
-use proc_macro::Diagnostic;
-use devise::{ext::TypeExt, Result, Spanned, syn};
-use proc_macro2::{Span as Span2, TokenStream as TokenStream2};
+use devise::{Diagnostic, Result, Spanned, syn};
+use devise::ext::{SpanDiagnosticExt, TypeExt};
+use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote_spanned;
 
 use crate::PARAM_PREFIX;
@@ -80,7 +80,7 @@ fn parse_glue_fn_args(diags: &mut Diagnostics, function: &mut syn::ItemFn) -> Ve
 fn scenario_data_expr(argument: &GlueFnArg) -> Result<TokenStream2> {
     let ty = &argument.ty;
     let ident = &argument.cuke_runner_ident;
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
+    let span = ident.span().join(ty.span()).unwrap_or_else(|| ty.span());
 
     let from_scenario = match ty {
         syn::Type::Reference(type_reference) => {
@@ -180,7 +180,7 @@ fn scenario_data_expr(argument: &GlueFnArg) -> Result<TokenStream2> {
     })
 }
 
-fn from_scenario_expr(type_reference: &syn::TypeReference, span: Span2) -> TokenStream2 {
+fn from_scenario_expr(type_reference: &syn::TypeReference, span: Span) -> TokenStream2 {
     if type_reference.mutability.is_some() {
         quote_spanned! { span =>
             ::cuke_runner::glue::scenario::FromScenarioMut::from_scenario_mut(__scenario)
@@ -195,7 +195,6 @@ fn from_scenario_expr(type_reference: &syn::TypeReference, span: Span2) -> Token
 fn invalid_scenario_data_argument(argument: &GlueFnArg) -> Diagnostic {
     argument.user_ident
         .span()
-        .unstable()
         .error("unsupported scenario data argument, must be one of:
         * shared reference: &T
         * mutable reference: &mut T

@@ -124,7 +124,7 @@ impl<W: Write + Send + Debug> Report<W> {
 
     fn add_test_step_result(&mut self, uri: &str,
         feature_background: Option<&Background>, _rule_background: Option<&Background>,
-        scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep<'_>,
+        scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep<'_, '_>,
         result: &TestResult)
     {
         let mut new_id_count = self.id_count + 1;

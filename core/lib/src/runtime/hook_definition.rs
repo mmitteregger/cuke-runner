@@ -39,14 +39,23 @@ impl From<(&Path, &&StaticHookDef)> for HookDefinition {
                     static_hook_def.tag_expression, err);
             });
 
-        let absolute_file_path = PathBuf::from(&static_hook_def.location.file_path);
-        let relative_file_path = match absolute_file_path.strip_prefix(base_path) {
-            Ok(relative_path) => relative_path,
-            Err(_strip_prefix_error) => {
-                panic!("unable to strip base path \"{}\" from path \"{}\"",
-                    base_path.display(), absolute_file_path.display());
+        let location = (static_hook_def.hook_fn_location_fn)();
+        let file_path = PathBuf::from(location.file);
+        let mut relative_file_path = file_path.as_path();
+        for ancestor in file_path.ancestors() {
+            if base_path.ends_with(ancestor) {
+                match file_path.strip_prefix(ancestor) {
+                    Ok(path) => {
+                        relative_file_path = path;
+                        break;
+                    },
+                    Err(_strip_prefix_error) => {
+                        panic!("unable to strip base path \"{}\" from path \"{}\"",
+                               base_path.display(), file_path.display());
+                    }
+                }
             }
-        };
+        }
 
         HookDefinition {
             tag_predicate,
@@ -54,7 +63,7 @@ impl From<(&Path, &&StaticHookDef)> for HookDefinition {
             hook_fn: static_hook_def.hook_fn,
             location: GlueCodeLocation {
                 file_path: relative_file_path.to_owned(),
-                line_number: static_hook_def.location.line_number,
+                line_number: location.line,
             },
         }
     }

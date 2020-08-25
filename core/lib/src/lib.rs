@@ -2,8 +2,6 @@
 Cucumber for Rust with a focus on ease-of-use.
 */
 
-#![feature(nll)]
-#![feature(arbitrary_self_types)]
 #![warn(rust_2018_idioms)]
 
 pub use gherkin;

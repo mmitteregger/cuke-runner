@@ -9,6 +9,9 @@ use crate::scenario::Scenario;
 #[doc(hidden)]
 pub type HookFn = fn(&mut Scenario) -> ::std::result::Result<(), ExecutionError>;
 
+#[doc(hidden)]
+pub type HookFnLocationFn = fn() -> StaticGlueCodeLocation;
+
 /// Generated info for a hook definition
 /// (for example a `#[before_scenario(...)]` annotated function).
 #[doc(hidden)]
@@ -41,8 +44,9 @@ pub struct StaticHookDef {
     pub tag_expression: &'static str,
     /// The generated hook handler function that will call the user defined annotated function.
     pub hook_fn: HookFn,
-    /// Location of the user defined annotated function.
-    pub location: StaticGlueCodeLocation,
+    /// The generated hook location function that will return
+    /// the location of the user defined annotated function.
+    pub hook_fn_location_fn: HookFnLocationFn,
 }
 
 impl fmt::Debug for StaticHookDef {
@@ -51,7 +55,7 @@ impl fmt::Debug for StaticHookDef {
             .field("name", &self.name)
             .field("tag_expression", &self.tag_expression)
             .field("hook_fn", &"<hook_fn>")
-            .field("location", &self.location)
+            .field("hook_fn_location_fn", &"<hook_fn_location_fn>")
             .finish()
     }
 }

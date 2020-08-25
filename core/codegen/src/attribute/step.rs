@@ -1,16 +1,14 @@
-use proc_macro::{Span, TokenStream};
-use devise::{FromMeta, Result, Spanned, SpanWrapped, syn};
+use devise::{FromMeta, Result, Spanned, SpanWrapped, Diagnostic};
+use devise::ext::SpanDiagnosticExt;
 use syn::{Attribute, parse::Parser};
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 
-use crate::{STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
+use crate::{STEP_FN_LOCATION_FN_PREFIX, STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
 use crate::attribute::GlueFnArg;
 use crate::glue_codegen::{Regex, StepKeyword};
-use crate::path_utils;
 use crate::proc_macro_ext::{Diagnostics, StringLit};
-use crate::syn_ext::{IdentExt, syn_to_diag};
-
+use crate::syn_ext::IdentExt;
 
 /// The raw, parsed `#[step]` attribute.
 #[derive(Debug, FromMeta)]
@@ -47,8 +45,8 @@ fn parse_step(attr: StepAttribute, mut function: syn::ItemFn) -> Result<Step> {
     diags.head_err_or(Step { attribute: attr, function, arguments })
 }
 
-fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize) -> TokenStream2 {
-    let span = ident.span().unstable().join(ty.span()).unwrap().into();
+fn step_data_expr(ident: &syn::Ident, ty: &syn::Type, step_argument_index: usize) -> TokenStream {
+    let span = ident.span().join(ty.span()).unwrap_or_else(|| ty.span());
 
     if let syn::Type::Reference(ref type_reference) = ty {
         if let syn::Type::Path(ref type_path) = *type_reference.elem {
@@ -95,10 +93,8 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
     // Gather everything we need.
     let (vis, user_handler_fn) = (&step.function.vis, &step.function);
     let user_handler_fn_name = &user_handler_fn.sig.ident;
-    let user_handler_fn_span = &user_handler_fn.sig.ident.span().unstable();
-    let user_handler_fn_path = path_utils::source_file_path(&user_handler_fn_span.source_file());
-    let user_handler_fn_file_path_str = path_utils::path_to_str(&user_handler_fn_path);
-    let user_handler_fn_line_number = user_handler_fn_span.start().line;
+    let user_handler_fn_span = user_handler_fn.sig.ident.span();
+    let generated_location_fn_name = user_handler_fn_name.prepend(STEP_FN_LOCATION_FN_PREFIX);
     let generated_fn_name = user_handler_fn_name.prepend(STEP_FN_PREFIX);
     let generated_struct_name = user_handler_fn_name.prepend(STEP_STRUCT_PREFIX);
     let parameter_names = step.arguments.iter().map(|argument| &argument.cuke_runner_ident);
@@ -119,9 +115,25 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
         data_statements.push(data_statement);
     }
 
+    // quote_spanned so that the line information points
+    // to the user handler function in the source file
+    // instead of the macro invocation line
+    let user_handler_fn_location_fn = quote_spanned! {user_handler_fn_span=>
+        #[track_caller]
+        #vis fn #generated_location_fn_name() -> ::cuke_runner::glue::location::StaticGlueCodeLocation {
+            let location = std::panic::Location::caller();
+            ::cuke_runner::glue::location::StaticGlueCodeLocation {
+                file: location.file(),
+                line: location.line(),
+            }
+        }
+    };
+
     Ok(quote! {
         #[inline(never)] // to see the function in the stack trace in case of a panic
         #user_handler_fn
+
+        #user_handler_fn_location_fn
 
         /// Cuke runner code generated wrapping step function.
         #vis fn #generated_fn_name(
@@ -147,20 +159,19 @@ fn codegen_step(step: Step) -> Result<TokenStream> {
                 keyword: #keyword,
                 expression: #expression,
                 step_fn: #generated_fn_name,
-                location: ::cuke_runner::glue::location::StaticGlueCodeLocation {
-                    file_path: #user_handler_fn_file_path_str,
-                    line_number: #user_handler_fn_line_number,
-                },
+                step_fn_location_fn: #generated_location_fn_name,
             };
     }.into())
 }
 
-fn complete_step(args: TokenStream2, input: TokenStream) -> Result<TokenStream> {
-    let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)
+fn complete_step(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+    let function: syn::ItemFn = syn::parse2(input)
+        .map_err(Diagnostic::from)
         .map_err(|diag| diag.help("`#[step]` can only be used on functions"))?;
 
     let full_attr = quote!(#[step(#args)]);
-    let attrs = Attribute::parse_outer.parse2(full_attr).map_err(syn_to_diag)?;
+    let attrs = Attribute::parse_outer.parse2(full_attr)
+        .map_err(Diagnostic::from)?;
     let attribute = match StepAttribute::from_attrs("step", &attrs) {
         Some(result) => result?,
         None => return Err(Span::call_site().error("internal error: bad attribute"))
@@ -171,21 +182,22 @@ fn complete_step(args: TokenStream2, input: TokenStream) -> Result<TokenStream> 
 
 fn incomplete_step(
     keyword: crate::glue::step::StepKeyword,
-    args: TokenStream2,
+    args: TokenStream,
     input: TokenStream
 ) -> Result<TokenStream> {
     let keyword_str = keyword.to_string().to_lowercase();
     // FIXME(proc_macro): there should be a way to get this `Span`.
     let keyword_span = StringLit::new(format!("#[{}]", keyword), Span::call_site())
-        .subspan(2..2 + keyword_str.len())
-        .unwrap_or_else(Span::call_site);
+        .subspan(2..2 + keyword_str.len());
     let keyword_ident = syn::Ident::new(&keyword_str, keyword_span.into());
 
-    let function: syn::ItemFn = syn::parse(input).map_err(syn_to_diag)
+    let function: syn::ItemFn = syn::parse2(input)
+        .map_err(Diagnostic::from)
         .map_err(|d| d.help(format!("#[{}] can only be used on functions", keyword_str)))?;
 
     let full_attr = quote!(#[#keyword_ident(#args)]);
-    let attrs = Attribute::parse_outer.parse2(full_attr).map_err(syn_to_diag)?;
+    let attrs = Attribute::parse_outer.parse2(full_attr)
+        .map_err(Diagnostic::from)?;
     let keyword_attribute = match KeywordStepAttribute::from_attrs(&keyword_str, &attrs) {
         Some(result) => result?,
         None => return Err(Span::call_site().error("internal error: bad attribute"))
@@ -193,7 +205,9 @@ fn incomplete_step(
 
     let attribute = StepAttribute {
         keyword: SpanWrapped {
-            full_span: keyword_span, span: keyword_span, value: StepKeyword(keyword)
+            full_span: keyword_span,
+            span: keyword_span,
+            value: StepKeyword(keyword),
         },
         expression: keyword_attribute.expression,
     };
@@ -203,13 +217,13 @@ fn incomplete_step(
 
 pub fn step_attribute<K: Into<Option<crate::glue::step::StepKeyword>>>(
     keyword: K,
-    args: TokenStream,
-    input: TokenStream
+    args: proc_macro::TokenStream,
+    input: proc_macro::TokenStream
 ) -> TokenStream {
     let result = match keyword.into() {
-        Some(keyword) => incomplete_step(keyword, args.into(), input),
-        None => complete_step(args.into(), input)
+        Some(keyword) => incomplete_step(keyword, args.into(), input.into()),
+        None => complete_step(args.into(), input.into())
     };
 
-    result.unwrap_or_else(|diag| { diag.emit(); TokenStream::new() })
+    result.unwrap_or_else(|diag| diag.emit_as_item_tokens())
 }

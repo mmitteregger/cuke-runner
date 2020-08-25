@@ -12,6 +12,9 @@ pub mod argument;
 #[doc(hidden)]
 pub type StepFn = fn(&mut Scenario, &[StepArgument<'_>]) -> ::std::result::Result<(), ExecutionError>;
 
+#[doc(hidden)]
+pub type StepFnLocationFn = fn() -> StaticGlueCodeLocation;
+
 /// Generated info for a step definition (a `#[step(...)]` annotated function).
 #[doc(hidden)]
 pub struct StaticStepDef {
@@ -23,8 +26,9 @@ pub struct StaticStepDef {
     pub expression: &'static str,
     /// The generated step handler function that will call the user defined annotated function.
     pub step_fn: StepFn,
-    /// Location of the user defined annotated function.
-    pub location: StaticGlueCodeLocation,
+    /// The generated step location function that will return
+    /// the location of the user defined annotated function.
+    pub step_fn_location_fn: StepFnLocationFn,
 }
 
 impl fmt::Debug for StaticStepDef {
@@ -34,7 +38,7 @@ impl fmt::Debug for StaticStepDef {
             .field("keyword", &self.keyword)
             .field("expression", &self.expression)
             .field("step_fn", &"<step_fn>")
-            .field("location", &self.location)
+            .field("step_fn_location_fn", &"<step_fn_location_fn>")
             .finish()
     }
 }

@@ -2,8 +2,7 @@ use std::fs;
 use std::ops::Add;
 use std::path::PathBuf;
 
-use proc_macro2::Span;
-use proc_macro::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use syn::{self, Path, Attribute, Item, Visibility};
 use devise::Result;
 use quote::quote_spanned;
@@ -16,7 +15,7 @@ use crate::{
     AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
 };
 
-crate fn generate_glue_macro(_input: TokenStream) -> Result<TokenStream> {
+pub fn generate_glue_macro(_input: TokenStream) -> Result<TokenStream> {
     let current_file_path = super::get_current_file_path();
 
     let before_scenario_hook_definition_path_tokens: Vec<Path> = parse_paths(&current_file_path,

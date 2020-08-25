@@ -1,21 +1,21 @@
 use std::env;
 use std::path::PathBuf;
 
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use quote::quote;
 
 mod generate_glue;
 mod glue;
 
-pub fn generate_glue_macro(input: TokenStream) -> TokenStream {
-    generate_glue::generate_glue_macro(input)
-        .map_err(|diag| diag.emit())
+pub fn generate_glue_macro(input: proc_macro::TokenStream) -> TokenStream {
+    generate_glue::generate_glue_macro(input.into())
+        .map_err(|diag| diag.emit_as_item_tokens())
         .unwrap_or_else(|_| quote!(()).into())
 }
 
-pub fn glue_macro(input: TokenStream) -> TokenStream {
-    glue::glue_macro(input)
-        .map_err(|diag| diag.emit())
+pub fn glue_macro(input: proc_macro::TokenStream) -> TokenStream {
+    glue::glue_macro(input.into())
+        .map_err(|diag| diag.emit_as_expr_tokens())
         .unwrap_or_else(|_| quote!(()).into())
 }
 

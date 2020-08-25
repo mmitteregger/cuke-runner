@@ -8,9 +8,9 @@ use crate::glue::step::argument::StepArgument;
 /// A test step can either represent the execution of a hook or a cuke step.
 /// Each step is tied to some glue code.
 #[derive(Debug)]
-pub enum TestStep<'s> {
-    Hook(&'s dyn HookTestStep<'s>),
-    Cuke(&'s dyn CukeStepTestStep<'s>),
+pub enum TestStep<'a, 's> {
+    Hook(&'a dyn HookTestStep<'s>),
+    Cuke(&'a dyn CukeStepTestStep<'s>),
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]

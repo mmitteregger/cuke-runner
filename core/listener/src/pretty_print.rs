@@ -146,7 +146,7 @@ impl Inner {
         self.print_description(description);
     }
 
-    fn handle_test_step_started(&mut self, uri: &str, scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep<'_>) {
+    fn handle_test_step_started(&mut self, uri: &str, scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep<'_, '_>) {
         if let TestStep::Cuke(cuke_step_test_step) = test_step {
             if self.print_scenario_text {
                 if !cuke_step_test_step.is_background_step() {
@@ -159,7 +159,7 @@ impl Inner {
         }
     }
 
-    fn handle_test_step_finished(&mut self, test_step: &TestStep<'_>, result: &TestResult) {
+    fn handle_test_step_finished(&mut self, test_step: &TestStep<'_, '_>, result: &TestResult) {
         if let TestStep::Cuke(cuke_step_test_step) = test_step {
             self.print_step(*cuke_step_test_step, result);
         }
@@ -483,7 +483,7 @@ impl Inner {
     }
 
     fn calculate_location_indentation(&mut self, definition_text: &str,
-        test_steps: &[TestStep<'_>], use_background_steps: bool) {
+        test_steps: &[TestStep<'_, '_>], use_background_steps: bool) {
 
         let mut max_text_length = SCENARIO_INDENT.chars().count() + definition_text.chars().count();
         for step in test_steps {

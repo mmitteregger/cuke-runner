@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone)]
 pub struct GlueCodeLocation {
     pub(crate) file_path: PathBuf,
-    pub(crate) line_number: usize,
+    pub(crate) line_number: u32,
 }
 
 impl GlueCodeLocation {
@@ -14,7 +14,7 @@ impl GlueCodeLocation {
     }
 
     /// Returns the line number in the glue code file.
-    pub fn line_number(&self) -> usize {
+    pub fn line_number(&self) -> u32 {
         self.line_number
     }
 }

@@ -130,7 +130,7 @@ impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
 #[inline(never)]
 fn run_test_step<EP: EventPublisher>(
     test_case: &TestCase<'_>,
-    test_step: &api::TestStep<'_>,
+    test_step: &api::TestStep<'_, '_>,
     definition_match: &StepDefinitionMatch<'_>,
     event_publisher: &EP,
     scenario: &mut Scenario<'_, '_>,

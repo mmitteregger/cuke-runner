@@ -44,7 +44,7 @@ pub enum Event<'e, 's> {
         rule_background: Option<&'e Background>,
         scenario: &'e Scenario,
         test_case: &'e dyn TestCase,
-        test_step: &'e TestStep<'s>,
+        test_step: &'e TestStep<'e, 's>,
     },
     /// Sent when a hook wants to embed media into a report.
     Embed {
@@ -66,7 +66,7 @@ pub enum Event<'e, 's> {
         rule_background: Option<&'e Background>,
         scenario: &'e Scenario,
         test_case: &'e dyn TestCase,
-        test_step: &'e TestStep<'s>,
+        test_step: &'e TestStep<'e, 's>,
         result: &'e TestResult,
     },
     /// Sent after the execution of a test step.

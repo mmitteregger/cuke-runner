@@ -19,12 +19,19 @@ use gherkin::cuke::String as CukeString;
 /// ```
 /// and the glue code:
 /// ```rust
-/// # #![feature(register_attr)]
-/// # #![register_attr(given, when, then, scenario)]
+/// # use cuke_runner::then;
+/// # use cuke_runner::glue::scenario::{FromScenarioError, FromScenario, Scenario};
 /// #
 /// # pub struct Calc;
 /// # impl Calc {
 /// #     pub fn value(&self) -> f64 { 0f64 }
+/// # }
+/// #
+/// # impl<'a> FromScenario<'a> for &'a Calc {
+/// #     fn from_scenario(scenario: &'a Scenario) -> Result<&'a Calc, FromScenarioError> {
+/// #         scenario.get::<Calc>()
+/// #             .ok_or_else(|| FromScenarioError::new("Could not get calc from scenario"))
+/// #     }
 /// # }
 /// #[then("the result is:")]
 /// pub fn assert_doc_string_result(#[scenario] calc: &Calc, expected: f64) {
