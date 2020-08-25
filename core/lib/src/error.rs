@@ -4,9 +4,10 @@ use std::io;
 
 use gherkin;
 use walkdir;
+use failure::Fail;
 
-use config;
-use glue;
+use crate::config;
+use crate::glue;
 
 /// A type alias for `Result<T, cuke_runner::Error>`.
 pub type Result<T> = result::Result<T, Error>;
@@ -25,7 +26,7 @@ pub enum Error {
     /// An error that occurred while converting scenario data to a step function parameter.
     FromScenario(#[cause] glue::scenario::FromScenarioError),
     /// An error that occurred while executing a step or hook function.
-    Execution(::glue::error::ExecutionError),
+    Execution(crate::glue::error::ExecutionError),
     AmbiguousStepDefinitions,
     UndefinedStepDefinition,
     Pending,
@@ -75,7 +76,7 @@ impl From<glue::error::ExecutionError> for Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::Io(ref err) => write!(f, "{}", err),
             Error::Config(ref err) => write!(f, "{}", err),

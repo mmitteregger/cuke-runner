@@ -7,7 +7,7 @@ pub struct LinePredicate<'p> {
 }
 
 impl<'p> LinePredicate<'p> {
-    pub fn new(line_filters: HashMap<&'p str, Vec<u32>>) -> LinePredicate {
+    pub fn new(line_filters: HashMap<&'p str, Vec<u32>>) -> LinePredicate<'_> {
         LinePredicate {
             line_filters,
         }
@@ -73,7 +73,7 @@ mod tests {
         }
     }
 
-    fn line_predicate(uri: &str, lines: Vec<u32>) -> LinePredicate {
+    fn line_predicate(uri: &str, lines: Vec<u32>) -> LinePredicate<'_> {
         let mut line_filters = HashMap::with_capacity(1);
         line_filters.insert(uri, lines);
         LinePredicate::new(line_filters)

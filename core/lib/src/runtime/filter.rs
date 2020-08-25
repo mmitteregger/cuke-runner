@@ -1,15 +1,15 @@
 use gherkin::cuke::Cuke;
 
-use Config;
-use glue::filter::CukePredicate;
-use glue::filter::tag::TagPredicate;
+use crate::Config;
+use crate::glue::filter::CukePredicate;
+use crate::glue::filter::tag::TagPredicate;
 
 pub struct Filters<'f> {
     filters: Vec<CukePredicate<'f>>,
 }
 
 impl<'f> Filters<'f> {
-    pub fn apply(&self, uri: &str, cuke: &Cuke) -> bool {
+    pub fn apply(&self, uri: &str, cuke: &Cuke<'_>) -> bool {
         for filter in &self.filters {
             if !filter.apply(uri, cuke) {
                 return false;

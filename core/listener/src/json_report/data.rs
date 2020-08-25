@@ -132,7 +132,7 @@ impl From<&api::TestResult> for Result {
     }
 }
 
-fn rows_from(arguments: &[StepArgument]) -> Vec<Row> {
+fn rows_from(arguments: &[StepArgument<'_>]) -> Vec<Row> {
     arguments.iter()
         .find_map(|argument| {
             match argument {
@@ -153,7 +153,7 @@ fn rows_from(arguments: &[StepArgument]) -> Vec<Row> {
         .unwrap_or(Vec::new())
 }
 
-fn doc_string_from(arguments: &[StepArgument]) -> Option<DocString> {
+fn doc_string_from(arguments: &[StepArgument<'_>]) -> Option<DocString> {
     arguments.iter()
         .find_map(|argument| {
             match argument {

@@ -4,6 +4,7 @@ use std::sync::RwLock;
 use std::thread::{self, ThreadId};
 
 use backtrace::Backtrace;
+use lazy_static::lazy_static;
 
 lazy_static! {
     static ref PANIC_INFOS: RwLock<HashMap<ThreadId, PanicInfo>> = RwLock::new(HashMap::new());
@@ -47,19 +48,19 @@ impl PanicInfo {
 
     /// Returns a struct that implements Display for this PanicInfo
     /// which includes the full backtrace.
-    pub fn full_display(&self) -> FullDisplay {
+    pub fn full_display(&self) -> FullDisplay<'_> {
         FullDisplay { panic_info: self }
     }
 
     /// Returns a struct that implements Display for this PanicInfo
     /// which includes the backtrace with some frames and other information omitted.
-    pub fn short_display(&self) -> ShortDisplay {
+    pub fn short_display(&self) -> ShortDisplay<'_> {
         ShortDisplay { panic_info: self }
     }
 }
 
 impl<'a> From<&'a std::panic::PanicInfo<'a>> for PanicInfo {
-    fn from(panic_info: &'a std::panic::PanicInfo) -> Self {
+    fn from(panic_info: &'a std::panic::PanicInfo<'_>) -> Self {
         let message = match panic_info.payload().downcast_ref::<&'static str>() {
             Some(s) => s.to_string(),
             None => match panic_info.payload().downcast_ref::<String>() {
@@ -214,7 +215,7 @@ impl PanicLocation {
 }
 
 impl<'a> From<&'a std::panic::Location<'a>> for PanicLocation {
-    fn from(location: &'a std::panic::Location) -> Self {
+    fn from(location: &'a std::panic::Location<'_>) -> Self {
         PanicLocation {
             file: location.file().to_owned(),
             line: location.line(),

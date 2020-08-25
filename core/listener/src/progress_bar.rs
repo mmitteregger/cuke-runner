@@ -51,7 +51,7 @@ impl ProgressBarListener {
 }
 
 impl EventListener for ProgressBarListener {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         match *event {
             Event::TestRunStarted { num_cukes, .. } => {
                 self.progress_bar.set_length(num_cukes as u64);

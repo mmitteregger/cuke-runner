@@ -7,9 +7,9 @@ mod test_step;
 
 use gherkin::cuke::{Cuke, Tag};
 
-use api::HookType;
-use runtime::{Glue, HookDefinition};
-use runtime::{self, TestCase, StepDefinitionMatch, HookDefinitionMatch};
+use crate::api::HookType;
+use crate::runtime::{Glue, HookDefinition};
+use crate::runtime::{self, TestCase, StepDefinitionMatch, HookDefinitionMatch};
 
 pub struct Runner {
     glue: Glue,
@@ -24,12 +24,12 @@ impl Runner {
         }
     }
 
-    pub fn run<EP: EventPublisher>(&self, uri: &str, cuke: Cuke, event_publisher: &EP) {
+    pub fn run<EP: EventPublisher>(&self, uri: &str, cuke: Cuke<'_>, event_publisher: &EP) {
         let test_case = self.create_test_case(uri, &cuke);
         runtime::test_case::run(test_case, event_publisher);
     }
 
-    fn create_test_case<'c, 's: 'c>(&'s self, uri: &'c str, cuke: &'c Cuke) -> TestCase<'c> {
+    fn create_test_case<'c, 's: 'c>(&'s self, uri: &'c str, cuke: &'c Cuke<'_>) -> TestCase<'c> {
         let (
             before_hooks,
             after_hooks,
@@ -59,18 +59,18 @@ impl Runner {
         }
     }
 
-    fn create_before_scenario_hooks(&self, tags: &[Tag]) -> Vec<HookTestStep> {
+    fn create_before_scenario_hooks(&self, tags: &[Tag<'_>]) -> Vec<HookTestStep<'_>> {
         let hook_definitions = &self.glue.get_before_scenario_hooks();
         self.create_hooks(tags, hook_definitions, HookType::BeforeScenario)
     }
 
-    fn create_after_scenario_hooks(&self, tags: &[Tag]) -> Vec<HookTestStep> {
+    fn create_after_scenario_hooks(&self, tags: &[Tag<'_>]) -> Vec<HookTestStep<'_>> {
         let hook_definitions = &self.glue.get_after_scenario_hooks();
         self.create_hooks(tags, hook_definitions, HookType::AfterScenario)
     }
 
-    fn create_hooks(&self, tags: &[Tag], hook_definitions: &[HookDefinition],
-        hook_type: HookType) -> Vec<HookTestStep>
+    fn create_hooks(&self, tags: &[Tag<'_>], hook_definitions: &[HookDefinition],
+        hook_type: HookType) -> Vec<HookTestStep<'_>>
     {
         let mut hooks = Vec::with_capacity(hook_definitions.len());
 
@@ -90,7 +90,7 @@ impl Runner {
         hooks
     }
 
-    fn create_test_steps<'e, 's: 'e>(&'s self, uri: &'s str, cuke: &'e Cuke)
+    fn create_test_steps<'e, 's: 'e>(&'s self, uri: &'s str, cuke: &'e Cuke<'_>)
         -> Vec<CukeStepTestStep<'e>>
     {
         let mut test_steps = Vec::new();
@@ -141,12 +141,12 @@ impl Runner {
         test_steps
     }
 
-    fn get_before_step_hooks(&self, tags: &[Tag]) -> Vec<HookTestStep> {
+    fn get_before_step_hooks(&self, tags: &[Tag<'_>]) -> Vec<HookTestStep<'_>> {
         let hook_definitions = &self.glue.get_before_step_hooks();
         self.create_hooks(tags, hook_definitions, HookType::BeforeStep)
     }
 
-    fn get_after_step_hooks(&self, tags: &[Tag]) -> Vec<HookTestStep> {
+    fn get_after_step_hooks(&self, tags: &[Tag<'_>]) -> Vec<HookTestStep<'_>> {
         let hook_definitions = &self.glue.get_after_step_hooks();
         self.create_hooks(tags, hook_definitions, HookType::AfterStep)
     }

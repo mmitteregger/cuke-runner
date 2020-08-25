@@ -2,7 +2,7 @@ use std::path::Path;
 use std::default::Default;
 
 pub use self::error::Error;
-use api::event::{EventListener, SyncEventListener};
+use crate::api::event::{EventListener, SyncEventListener};
 
 mod error;
 

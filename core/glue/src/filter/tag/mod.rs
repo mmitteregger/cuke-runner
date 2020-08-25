@@ -1,9 +1,10 @@
+use gherkin::cuke::Tag;
+
+use self::expression::Expression;
+
 mod expression;
 #[doc(hidden)]
 pub mod parser;
-
-use gherkin::cuke::Tag;
-use self::expression::Expression;
 
 #[derive(Debug, Clone)]
 pub struct TagPredicate<'p> {
@@ -20,7 +21,7 @@ impl<'p> TagPredicate<'p> {
         Ok(tag_predicate)
     }
 
-    pub fn apply(&self, tags: &[Tag]) -> bool {
+    pub fn apply(&self, tags: &[Tag<'_>]) -> bool {
         self.expression.evaluate(tags)
     }
 }

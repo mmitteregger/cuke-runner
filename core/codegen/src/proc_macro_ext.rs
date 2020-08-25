@@ -1,5 +1,6 @@
-use proc_macro::{Diagnostic, Literal, Span};
 use std::ops::{Deref, RangeBounds};
+
+use proc_macro::{Diagnostic, Literal, Span};
 
 pub type PResult<T> = ::std::result::Result<T, Diagnostic>;
 

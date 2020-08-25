@@ -1,12 +1,10 @@
-use path_utils;
-
 use proc_macro::TokenStream;
+use devise::{Result, Spanned};
+use syn::{parse::Parser, Path, punctuated::Punctuated, token::Comma};
+use quote::{quote, quote_spanned};
 
-use devise::{Result, Spanned, syn};
-
-use syn_ext::syn_to_diag;
-
-use self::syn::{parse::Parser, Path, punctuated::Punctuated, token::Comma};
+use crate::path_utils;
+use crate::syn_ext::syn_to_diag;
 
 crate fn glue_macro(input: TokenStream) -> Result<TokenStream> {
     let current_file_path = super::get_current_file_path();

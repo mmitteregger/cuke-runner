@@ -285,9 +285,9 @@ mod tests {
         let cuke_table = create_cuke_table(DEFAULT_NON_EMPTY_TABLE);
         let data_table = DataTable::from(&cuke_table);
 
-        assert_eq!(data_table.rows::<TestRow>().count(), 4);
+        assert_eq!(data_table.rows::<TestRow<'_>>().count(), 4);
 
-        let mut test_row_iter = data_table.rows::<TestRow>();
+        let mut test_row_iter = data_table.rows::<TestRow<'_>>();
 
         let header_test_row = test_row_iter.next().unwrap();
         assert_eq!(header_test_row.first, "first");
@@ -315,9 +315,9 @@ mod tests {
         let cuke_table = create_cuke_table(DEFAULT_NON_EMPTY_TABLE);
         let data_table = DataTable::from(&cuke_table);
 
-        assert_eq!(data_table.body_rows::<BodyTestRowIndexedStr>().count(), 3);
+        assert_eq!(data_table.body_rows::<BodyTestRowIndexedStr<'_>>().count(), 3);
 
-        let mut test_row_iter = data_table.body_rows::<BodyTestRowIndexedStr>();
+        let mut test_row_iter = data_table.body_rows::<BodyTestRowIndexedStr<'_>>();
         let first_row = test_row_iter.next().unwrap();
         assert_eq!(first_row.first, "1");
         assert_eq!(first_row.second, "4");
@@ -327,7 +327,7 @@ mod tests {
         assert_eq!(second_row.second, "5");
         assert_eq!(second_row.operation, "*");
 
-        let mut test_row_iter = data_table.body_rows::<BodyTestRowIndexedUsize>();
+        let mut test_row_iter = data_table.body_rows::<BodyTestRowIndexedUsize<'_>>();
         let first_row = test_row_iter.next().unwrap();
         assert_eq!(first_row.first, "1");
         assert_eq!(first_row.second, "4");
@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(second_row.second, "5");
         assert_eq!(second_row.operation, "*");
 
-        let mut test_row_iter = data_table.body_rows::<BodyTestRowByHeaderName>();
+        let mut test_row_iter = data_table.body_rows::<BodyTestRowByHeaderName<'_>>();
         let first_row = test_row_iter.next().unwrap();
         assert_eq!(first_row.first, "1");
         assert_eq!(first_row.second, "4");
@@ -347,7 +347,7 @@ mod tests {
         assert_eq!(second_row.second, "5");
         assert_eq!(second_row.operation, "*");
 
-        let mut test_row_iter = data_table.body_rows::<BodyTestRowByValueAtIndex>();
+        let mut test_row_iter = data_table.body_rows::<BodyTestRowByValueAtIndex<'_>>();
         let first_row = test_row_iter.next().unwrap();
         assert_eq!(first_row.first, "1");
         assert_eq!(first_row.second, "4");

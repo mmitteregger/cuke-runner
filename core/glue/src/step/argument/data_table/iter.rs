@@ -12,7 +12,7 @@ pub(crate) struct DataTableIter<'dt> {
 }
 
 impl<'dt> DataTableIter<'dt> {
-    pub(crate) fn new(data_table: &'dt DataTable) -> DataTableIter<'dt> {
+    pub(crate) fn new(data_table: &'dt DataTable<'_>) -> DataTableIter<'dt> {
         DataTableIter {
             row_iter: data_table.cuke_table.rows.iter(),
         }
@@ -36,7 +36,7 @@ pub(crate) struct DataTableCellIter<'dt> {
 }
 
 impl<'dt> DataTableCellIter<'dt> {
-    pub(crate) fn new(row: &'dt cuke::Row) -> DataTableCellIter<'dt> {
+    pub(crate) fn new(row: &'dt cuke::Row<'_>) -> DataTableCellIter<'dt> {
         DataTableCellIter {
             cell_iter: row.cells.iter(),
         }
@@ -66,7 +66,7 @@ pub struct FromDataTableRowIter<'dt, T: FromDataTableRow<'dt>> {
 }
 
 impl<'dt, T: FromDataTableRow<'dt>> FromDataTableRowIter<'dt, T> {
-    pub(crate) fn new(data_table: &'dt DataTable) -> FromDataTableRowIter<'dt, T> {
+    pub(crate) fn new(data_table: &'dt DataTable<'_>) -> FromDataTableRowIter<'dt, T> {
         FromDataTableRowIter {
             rows_iter: data_table.cuke_table.rows.iter(),
             result: std::marker::PhantomData,
@@ -108,7 +108,7 @@ pub struct FromDataTableBodyRowIter<'dt, T: FromDataTableBodyRow<'dt>> {
 }
 
 impl<'dt, T: FromDataTableBodyRow<'dt>> FromDataTableBodyRowIter<'dt, T> {
-    pub(crate) fn new(data_table: &'dt DataTable) -> FromDataTableBodyRowIter<'dt, T> {
+    pub(crate) fn new(data_table: &'dt DataTable<'_>) -> FromDataTableBodyRowIter<'dt, T> {
         let mut iter = data_table.cuke_table.rows.iter();
 
         let mut cells = IndexMap::with_capacity(data_table.columns_len());

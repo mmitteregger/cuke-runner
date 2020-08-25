@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::cell::RefCell;
-use api::event::{Event, EventListener};
-use api::TestResultStatus;
+use crate::api::event::{Event, EventListener};
+use crate::api::TestResultStatus;
 
 #[derive(Debug, Default)]
 pub struct ExitStatusListener {
@@ -20,7 +20,7 @@ impl ExitStatusListener {
 }
 
 impl EventListener for ExitStatusListener {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         if let Event::TestCaseFinished { ref result, .. } = *event {
             self.test_result_statuses.borrow_mut().push(result.status);
         }
@@ -45,7 +45,7 @@ impl SyncExitStatusListener {
 }
 
 impl EventListener for SyncExitStatusListener {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         if let Event::TestCaseFinished { ref result, .. } = *event {
             self.test_result_statuses.lock().unwrap().borrow_mut().push(result.status);
         }

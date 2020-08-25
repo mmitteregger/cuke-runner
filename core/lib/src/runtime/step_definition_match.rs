@@ -1,10 +1,10 @@
 use gherkin::cuke;
-use glue::step::argument::StepArgument;
+use crate::glue::step::argument::StepArgument;
 
-use error::{Result, Error};
-use api::GlueCodeLocation;
-use runtime::{HookDefinition, StepDefinition};
-use runtime::Scenario;
+use crate::error::{Result, Error};
+use crate::api::GlueCodeLocation;
+use crate::runtime::{HookDefinition, StepDefinition};
+use crate::runtime::Scenario;
 
 #[derive(Debug)]
 pub enum StepDefinitionMatch<'s> {
@@ -15,7 +15,7 @@ pub enum StepDefinitionMatch<'s> {
 }
 
 impl<'s> StepDefinitionMatch<'s> {
-    pub fn get_step(&self) -> &cuke::Step {
+    pub fn get_step(&self) -> &cuke::Step<'_> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_step(),
             StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_step(),
@@ -24,7 +24,7 @@ impl<'s> StepDefinitionMatch<'s> {
         }
     }
 
-    pub fn run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    pub fn run_step(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.run_step(scenario),
             StepDefinitionMatch::Cuke(cuke_step) => cuke_step.run_step(scenario),
@@ -33,7 +33,7 @@ impl<'s> StepDefinitionMatch<'s> {
         }
     }
 
-    pub fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    pub fn dry_run_step(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.dry_run_step(scenario),
             StepDefinitionMatch::Cuke(cuke_step) => cuke_step.dry_run_step(scenario),
@@ -60,7 +60,7 @@ impl<'s> StepDefinitionMatch<'s> {
         }
     }
 
-    pub fn get_arguments(&self) -> &[StepArgument] {
+    pub fn get_arguments(&self) -> &[StepArgument<'_>] {
         match self {
             StepDefinitionMatch::Hook(hook) => hook.get_arguments(),
             StepDefinitionMatch::Cuke(cuke_step) => cuke_step.get_arguments(),
@@ -78,15 +78,15 @@ pub struct HookDefinitionMatch<'s> {
 }
 
 impl<'s> HookDefinitionMatch<'s> {
-    pub fn get_step(&self) -> &cuke::Step {
+    pub fn get_step(&self) -> &cuke::Step<'_> {
         unimplemented!("HookDefinitionMatch::get_step(&self)");
     }
 
-    pub fn run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    pub fn run_step(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         self.hook_definition.execute(scenario)
     }
 
-    pub fn dry_run_step(&self, _scenario: &mut Scenario) -> Result<()> {
+    pub fn dry_run_step(&self, _scenario: &mut Scenario<'_, '_>) -> Result<()> {
         Ok(())
     }
 
@@ -98,7 +98,7 @@ impl<'s> HookDefinitionMatch<'s> {
         None
     }
 
-    pub fn get_arguments(&self) -> &[StepArgument] {
+    pub fn get_arguments(&self) -> &[StepArgument<'_>] {
         &self.arguments
     }
 }
@@ -112,16 +112,16 @@ pub struct CukeStepDefinitionMatch<'s> {
 }
 
 impl<'s> CukeStepDefinitionMatch<'s> {
-    fn get_step(&self) -> &cuke::Step {
+    fn get_step(&self) -> &cuke::Step<'_> {
         &self.step
     }
 
-    fn run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    fn run_step(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         self.step_definition.execute(scenario, &self.arguments)?;
         Ok(())
     }
 
-    fn dry_run_step(&self, _scenario: &mut Scenario) -> Result<()> {
+    fn dry_run_step(&self, _scenario: &mut Scenario<'_, '_>) -> Result<()> {
         Ok(())
     }
 
@@ -133,7 +133,7 @@ impl<'s> CukeStepDefinitionMatch<'s> {
         Some(self.step_definition.get_pattern())
     }
 
-    fn get_arguments(&self) -> &[StepArgument] {
+    fn get_arguments(&self) -> &[StepArgument<'_>] {
         &self.arguments
     }
 }
@@ -146,15 +146,15 @@ pub struct AmbiguousCukeStepDefinitionMatch<'s> {
 }
 
 impl<'s> AmbiguousCukeStepDefinitionMatch<'s> {
-    fn get_step(&self) -> &cuke::Step {
+    fn get_step(&self) -> &cuke::Step<'_> {
         &self.step
     }
 
-    fn run_step(&self, _scenario: &mut Scenario) -> Result<()> {
+    fn run_step(&self, _scenario: &mut Scenario<'_, '_>) -> Result<()> {
         unimplemented!("AmbiguousPickleStepDefinitionMatch::run_step");
     }
 
-    fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    fn dry_run_step(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         self.run_step(scenario)
     }
 
@@ -166,7 +166,7 @@ impl<'s> AmbiguousCukeStepDefinitionMatch<'s> {
         None
     }
 
-    fn get_arguments(&self) -> &[StepArgument] {
+    fn get_arguments(&self) -> &[StepArgument<'_>] {
         &self.arguments
     }
 }
@@ -178,15 +178,15 @@ pub struct UndefinedCukeStepDefinitionMatch<'s> {
 }
 
 impl<'s> UndefinedCukeStepDefinitionMatch<'s> {
-    fn get_step(&self) -> &cuke::Step {
+    fn get_step(&self) -> &cuke::Step<'_> {
         &self.step
     }
 
-    fn run_step(&self, _scenario: &mut Scenario) -> Result<()> {
+    fn run_step(&self, _scenario: &mut Scenario<'_, '_>) -> Result<()> {
         Err(Error::UndefinedStepDefinition)
     }
 
-    fn dry_run_step(&self, scenario: &mut Scenario) -> Result<()> {
+    fn dry_run_step(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         self.run_step(scenario)
     }
 
@@ -198,7 +198,7 @@ impl<'s> UndefinedCukeStepDefinitionMatch<'s> {
         None
     }
 
-    fn get_arguments(&self) -> &[StepArgument] {
+    fn get_arguments(&self) -> &[StepArgument<'_>] {
         &self.arguments
     }
 }

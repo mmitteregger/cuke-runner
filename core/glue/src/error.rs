@@ -1,5 +1,7 @@
 use std::fmt;
 
+use failure::Fail;
+
 use crate::scenario::FromScenarioError;
 use crate::step::argument::FromStepArgumentError;
 use crate::panic::{self, PanicInfo};
@@ -35,7 +37,7 @@ impl PanicError {
 }
 
 impl fmt::Display for PanicError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.panic_info.short_display())
     }
 }
@@ -53,7 +55,7 @@ impl From<FromStepArgumentError> for ExecutionError {
 }
 
 impl fmt::Display for ExecutionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             ExecutionError::FromScenario(ref err) => fmt::Display::fmt(err, f),
             ExecutionError::FromStepArgument(ref err) => fmt::Display::fmt(err, f),

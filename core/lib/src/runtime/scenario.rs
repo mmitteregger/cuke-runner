@@ -2,11 +2,11 @@ use std::time::SystemTime;
 
 use gherkin::cuke::{Cuke, Tag};
 
-use error::Error;
-use runner::EventPublisher;
-use api::{TestResult, TestResultStatus};
-use api::event::Event;
-use glue;
+use crate::error::Error;
+use crate::runner::EventPublisher;
+use crate::api::{TestResult, TestResultStatus};
+use crate::api::event::Event;
+use crate::glue;
 
 #[derive(Debug)]
 pub struct Scenario<'a, 'b> {
@@ -21,7 +21,7 @@ pub struct Scenario<'a, 'b> {
 }
 
 impl<'a, 'b> Scenario<'a, 'b> {
-    pub fn new(uri: &'a str, cuke: &'a Cuke, event_publisher: &'b dyn EventPublisher) -> Scenario<'a, 'b> {
+    pub fn new(uri: &'a str, cuke: &'a Cuke<'_>, event_publisher: &'b dyn EventPublisher) -> Scenario<'a, 'b> {
         let test_results = Vec::new();
         let tags = &cuke.tags;
         let name = &cuke.name;

@@ -1,11 +1,8 @@
 #![feature(proc_macro_hygiene)]
-
-extern crate calculator;
-#[macro_use]
-extern crate cuke_runner;
-extern crate cuke_runner_listener;
+#![warn(rust_2018_idioms)]
 
 use std::path::PathBuf;
+
 use cuke_runner::{Config, ExecutionMode, Glue};
 use cuke_runner_listener::PrettyPrintListener;
 
@@ -13,7 +10,7 @@ mod steps;
 
 #[test]
 fn test_cucumber_features() {
-    let glue = glue![steps];
+    let glue = cuke_runner::glue![steps];
 
     let config = Config {
         features_dir: &[env!("CARGO_MANIFEST_DIR"), "tests", "features"].iter().collect::<PathBuf>(),

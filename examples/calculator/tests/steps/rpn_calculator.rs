@@ -1,6 +1,8 @@
-use calculator::RpnCalculator;
+use cuke_runner::{before_scenario, given, when, then};
 use cuke_runner::glue::scenario::{FromScenarioError, FromScenarioMut, Scenario};
 use cuke_runner::glue::step::argument::{BodyRowRef, DataTable, FromDataTableBodyRow};
+
+use calculator::RpnCalculator;
 
 #[derive(Debug)]
 pub struct Calc(RpnCalculator);
@@ -71,8 +73,8 @@ pub fn assert_doc_string_result(#[scenario] calc: &mut Calc, expected: f64) {
 }
 
 #[given("the previous entries:")]
-pub fn previous_entries(#[scenario] calc: &mut Calc, data_table: &DataTable) {
-    for entry in data_table.body_rows::<Entry>() {
+pub fn previous_entries(#[scenario] calc: &mut Calc, data_table: &DataTable<'_>) {
+    for entry in data_table.body_rows::<Entry<'_>>() {
         calc.push(entry.first);
         calc.push(entry.second);
         calc.push(entry.operation);

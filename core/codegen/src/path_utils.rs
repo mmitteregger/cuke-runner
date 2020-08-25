@@ -1,5 +1,6 @@
-use proc_macro::SourceFile;
 use std::path::{Path, PathBuf};
+
+use proc_macro::SourceFile;
 
 pub fn source_file_path(source_file: &SourceFile) -> PathBuf {
     let source_file_path = source_file.path();

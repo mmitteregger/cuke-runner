@@ -1,12 +1,4 @@
-extern crate gherkin;
-extern crate regex;
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-extern crate indexmap;
-extern crate backtrace;
-#[macro_use]
-extern crate lazy_static;
+#![warn(rust_2018_idioms)]
 
 pub mod error;
 pub mod scenario;

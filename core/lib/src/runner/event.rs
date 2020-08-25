@@ -1,9 +1,9 @@
 use std::fmt::Debug;
 
-use api::event::{Event, EventListener, SyncEventListener};
+use crate::api::event::{Event, EventListener, SyncEventListener};
 
 pub trait EventPublisher: Debug {
-    fn send(&self, event: Event);
+    fn send(&self, event: Event<'_, '_>);
 }
 
 #[derive(Debug)]
@@ -33,7 +33,7 @@ impl<'a> SyncEventBus<'a> {
 }
 
 impl<'a> EventPublisher for EventBus<'a> {
-    fn send(&self, event: Event) {
+    fn send(&self, event: Event<'_, '_>) {
         for event_listener in &self.event_listeners {
             event_listener.on_event(&event);
         }
@@ -41,7 +41,7 @@ impl<'a> EventPublisher for EventBus<'a> {
 }
 
 impl<'a> EventPublisher for SyncEventBus<'a> {
-    fn send(&self, event: Event) {
+    fn send(&self, event: Event<'_, '_>) {
         for event_listener in &self.event_listeners {
             event_listener.on_event(&event);
         }

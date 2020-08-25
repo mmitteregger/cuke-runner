@@ -10,7 +10,7 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+    pub fn evaluate(&self, tags: &[Tag<'_>]) -> bool {
         use self::Expression::*;
 
         match self {
@@ -29,7 +29,7 @@ pub struct LiteralExpression {
 }
 
 impl LiteralExpression {
-    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+    pub fn evaluate(&self, tags: &[Tag<'_>]) -> bool {
         tags.iter().any(|tag| tag.name == self.value)
     }
 }
@@ -41,7 +41,7 @@ pub struct OrExpression {
 }
 
 impl OrExpression {
-    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+    pub fn evaluate(&self, tags: &[Tag<'_>]) -> bool {
         self.left.evaluate(tags) || self.right.evaluate(tags)
     }
 }
@@ -53,7 +53,7 @@ pub struct AndExpression {
 }
 
 impl AndExpression {
-    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+    pub fn evaluate(&self, tags: &[Tag<'_>]) -> bool {
         self.left.evaluate(tags) && self.right.evaluate(tags)
     }
 }
@@ -64,7 +64,7 @@ pub struct NotExpression {
 }
 
 impl NotExpression {
-    pub fn evaluate(&self, tags: &[Tag]) -> bool {
+    pub fn evaluate(&self, tags: &[Tag<'_>]) -> bool {
         !self.expression.evaluate(tags)
     }
 }

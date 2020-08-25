@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use gherkin::cuke;
 
-use api::GlueCodeLocation;
-use glue::step::argument::StepArgument;
+use crate::api::GlueCodeLocation;
+use crate::glue::step::argument::StepArgument;
 
 /// A test step can either represent the execution of a hook or a cuke step.
 /// Each step is tied to some glue code.
@@ -39,10 +39,10 @@ pub trait CukeStepTestStep<'s>: Debug + Send + Sync {
     fn get_pattern(&self) -> Option<&str>;
 
     /// The matched Gherkin step.
-    fn get_cuke_step(&self) -> &cuke::Step;
+    fn get_cuke_step(&self) -> &cuke::Step<'_>;
 
     /// Returns arguments provided to the Gherkin step.
-    fn get_arguments(&self) -> &[StepArgument];
+    fn get_arguments(&self) -> &[StepArgument<'_>];
 
     /// The keyword of the Gherkin step like "Given ", "When " or "Then ".
     fn get_step_keyword(&self) -> &str;

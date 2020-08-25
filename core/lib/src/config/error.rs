@@ -2,6 +2,8 @@ use std::fmt;
 use std::io;
 use std::env;
 
+use failure::Fail;
+
 /// The specific type of an error.
 #[derive(Fail, Debug)]
 pub enum Error {
@@ -27,7 +29,7 @@ impl From<io::Error> for Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::Io(ref err) => err.fmt(f),
             Error::EnvVar(ref err, ref var) =>

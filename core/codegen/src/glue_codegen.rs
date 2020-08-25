@@ -1,10 +1,11 @@
 use quote::ToTokens;
 use proc_macro2::TokenStream as TokenStream2;
 use devise::{FromMeta, MetaItem, Result};
-use glue;
+use quote::quote;
 
-use proc_macro_ext::StringLit;
-use syn_ext::PathExt;
+use crate::glue;
+use crate::proc_macro_ext::StringLit;
+use crate::syn_ext::PathExt;
 
 #[derive(Debug)]
 crate struct HookType(crate glue::hook::HookType);
@@ -22,7 +23,7 @@ crate struct TagExpression(crate String);
 crate struct Optional<T>(crate Option<T>);
 
 impl FromMeta for StringLit {
-    fn from_meta(meta: MetaItem) -> Result<Self> {
+    fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         Ok(StringLit::new(String::from_meta(meta)?, meta.value_span()))
     }
 }
@@ -37,7 +38,7 @@ const VALID_HOOK_TYPES: &[glue::hook::HookType] = &[
 ];
 
 impl FromMeta for HookType {
-    fn from_meta(meta: MetaItem) -> Result<Self> {
+    fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         let span = meta.value_span();
         let help_text = format!("hook type must be one of: {}", VALID_HOOK_TYPES_STR);
 
@@ -59,7 +60,7 @@ impl FromMeta for HookType {
 
 impl ToTokens for HookType {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
-        use glue::hook::HookType::*;
+        use crate::glue::hook::HookType::*;
 
         let keyword_tokens = match self.0 {
             BeforeScenario => quote!(::cuke_runner::glue::HookType::BeforeScenario),
@@ -82,7 +83,7 @@ const VALID_STEPS: &[glue::step::StepKeyword] = &[
 ];
 
 impl FromMeta for StepKeyword {
-    fn from_meta(meta: MetaItem) -> Result<Self> {
+    fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         let span = meta.value_span();
         let help_text = format!("keyword must be one of: {}", VALID_STEPS_STR);
 
@@ -104,7 +105,7 @@ impl FromMeta for StepKeyword {
 
 impl ToTokens for StepKeyword {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
-        use glue::step::StepKeyword::*;
+        use crate::glue::step::StepKeyword::*;
 
         let keyword_tokens = match self.0 {
             Star => quote!(::cuke_runner::glue::step::StepKeyword::Star),
@@ -118,7 +119,7 @@ impl ToTokens for StepKeyword {
 }
 
 impl FromMeta for Regex {
-    fn from_meta(meta: MetaItem) -> Result<Self> {
+    fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         let string = StringLit::from_meta(meta)?;
         let span = string.subspan(1..=string.len())
             .unwrap_or_else(|| string.1.span());
@@ -139,7 +140,7 @@ impl ToTokens for Regex {
 }
 
 impl FromMeta for TagExpression {
-    fn from_meta(meta: MetaItem) -> Result<Self> {
+    fn from_meta(meta: MetaItem<'_>) -> Result<Self> {
         let string = StringLit::from_meta(meta)?;
         let span = string.subspan(1..=string.len())
             .unwrap_or_else(|| string.1.span());

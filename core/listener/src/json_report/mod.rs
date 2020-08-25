@@ -73,7 +73,7 @@ impl<W: Write + Send + Debug> JsonReportListener<W> {
 }
 
 impl<W: Write + Send + Debug> EventListener for JsonReportListener<W> {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         match *event {
             Event::TestSourceRead { uri, feature, .. } => {
                 let report_lock = self.report.lock().unwrap();
@@ -123,8 +123,8 @@ impl<W: Write + Send + Debug> Report<W> {
     }
 
     fn add_test_step_result(&mut self, uri: &str,
-        feature_background: Option<&Background>, rule_background: Option<&Background>,
-        scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep,
+        feature_background: Option<&Background>, _rule_background: Option<&Background>,
+        scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep<'_>,
         result: &TestResult)
     {
         let mut new_id_count = self.id_count + 1;

@@ -9,6 +9,7 @@ readme = "../../README.md"
 keywords = ["cucumber", "bdd", "testing", "glue"]
 categories = ["development-tools::testing"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 gherkin = { path = "../../../cucumber/gherkin/rust/lib" }

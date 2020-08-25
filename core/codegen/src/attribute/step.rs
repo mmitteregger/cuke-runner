@@ -1,16 +1,16 @@
 use proc_macro::{Span, TokenStream};
-
 use devise::{FromMeta, Result, Spanned, SpanWrapped, syn};
+use syn::{Attribute, parse::Parser};
 use proc_macro2::TokenStream as TokenStream2;
+use quote::{quote, quote_spanned};
 
-use {STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
-use attribute::GlueFnArg;
-use glue_codegen::{Regex, StepKeyword};
-use path_utils;
-use proc_macro_ext::{Diagnostics, StringLit};
-use syn_ext::{IdentExt, syn_to_diag};
+use crate::{STEP_FN_PREFIX, STEP_STRUCT_PREFIX};
+use crate::attribute::GlueFnArg;
+use crate::glue_codegen::{Regex, StepKeyword};
+use crate::path_utils;
+use crate::proc_macro_ext::{Diagnostics, StringLit};
+use crate::syn_ext::{IdentExt, syn_to_diag};
 
-use self::syn::{Attribute, parse::Parser};
 
 /// The raw, parsed `#[step]` attribute.
 #[derive(Debug, FromMeta)]
@@ -170,7 +170,7 @@ fn complete_step(args: TokenStream2, input: TokenStream) -> Result<TokenStream> 
 }
 
 fn incomplete_step(
-    keyword: ::glue::step::StepKeyword,
+    keyword: crate::glue::step::StepKeyword,
     args: TokenStream2,
     input: TokenStream
 ) -> Result<TokenStream> {
@@ -201,7 +201,7 @@ fn incomplete_step(
     codegen_step(parse_step(attribute, function)?)
 }
 
-pub fn step_attribute<K: Into<Option<::glue::step::StepKeyword>>>(
+pub fn step_attribute<K: Into<Option<crate::glue::step::StepKeyword>>>(
     keyword: K,
     args: TokenStream,
     input: TokenStream

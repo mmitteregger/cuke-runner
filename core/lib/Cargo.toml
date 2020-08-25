@@ -9,6 +9,7 @@ readme = "../README.md"
 keywords = ["cucumber", "bdd", "testing", "gherkin"]
 categories = ["development-tools::testing"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 cuke_runner_glue = { path = "../glue" }

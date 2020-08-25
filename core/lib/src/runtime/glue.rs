@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use gherkin::cuke;
 
-use glue::StaticGlueDefinitions;
-use runtime::{
+use crate::glue::StaticGlueDefinitions;
+use crate::runtime::{
     AmbiguousCukeStepDefinitionMatch, HookDefinition, CukeStepDefinitionMatch,
     StepDefinition, StepDefinitionMatch, UndefinedCukeStepDefinitionMatch,
 };
@@ -91,7 +91,7 @@ impl Glue {
         &self.after_scenario_hooks
     }
 
-    pub fn step_definition_match<'s, 'a: 's>(&'a self, feature_path: &str, step: &'s cuke::Step)
+    pub fn step_definition_match<'s, 'a: 's>(&'a self, feature_path: &str, step: &'s cuke::Step<'_>)
         -> StepDefinitionMatch<'s> {
 
         let mut matches = Vec::new();

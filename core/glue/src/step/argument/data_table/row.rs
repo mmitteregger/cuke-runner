@@ -12,7 +12,7 @@ use indexmap::IndexMap;
 /// [`FromDataTableRow`]: ./trait.FromDataTableRow.html
 /// [`Iterator`]: ./struct.FromDataTableRowIter.html
 #[derive(Debug)]
-pub struct RowRef<'r, 'dt: 'r> {
+pub struct RowRef<'r, 'dt> {
     cells: &'r [&'dt str],
 }
 
@@ -126,7 +126,7 @@ impl std::ops::Index<usize> for Row {
 /// [`FromDataTableBodyRow`]: ./trait.FromDataTableBodyRow.html
 /// [`Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
 #[derive(Debug)]
-pub struct BodyRowRef<'r, 'dt: 'r> {
+pub struct BodyRowRef<'r, 'dt> {
     cells: &'r IndexMap<&'dt str, &'dt str>,
 }
 

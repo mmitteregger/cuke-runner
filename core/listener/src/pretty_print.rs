@@ -69,7 +69,7 @@ impl PrettyPrintListener {
 }
 
 impl EventListener for PrettyPrintListener {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         match *event {
             Event::TestCaseStarted {
                 uri,
@@ -119,7 +119,7 @@ impl Inner {
         uri: &str,
         feature: &Feature,
         feature_background: Option<&Background>,
-        rule_background: Option<&Background>,
+        _rule_background: Option<&Background>,
         scenario: &Scenario,
         test_case: &dyn TestCase,
     ) {
@@ -146,7 +146,7 @@ impl Inner {
         self.print_description(description);
     }
 
-    fn handle_test_step_started(&mut self, uri: &str, scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep) {
+    fn handle_test_step_started(&mut self, uri: &str, scenario: &Scenario, test_case: &dyn TestCase, test_step: &TestStep<'_>) {
         if let TestStep::Cuke(cuke_step_test_step) = test_step {
             if self.print_scenario_text {
                 if !cuke_step_test_step.is_background_step() {
@@ -159,7 +159,7 @@ impl Inner {
         }
     }
 
-    fn handle_test_step_finished(&mut self, test_step: &TestStep, result: &TestResult) {
+    fn handle_test_step_finished(&mut self, test_step: &TestStep<'_>, result: &TestResult) {
         if let TestStep::Cuke(cuke_step_test_step) = test_step {
             self.print_step(*cuke_step_test_step, result);
         }
@@ -170,7 +170,7 @@ impl Inner {
         println!("{}", text);
     }
 
-    fn print_step(&self, test_step: &dyn CukeStepTestStep, result: &TestResult) {
+    fn print_step(&self, test_step: &dyn CukeStepTestStep<'_>, result: &TestResult) {
         let keyword = test_step.get_step_keyword();
         let step_text = test_step.get_step_text();
         let definition_text = format!("{}{}", keyword, step_text);
@@ -186,7 +186,7 @@ impl Inner {
     }
 
     fn format_step_text(&self, keyword: &str, step_text: &str,
-        ansi_color_code: u8, arguments: &[StepArgument]) -> String
+        ansi_color_code: u8, arguments: &[StepArgument<'_>]) -> String
     {
         let mut result = format!("\x1B[{}m{}\x1B[0m", ansi_color_code, keyword);
         let mut begin_index = 0usize;
@@ -221,7 +221,7 @@ impl Inner {
         result
     }
 
-    fn format_attached_step_arguments(&self, arguments: &[StepArgument]) -> Option<String> {
+    fn format_attached_step_arguments(&self, arguments: &[StepArgument<'_>]) -> Option<String> {
         for argument in arguments {
             match argument {
                 StepArgument::Expression(_expression) => {},
@@ -450,7 +450,7 @@ impl Inner {
         }
     }
 
-    fn print_cuke_tags(&self, tags: &[cuke::Tag], indent: &str) {
+    fn print_cuke_tags(&self, tags: &[cuke::Tag<'_>], indent: &str) {
         if !tags.is_empty() {
             let tag_names: Vec<&str> = tags.iter()
                 .map(cuke::Tag::as_ref)
@@ -483,7 +483,7 @@ impl Inner {
     }
 
     fn calculate_location_indentation(&mut self, definition_text: &str,
-        test_steps: &[TestStep], use_background_steps: bool) {
+        test_steps: &[TestStep<'_>], use_background_steps: bool) {
 
         let mut max_text_length = SCENARIO_INDENT.chars().count() + definition_text.chars().count();
         for step in test_steps {
@@ -499,7 +499,7 @@ impl Inner {
         self.location_indentation = max_text_length;
     }
 
-    fn step_text(&self, test_step: &dyn CukeStepTestStep) -> String {
+    fn step_text(&self, test_step: &dyn CukeStepTestStep<'_>) -> String {
         let keyword = test_step.get_step_keyword();
         let text = test_step.get_step_text();
         format!("{}{}", keyword, text)

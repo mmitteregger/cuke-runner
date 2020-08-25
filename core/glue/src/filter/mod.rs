@@ -1,8 +1,8 @@
 use gherkin::cuke::Cuke;
 
-use filter::line::LinePredicate;
-use filter::name::NamePredicate;
-use filter::tag::TagPredicate;
+use crate::filter::line::LinePredicate;
+use crate::filter::name::NamePredicate;
+use crate::filter::tag::TagPredicate;
 
 #[doc(hidden)]
 pub mod line;
@@ -18,7 +18,7 @@ pub enum CukePredicate<'p> {
 }
 
 impl<'p> CukePredicate<'p> {
-    pub fn apply(&self, uri: &str, cuke: &Cuke) -> bool {
+    pub fn apply(&self, uri: &str, cuke: &Cuke<'_>) -> bool {
         match self {
             CukePredicate::Line(line_predicate) => {
                 line_predicate.apply(uri, &cuke.locations)

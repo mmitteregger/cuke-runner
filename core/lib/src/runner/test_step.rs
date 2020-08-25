@@ -2,11 +2,11 @@ use std::time::{SystemTime, Duration};
 
 use gherkin::cuke;
 
-use error::{Result, Error};
-use api::{self, event::Event, HookType, GlueCodeLocation, TestResult, TestResultStatus};
-use glue::step::argument::StepArgument;
-use runner::EventPublisher;
-use runtime::{TestCase, StepDefinitionMatch, Scenario};
+use crate::error::{Result, Error};
+use crate::api::{self, event::Event, HookType, GlueCodeLocation, TestResult, TestResultStatus};
+use crate::glue::step::argument::StepArgument;
+use crate::runner::EventPublisher;
+use crate::runtime::{TestCase, StepDefinitionMatch, Scenario};
 
 #[derive(Debug)]
 pub struct HookTestStep<'s> {
@@ -18,12 +18,12 @@ impl<'s> HookTestStep<'s> {
     pub fn run<EP: EventPublisher>(
         &self,
         event_publisher: &EP,
-        test_case: &TestCase,
-        scenario: &mut Scenario,
+        test_case: &TestCase<'_>,
+        scenario: &mut Scenario<'_, '_>,
         skip: bool,
     ) -> TestResult
     {
-        let test_step = &api::TestStep::Hook(self as &dyn api::HookTestStep);
+        let test_step = &api::TestStep::Hook(self as &dyn api::HookTestStep<'_>);
         run_test_step(test_case, test_step, &self.definition_match, event_publisher, scenario, skip)
     }
 }
@@ -51,8 +51,8 @@ impl<'s> CukeStepTestStep<'s> {
     pub fn run<EP: EventPublisher>(
         &self,
         event_publisher: &EP,
-        test_case: &TestCase,
-        scenario: &mut Scenario,
+        test_case: &TestCase<'_>,
+        scenario: &mut Scenario<'_, '_>,
         skip: bool,
     ) -> TestResult
     {
@@ -69,7 +69,7 @@ impl<'s> CukeStepTestStep<'s> {
             results.push(hook_result);
         }
 
-        let test_step = &api::TestStep::Cuke(self as &dyn api::CukeStepTestStep);
+        let test_step = &api::TestStep::Cuke(self as &dyn api::CukeStepTestStep<'_>);
         let self_result = run_test_step(test_case, test_step, &self.step_definition_match,
                 event_publisher, scenario, skip_self);
         results.push(self_result);
@@ -94,11 +94,11 @@ impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
         self.step_definition_match.get_pattern().map(String::as_str)
     }
 
-    fn get_cuke_step(&self) -> &cuke::Step {
+    fn get_cuke_step(&self) -> &cuke::Step<'_> {
         &self.step_definition_match.get_step()
     }
 
-    fn get_arguments(&self) -> &[StepArgument] {
+    fn get_arguments(&self) -> &[StepArgument<'_>] {
         &self.step_definition_match.get_arguments()
     }
 
@@ -129,11 +129,11 @@ impl<'s> api::CukeStepTestStep<'s> for CukeStepTestStep<'s> {
 // to identify that this is an panic in a cucumber test
 #[inline(never)]
 fn run_test_step<EP: EventPublisher>(
-    test_case: &TestCase,
-    test_step: &api::TestStep,
-    definition_match: &StepDefinitionMatch,
+    test_case: &TestCase<'_>,
+    test_step: &api::TestStep<'_>,
+    definition_match: &StepDefinitionMatch<'_>,
     event_publisher: &EP,
-    scenario: &mut Scenario,
+    scenario: &mut Scenario<'_, '_>,
     skip: bool,
 ) -> TestResult
 {
@@ -176,8 +176,8 @@ fn run_test_step<EP: EventPublisher>(
 }
 
 fn execute_step(
-    definition_match: &StepDefinitionMatch,
-    scenario: &mut Scenario,
+    definition_match: &StepDefinitionMatch<'_>,
+    scenario: &mut Scenario<'_, '_>,
     skip: bool
 ) -> Result<TestResultStatus>
 {

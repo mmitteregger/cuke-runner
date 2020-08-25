@@ -1,6 +1,7 @@
-mod expression;
-mod doc_string;
-mod data_table;
+use std::fmt;
+use std::str::FromStr;
+
+use failure::Fail;
 
 pub use self::expression::Expression;
 pub use self::doc_string::DocString;
@@ -16,8 +17,9 @@ pub use self::data_table::{
     BodyRowRef,
 };
 
-use std::fmt;
-use std::str::FromStr;
+mod expression;
+mod doc_string;
+mod data_table;
 
 /// An argument from a scenario step that is passed to an step function.
 ///
@@ -42,7 +44,7 @@ pub type FromStepArgumentResult<T> = ::std::result::Result<T, FromStepArgumentEr
 ///
 /// [`StepArgument`]: ./enum.StepArgument.html
 pub trait FromStepArgument<'s>: Sized {
-    fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<Self>;
+    fn from_step_argument(step_argument: &'s StepArgument<'_>) -> FromStepArgumentResult<Self>;
 }
 
 /// The error holding information for a failed [`FromStepArgument`] conversion.
@@ -62,7 +64,7 @@ impl FromStepArgumentError {
 }
 
 impl fmt::Display for FromStepArgumentError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.message.fmt(f)
     }
 }
@@ -76,7 +78,7 @@ impl From<String> for FromStepArgumentError {
 }
 
 impl<'s, T: FromStr> FromStepArgument<'s> for T where <T as std::str::FromStr>::Err: fmt::Debug {
-    fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<T> {
+    fn from_step_argument(step_argument: &'s StepArgument<'_>) -> FromStepArgumentResult<T> {
         let str_value = match step_argument {
             StepArgument::Expression(expression) => Some(expression.value()),
             StepArgument::DocString(doc_string) => Some(doc_string.value()),
@@ -96,7 +98,7 @@ impl<'s, T: FromStr> FromStepArgument<'s> for T where <T as std::str::FromStr>::
 }
 
 impl<'s> FromStepArgument<'s> for &'s DataTable<'s> {
-    fn from_step_argument(step_argument: &'s StepArgument) -> FromStepArgumentResult<&'s DataTable<'s>> {
+    fn from_step_argument(step_argument: &'s StepArgument<'_>) -> FromStepArgumentResult<&'s DataTable<'s>> {
         match step_argument {
             StepArgument::DataTable(ref data_table) => Ok(&data_table),
             _ => Err(FromStepArgumentError {

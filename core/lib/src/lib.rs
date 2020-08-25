@@ -1,27 +1,19 @@
 /*!
 Cucumber for Rust with a focus on ease-of-use.
 */
+
 #![feature(nll)]
 #![feature(arbitrary_self_types)]
+#![warn(rust_2018_idioms)]
 
-extern crate cuke_runner_codegen;
+pub use gherkin;
 #[doc(hidden)] pub use cuke_runner_codegen::*;
+pub use cuke_runner_glue as glue;
 
-pub extern crate cuke_runner_glue as glue;
-pub extern crate gherkin;
-
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-extern crate walkdir;
-extern crate regex;
-extern crate rayon;
-extern crate termcolor;
-
-pub use config::{Config, ExecutionMode};
-pub use error::{Error, Result};
-pub use runtime::Glue;
-pub use runtime::event_listener;
+pub use crate::config::{Config, ExecutionMode};
+pub use crate::error::{Error, Result};
+pub use crate::runtime::Glue;
+pub use crate::runtime::event_listener;
 
 mod config;
 mod error;
@@ -29,7 +21,7 @@ pub mod api;
 mod runner;
 pub(crate) mod runtime;
 
-pub fn execute_cucumber_tests(glue: Glue, config: Config) {
+pub fn execute_cucumber_tests(glue: Glue, config: Config<'_>) {
     let exit_status = runtime::run(glue, config);
 
     if exit_status != 0 {

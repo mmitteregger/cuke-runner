@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 
 use gherkin::cuke::Tag;
 
-use api::GlueCodeLocation;
-use error::Result;
-use glue::filter::tag::TagPredicate;
-use glue::hook::{HookFn, StaticHookDef};
-use runtime::Scenario;
+use crate::api::GlueCodeLocation;
+use crate::error::Result;
+use crate::glue::filter::tag::TagPredicate;
+use crate::glue::hook::{HookFn, StaticHookDef};
+use crate::runtime::Scenario;
 
 #[derive(Clone)]
 pub struct HookDefinition {
@@ -19,7 +19,7 @@ pub struct HookDefinition {
 }
 
 impl fmt::Debug for HookDefinition {
-    fn fmt(&self, f: &mut fmt::Formatter) -> ::std::result::Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> ::std::result::Result<(), fmt::Error> {
         f.debug_struct("HookDefinition")
             .field("tag_predicate", &self.tag_predicate)
             .field("order", &self.order)
@@ -65,15 +65,15 @@ impl HookDefinition {
         &self.location
     }
 
-    pub fn execute(&self, scenario: &mut Scenario) -> Result<()> {
+    pub fn execute(&self, scenario: &mut Scenario<'_, '_>) -> Result<()> {
         let result = (self.hook_fn)(&mut scenario.glue_scenario);
         match result {
             Ok(_) => Ok(()),
-            Err(error) => Err(::error::Error::Execution(error)),
+            Err(error) => Err(crate::error::Error::Execution(error)),
         }
     }
 
-    pub fn matches(&self, tags: &[Tag]) -> bool {
+    pub fn matches(&self, tags: &[Tag<'_>]) -> bool {
         self.tag_predicate.apply(tags)
     }
 

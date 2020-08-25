@@ -1,11 +1,14 @@
 use std::fs;
 use std::ops::Add;
 use std::path::PathBuf;
+
 use proc_macro2::Span;
 use proc_macro::TokenStream;
 use syn::{self, Path, Attribute, Item, Visibility};
 use devise::Result;
-use {
+use quote::quote_spanned;
+
+use crate::{
     BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
     BEFORE_STEP_HOOK_STRUCT_PREFIX,
     STEP_STRUCT_PREFIX,
@@ -69,7 +72,7 @@ fn add_from_file(static_glue_definition_paths: &mut Vec<Path>,
     module_paths: &mut Vec<String>, fs_path: &mut PathBuf,
     fn_attribute_names: &[&str], struct_prefix: &str) {
 
-    debug!("Searching for glue definitions in: {}", &fs_path.display());
+    log::debug!("Searching for glue definitions in: {}", &fs_path.display());
 
     let src = match fs::read_to_string(&fs_path) {
         Ok(src) => src,
@@ -98,16 +101,17 @@ fn add_from_items(static_glue_definition_paths: &mut Vec<Path>,
                 let glue_fn_path = format!("{}::{}", current_path, &function_name);
 
                 if !is_visible(item_fn.vis) {
-                    debug!("Skipping private function: {}", glue_fn_path);
+                    log::debug!("Skipping private function: {}", glue_fn_path);
                     continue;
                 }
 
                 if get_attribute(item_fn.attrs, fn_attribute_names).is_none() {
-                    debug!("Skipping function without glue attribute: {}", glue_fn_path);
+                    log::debug!("Skipping function without glue attribute: {}", glue_fn_path);
                     continue;
                 }
 
                 let function_path = String::new()
+                    .add("crate")
                     .add("::")
                     .add(&current_path)
                     .add("::")

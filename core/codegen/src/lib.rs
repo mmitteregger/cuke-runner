@@ -4,22 +4,15 @@
 #![feature(crate_visibility_modifier)]
 #![feature(rustc_private)]
 #![recursion_limit="128"]
+#![warn(rust_2018_idioms)]
 
-extern crate cuke_runner_glue as glue;
-extern crate proc_macro;
-extern crate proc_macro2;
-#[macro_use]
-extern crate quote;
-extern crate regex;
-extern crate syn;
-#[macro_use]
-extern crate log;
-extern crate devise;
+use cuke_runner_glue as glue;
 
+use devise;
 use proc_macro::TokenStream;
 
-use glue::hook::HookType;
-use glue::step::StepKeyword;
+use crate::glue::hook::HookType;
+use crate::glue::step::StepKeyword;
 
 #[macro_use]
 mod proc_macro_ext;

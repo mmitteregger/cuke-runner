@@ -6,6 +6,8 @@ This way only the required listeners and their dependencies need to be compiled.
 Look at the documentation of the individual listeners for the required feature names.
 */
 
+#![warn(rust_2018_idioms)]
+
 #[cfg(feature = "pretty_print")]
 mod pretty_print;
 #[cfg(feature = "pretty_print")]

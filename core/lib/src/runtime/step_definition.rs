@@ -4,10 +4,10 @@ use std::fmt;
 
 use gherkin::cuke;
 
-use api::GlueCodeLocation;
-use glue::step::{StaticStepDef, StepFn};
-use glue::step::argument::{StepArgument, DocString, DataTable};
-use runtime::Scenario;
+use crate::api::GlueCodeLocation;
+use crate::glue::step::{StaticStepDef, StepFn};
+use crate::glue::step::argument::{StepArgument, DocString, DataTable};
+use crate::runtime::Scenario;
 
 use super::step_expression::StepExpression;
 use std::path::{Path, PathBuf};
@@ -22,7 +22,7 @@ pub struct StepDefinition {
 }
 
 impl fmt::Debug for StepDefinition {
-    fn fmt(&self, f: &mut fmt::Formatter) -> ::std::result::Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> ::std::result::Result<(), fmt::Error> {
         f.debug_struct("StepDefinition")
             .field("expression", &self.expression)
             .field("parameter_infos", &self.parameter_infos)
@@ -62,7 +62,7 @@ impl StepDefinition {
     /// Returns `None` if the step definition doesn't match at all.
     /// Returns an empty `Vec` if it matches with 0 arguments
     /// and bigger sizes if it matches several.
-    pub fn matched_arguments<'s>(&'s self, step: &'s cuke::Step) -> Option<Vec<StepArgument<'s>>> {
+    pub fn matched_arguments<'s>(&'s self, step: &'s cuke::Step<'_>) -> Option<Vec<StepArgument<'s>>> {
         let mut matched_arguments = match self.expression.matched_arguments(&step.text) {
             Some(arguments) => arguments,
             None => return None,
@@ -98,8 +98,8 @@ impl StepDefinition {
     }
 
     /// Invokes the step definition.
-    pub fn execute(&self, scenario: &mut Scenario, args: &[StepArgument])
-        -> ::std::result::Result<(), ::glue::error::ExecutionError>
+    pub fn execute(&self, scenario: &mut Scenario<'_, '_>, args: &[StepArgument<'_>])
+        -> ::std::result::Result<(), crate::glue::error::ExecutionError>
     {
         (self.step_fn)(&mut scenario.glue_scenario, args)
     }

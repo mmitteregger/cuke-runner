@@ -1,9 +1,9 @@
 use proc_macro::{Span, TokenStream};
-
 use devise::{FromMeta, Result, SpanWrapped, syn};
 use proc_macro2::{Ident, TokenStream as TokenStream2};
+use quote::quote;
 
-use {
+use crate::{
     AFTER_SCENARIO_HOOK_FN_PREFIX,
     AFTER_SCENARIO_HOOK_STRUCT_PREFIX,
     AFTER_STEP_HOOK_FN_PREFIX,
@@ -13,11 +13,11 @@ use {
     BEFORE_STEP_HOOK_FN_PREFIX,
     BEFORE_STEP_HOOK_STRUCT_PREFIX,
 };
-use attribute::GlueFnArg;
-use glue_codegen::{HookType, TagExpression};
-use path_utils;
-use proc_macro_ext::{Diagnostics, StringLit};
-use syn_ext::{IdentExt, syn_to_diag};
+use crate::attribute::GlueFnArg;
+use crate::glue_codegen::{HookType, TagExpression};
+use crate::path_utils;
+use crate::proc_macro_ext::{Diagnostics, StringLit};
+use crate::syn_ext::{IdentExt, syn_to_diag};
 
 use self::syn::{Attribute, parse::Parser};
 
@@ -58,7 +58,7 @@ fn parse_hook(attr: HookAttribute, mut function: syn::ItemFn) -> Result<Hook> {
 }
 
 fn generate_fn_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
-    use glue::hook::HookType::*;
+    use crate::glue::hook::HookType::*;
 
     let hook_fn_prefix = match hook_type.0 {
         BeforeScenario => BEFORE_SCENARIO_HOOK_FN_PREFIX,
@@ -71,7 +71,7 @@ fn generate_fn_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident
 }
 
 fn generate_struct_name(user_handler_fn_name: &Ident, hook_type: &HookType) -> Ident {
-    use glue::hook::HookType::*;
+    use crate::glue::hook::HookType::*;
 
     let hook_struct_prefix = match hook_type.0 {
         BeforeScenario => BEFORE_SCENARIO_HOOK_STRUCT_PREFIX,
@@ -156,7 +156,7 @@ fn complete_hook(args: TokenStream2, input: TokenStream) -> Result<TokenStream> 
 }
 
 fn incomplete_hook(
-    hook_type: ::glue::hook::HookType,
+    hook_type: crate::glue::hook::HookType,
     args: TokenStream2,
     input: TokenStream
 ) -> Result<TokenStream> {
@@ -188,7 +188,7 @@ fn incomplete_hook(
     codegen_hook(parse_hook(attribute, function)?)
 }
 
-pub fn hook_attribute<T: Into<Option<::glue::hook::HookType>>>(
+pub fn hook_attribute<T: Into<Option<crate::glue::hook::HookType>>>(
     hook_type: T,
     args: TokenStream,
     input: TokenStream

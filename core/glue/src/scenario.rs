@@ -2,6 +2,8 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt;
 
+use failure::Fail;
+
 #[derive(Debug, Default)]
 pub struct Scenario {
     data: HashMap<TypeId, Box<dyn Any>>,
@@ -55,7 +57,7 @@ impl FromScenarioError {
 }
 
 impl fmt::Display for FromScenarioError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.message.fmt(f)
     }
 }

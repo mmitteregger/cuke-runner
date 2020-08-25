@@ -2,10 +2,10 @@ use std::time::SystemTime;
 
 use gherkin::cuke::{Cuke, Tag};
 
-use api::{self, TestResult, TestResultStatus};
-use api::event::Event;
-use runner::{EventPublisher, CukeStepTestStep, HookTestStep};
-use runtime;
+use crate::api::{self, TestResult, TestResultStatus};
+use crate::api::event::Event;
+use crate::runner::{EventPublisher, CukeStepTestStep, HookTestStep};
+use crate::runtime;
 
 #[derive(Debug)]
 pub struct TestCase<'c> {
@@ -18,27 +18,27 @@ pub struct TestCase<'c> {
 }
 
 impl<'s> api::TestCase for TestCase<'s> {
-    fn get_test_steps(&self) -> Vec<api::TestStep> {
+    fn get_test_steps(&self) -> Vec<api::TestStep<'_>> {
         let mut test_steps = Vec::new();
 
         for before_hook in &self.before_hooks {
-            test_steps.push(api::TestStep::Hook(before_hook as &dyn api::HookTestStep));
+            test_steps.push(api::TestStep::Hook(before_hook as &dyn api::HookTestStep<'_>));
         }
 
         for test_step in &self.test_steps {
             for before_step_hook_step in &test_step.before_step_hook_steps {
-                test_steps.push(api::TestStep::Hook(before_step_hook_step as &dyn api::HookTestStep));
+                test_steps.push(api::TestStep::Hook(before_step_hook_step as &dyn api::HookTestStep<'_>));
             }
 
-            test_steps.push(api::TestStep::Cuke(test_step as &dyn api::CukeStepTestStep));
+            test_steps.push(api::TestStep::Cuke(test_step as &dyn api::CukeStepTestStep<'_>));
 
             for after_step_hook_step in &test_step.after_step_hook_steps {
-                test_steps.push(api::TestStep::Hook(after_step_hook_step as &dyn api::HookTestStep));
+                test_steps.push(api::TestStep::Hook(after_step_hook_step as &dyn api::HookTestStep<'_>));
             }
         }
 
         for after_hook in &self.after_hooks {
-            test_steps.push(api::TestStep::Hook(after_hook as &dyn api::HookTestStep));
+            test_steps.push(api::TestStep::Hook(after_hook as &dyn api::HookTestStep<'_>));
         }
 
         test_steps
@@ -60,12 +60,12 @@ impl<'s> api::TestCase for TestCase<'s> {
         self.cuke.locations[0].line
     }
 
-    fn get_tags(&self) -> &[Tag] {
+    fn get_tags(&self) -> &[Tag<'_>] {
         &self.cuke.tags
     }
 }
 
-pub fn run<EP: EventPublisher>(test_case: TestCase, event_publisher: &EP) {
+pub fn run<EP: EventPublisher>(test_case: TestCase<'_>, event_publisher: &EP) {
     let start_time = SystemTime::now();
     event_publisher.send(Event::TestCaseStarted {
         time: start_time,

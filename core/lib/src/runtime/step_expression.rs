@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use glue::step::argument::{StepArgument, Expression};
+use crate::glue::step::argument::{StepArgument, Expression};
 
 #[derive(Debug, Clone)]
 pub struct StepExpression {
@@ -22,7 +22,7 @@ impl StepExpression {
             .filter_map(|opt_mat| {
                 opt_mat.map(|mat| StepArgument::Expression(Expression::from(mat)))
             })
-            .collect::<Vec<StepArgument>>();
+            .collect::<Vec<StepArgument<'_>>>();
 
         Some(matched_arguments)
     }

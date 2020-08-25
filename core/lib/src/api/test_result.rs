@@ -3,7 +3,7 @@ use std::fmt;
 
 use failure::{Fail, AsFail};
 
-use error::Error;
+use crate::error::Error;
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Copy, Clone)]
 pub enum TestResultStatus {
@@ -43,7 +43,7 @@ impl TestResultStatus {
 }
 
 impl fmt::Display for TestResultStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::TestResultStatus::*;
 
         match *self {

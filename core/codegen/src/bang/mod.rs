@@ -1,9 +1,11 @@
-mod generate_glue;
-mod glue;
-
-use proc_macro::TokenStream;
 use std::env;
 use std::path::PathBuf;
+
+use proc_macro::TokenStream;
+use quote::quote;
+
+mod generate_glue;
+mod glue;
 
 pub fn generate_glue_macro(input: TokenStream) -> TokenStream {
     generate_glue::generate_glue_macro(input)
@@ -25,6 +27,6 @@ fn get_current_file_path() -> PathBuf {
         .expect("could not find compiling rust file in current argument list");
     let current_file_path = crate_root_path.join(crate_relative_path);
 
-    debug!("current_file_path: {}", current_file_path.display());
+    log::debug!("current_file_path: {}", current_file_path.display());
     current_file_path
 }

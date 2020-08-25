@@ -8,9 +8,9 @@ use gherkin::cuke::Cuke;
 use rayon::prelude::*;
 use walkdir::{DirEntry, WalkDir};
 
-use {Config, ExecutionMode};
-use runner::{EventBus, EventPublisher, Runner, SyncEventBus};
-use runtime::filter::Filters;
+use crate::{Config, ExecutionMode};
+use crate::runner::{EventBus, EventPublisher, Runner, SyncEventBus};
+use crate::runtime::filter::Filters;
 
 use crate::api::event::{Event, EventListener, SyncEventListener};
 
@@ -33,7 +33,7 @@ mod step_definition_match;
 pub mod event_listener;
 mod filter;
 
-pub fn run(glue: Glue, config: Config) -> i32 {
+pub fn run(glue: Glue, config: Config<'_>) -> i32 {
     cuke_runner_glue::panic::register_cuke_runner_hook();
 
     let runner = Runner::new(glue, config.dry_run);
@@ -117,7 +117,7 @@ struct ParsedCuke<'d> {
     cuke: Cuke<'d>,
 }
 
-fn run_sequential(runner: Runner, filters: Filters, event_bus: &EventBus, config: &Config) {
+fn run_sequential(runner: Runner, filters: Filters<'_>, event_bus: &EventBus<'_>, config: &Config<'_>) {
     let mut id_generator = IncrementingIdGenerator::new();
     let parsed_gherkin_documents = parse_gherking_documents(config, &mut id_generator);
     let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus, &mut id_generator);
@@ -138,7 +138,7 @@ fn run_sequential(runner: Runner, filters: Filters, event_bus: &EventBus, config
     });
 }
 
-fn run_parallel_features(runner: Runner, filters: Filters, event_bus: &SyncEventBus, config: &Config) {
+fn run_parallel_features(runner: Runner, filters: Filters<'_>, event_bus: &SyncEventBus<'_>, config: &Config<'_>) {
     let mut id_generator = IncrementingIdGenerator::new();
     let parsed_gherkin_documents = parse_gherking_documents(config, &mut id_generator);
     let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus, &mut id_generator);
@@ -169,7 +169,7 @@ fn run_parallel_features(runner: Runner, filters: Filters, event_bus: &SyncEvent
     });
 }
 
-fn run_parallel_scenarios(runner: Runner, filters: Filters, event_bus: &SyncEventBus, config: &Config) {
+fn run_parallel_scenarios(runner: Runner, filters: Filters<'_>, event_bus: &SyncEventBus<'_>, config: &Config<'_>) {
     let mut id_generator = IncrementingIdGenerator::new();
     let parsed_gherkin_documents = parse_gherking_documents(config, &mut id_generator);
     let parsed_cukes = parse_cukes(&parsed_gherkin_documents, event_bus, &mut id_generator);
@@ -198,7 +198,7 @@ fn init_rayon() {
 }
 
 fn parse_gherking_documents(
-    config: &Config,
+    config: &Config<'_>,
     id_generator: &mut dyn IdGenerator,
 ) -> Vec<ParsedGherkinDocument>
 {
@@ -265,7 +265,7 @@ fn parse_cukes<'d>(
                     uri: &parsed_gherkin_document.uri,
                     cuke,
                 })
-                .collect::<Vec<ParsedCuke>>()
+                .collect::<Vec<ParsedCuke<'_>>>()
         })
-        .collect::<Vec<ParsedCuke>>()
+        .collect::<Vec<ParsedCuke<'_>>>()
 }

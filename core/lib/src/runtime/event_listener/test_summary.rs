@@ -6,8 +6,8 @@ use std::time::Instant;
 use gherkin::ast::Scenario;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use api::{TestCase, TestResultStatus};
-use api::event::{Event, EventListener};
+use crate::api::{TestCase, TestResultStatus};
+use crate::api::event::{Event, EventListener};
 
 #[derive(Debug, Default)]
 struct TestSummary {
@@ -74,7 +74,7 @@ impl TestSummaryListener {
 }
 
 impl EventListener for TestSummaryListener {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         if let Event::TestCaseFinished { scenario, test_case, ref result, .. } = *event {
             self.test_summary.borrow_mut()
                 .add_result(scenario, test_case, result.status)
@@ -104,7 +104,7 @@ impl SyncTestSummaryListener {
 }
 
 impl EventListener for SyncTestSummaryListener {
-    fn on_event(&self, event: &Event) {
+    fn on_event(&self, event: &Event<'_, '_>) {
         if let Event::TestCaseFinished { scenario, test_case, ref result, .. } = *event {
             self.test_summary.lock().unwrap().borrow_mut()
                 .add_result(scenario, test_case, result.status)

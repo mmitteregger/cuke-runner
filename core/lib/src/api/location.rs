@@ -20,7 +20,7 @@ impl GlueCodeLocation {
 }
 
 impl fmt::Display for GlueCodeLocation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "{}:{}", self.file_path.display(), self.line_number)
     }
 }

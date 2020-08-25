@@ -46,7 +46,7 @@ pub struct StaticHookDef {
 }
 
 impl fmt::Debug for StaticHookDef {
-    fn fmt(&self, f: &mut fmt::Formatter) -> ::std::result::Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> ::std::result::Result<(), fmt::Error> {
         f.debug_struct("StaticHookDef")
             .field("name", &self.name)
             .field("tag_expression", &self.tag_expression)
@@ -97,7 +97,7 @@ impl FromStr for HookType {
 
 impl fmt::Display for HookType {
     #[inline(always)]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self.as_str(), f)
     }
 }
