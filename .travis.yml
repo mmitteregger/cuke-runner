@@ -1,0 +1,12 @@
+language: rust
+env:
+  global:
+    - PROJECT_NAME: cuke-runner
+    - RUST_BACKTRACE: full
+rust:
+  # Minimum Rust supported channel to make sure the project continues to work on the advertised minimum version.
+  - 1.46.0
+  - beta
+  - nightly
+matrix:
+  fast_finish: true
