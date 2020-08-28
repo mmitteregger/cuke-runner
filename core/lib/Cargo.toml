@@ -14,7 +14,7 @@ edition = "2018"
 [dependencies]
 cuke_runner_glue = { path = "../glue" }
 cuke_runner_codegen = { path = "../codegen" }
-gherkin = { path = "../../../cucumber/gherkin/rust/lib" }
+gherkin = { git = "https://github.com/mmitteregger/gherkin-rust" }
 failure = "0.1"
 failure_derive = "0.1"
 walkdir = "2"
