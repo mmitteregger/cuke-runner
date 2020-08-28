@@ -62,7 +62,7 @@ impl EventListener for ProgressBarListener {
                 self.progress_bar.inc(1);
             },
             Event::TestRunFinished { .. } => {
-                self.progress_bar.finish();
+                self.progress_bar.finish_and_clear();
             },
             _ => {},
         }
